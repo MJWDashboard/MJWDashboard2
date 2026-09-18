@@ -73,3 +73,18 @@ export const RISK_SEVERITY_CLASSES: Record<string, string> = {
   high: "bg-orange-500/20 text-orange-400",
   critical: "bg-red-500/20 text-red-400",
 };
+
+export const VACANT_UNIT_STATUS_CLASSES: Record<string, string> = {
+  vacant: "bg-yellow-500/20 text-yellow-400",
+  under_offer: "bg-cyan-600/20 text-cyan-400",
+  leased: "bg-green-500/20 text-green-400",
+};
+
+export const LEASING_TARGET_STATUS_CLASSES: Record<string, string> = {
+  to_approach: "bg-charcoal-600/60 text-charcoal-200",
+  contacted: "bg-cyan-600/20 text-cyan-400",
+  meeting_set: "bg-cyan-600/20 text-cyan-400",
+  interested: "bg-yellow-500/20 text-yellow-400",
+  not_interested: "bg-red-500/20 text-red-400",
+  converted: "bg-green-500/20 text-green-400",
+};

@@ -11,6 +11,7 @@ export async function uploadDocument(formData: FormData) {
   const file = formData.get("file") as File | null;
   const buildingId = (formData.get("building_id") as string) || null;
   const tenantId = (formData.get("tenant_id") as string) || null;
+  const leasingDealId = (formData.get("leasing_deal_id") as string) || null;
   const category = (formData.get("category") as string) || null;
 
   if (!file || file.size === 0) return { error: "Please choose a file." };
@@ -27,6 +28,7 @@ export async function uploadDocument(formData: FormData) {
   const { error: insertError } = await supabase.from("documents").insert({
     building_id: buildingId,
     tenant_id: tenantId,
+    leasing_deal_id: leasingDealId,
     category,
     file_name: file.name,
     file_path: path,
@@ -39,6 +41,7 @@ export async function uploadDocument(formData: FormData) {
   if (insertError) return { error: insertError.message };
 
   revalidatePath("/dashboard/documents");
+  if (leasingDealId) revalidatePath(`/dashboard/leasing/${leasingDealId}`);
   return { error: null };
 }
 

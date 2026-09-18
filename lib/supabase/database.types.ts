@@ -619,6 +619,7 @@ export type Database = {
           file_path: string
           file_size: number | null
           id: string
+          leasing_deal_id: string | null
           meeting_id: string | null
           mime_type: string | null
           organization_id: string | null
@@ -635,6 +636,7 @@ export type Database = {
           file_path: string
           file_size?: number | null
           id?: string
+          leasing_deal_id?: string | null
           meeting_id?: string | null
           mime_type?: string | null
           organization_id?: string | null
@@ -651,6 +653,7 @@ export type Database = {
           file_path?: string
           file_size?: number | null
           id?: string
+          leasing_deal_id?: string | null
           meeting_id?: string | null
           mime_type?: string | null
           organization_id?: string | null
@@ -665,6 +668,13 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_leasing_deal_id_fkey"
+            columns: ["leasing_deal_id"]
+            isOneToOne: false
+            referencedRelation: "leasing_deals"
             referencedColumns: ["id"]
           },
           {
@@ -1112,54 +1122,214 @@ export type Database = {
           },
         ]
       }
-      leasing_deals: {
+      leasing_approved_rates: {
         Row: {
           archived_at: string | null
           building_id: string
+          category: string
           created_at: string
           created_by: string | null
-          deal_value: number | null
+          effective_date: string | null
           id: string
           notes: string | null
-          owner: string | null
-          prospect_name: string | null
-          shop_number: string | null
-          stage: Database["public"]["Enums"]["leasing_deal_stage"]
-          tenant_id: string | null
+          organization_id: string | null
+          rate_per_sqm: number
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           archived_at?: string | null
           building_id: string
+          category: string
           created_at?: string
           created_by?: string | null
-          deal_value?: number | null
+          effective_date?: string | null
           id?: string
           notes?: string | null
-          owner?: string | null
-          prospect_name?: string | null
-          shop_number?: string | null
-          stage?: Database["public"]["Enums"]["leasing_deal_stage"]
-          tenant_id?: string | null
+          organization_id?: string | null
+          rate_per_sqm: number
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           archived_at?: string | null
           building_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          rate_per_sqm?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasing_approved_rates_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasing_approved_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leasing_deal_documents: {
+        Row: {
+          created_at: string
+          deal_id: string
+          document_name: string
+          id: string
+          notes: string | null
+          received: boolean
+          received_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          document_name: string
+          id?: string
+          notes?: string | null
+          received?: boolean
+          received_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          document_name?: string
+          id?: string
+          notes?: string | null
+          received?: boolean
+          received_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasing_deal_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "leasing_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leasing_deal_feedback: {
+        Row: {
+          comment: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          id?: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasing_deal_feedback_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "leasing_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leasing_deals: {
+        Row: {
+          archived_at: string | null
+          building_id: string
+          commencement_date: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          deal_value: number | null
+          enquiry_date: string | null
+          enquiry_source: string | null
+          id: string
+          lease_term_months: number | null
+          notes: string | null
+          owner: string | null
+          prospect_name: string | null
+          rate_per_sqm: number | null
+          requirements: string | null
+          shop_number: string | null
+          stage: Database["public"]["Enums"]["leasing_deal_stage"]
+          tenant_id: string | null
+          unit_size_sqm: number | null
+          updated_at: string
+          updated_by: string | null
+          vacant_unit_id: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          building_id: string
+          commencement_date?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
           deal_value?: number | null
+          enquiry_date?: string | null
+          enquiry_source?: string | null
           id?: string
+          lease_term_months?: number | null
           notes?: string | null
           owner?: string | null
           prospect_name?: string | null
+          rate_per_sqm?: number | null
+          requirements?: string | null
           shop_number?: string | null
           stage?: Database["public"]["Enums"]["leasing_deal_stage"]
           tenant_id?: string | null
+          unit_size_sqm?: number | null
           updated_at?: string
           updated_by?: string | null
+          vacant_unit_id?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          building_id?: string
+          commencement_date?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_value?: number | null
+          enquiry_date?: string | null
+          enquiry_source?: string | null
+          id?: string
+          lease_term_months?: number | null
+          notes?: string | null
+          owner?: string | null
+          prospect_name?: string | null
+          rate_per_sqm?: number | null
+          requirements?: string | null
+          shop_number?: string | null
+          stage?: Database["public"]["Enums"]["leasing_deal_stage"]
+          tenant_id?: string | null
+          unit_size_sqm?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          vacant_unit_id?: string | null
         }
         Relationships: [
           {
@@ -1174,6 +1344,126 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasing_deals_vacant_unit_id_fkey"
+            columns: ["vacant_unit_id"]
+            isOneToOne: false
+            referencedRelation: "vacant_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leasing_document_templates: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          items: Json
+          name: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          items?: Json
+          name: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          items?: Json
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasing_document_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leasing_targets: {
+        Row: {
+          archived_at: string | null
+          building_id: string
+          company_name: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string | null
+          status: Database["public"]["Enums"]["leasing_target_status"]
+          trade_category: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          building_id: string
+          company_name: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          status?: Database["public"]["Enums"]["leasing_target_status"]
+          trade_category?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          building_id?: string
+          company_name?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          status?: Database["public"]["Enums"]["leasing_target_status"]
+          trade_category?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasing_targets_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasing_targets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2178,6 +2468,72 @@ export type Database = {
           },
         ]
       }
+      vacant_units: {
+        Row: {
+          archived_at: string | null
+          asking_rate_per_sqm: number | null
+          availability_date: string | null
+          building_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string | null
+          shop_number: string | null
+          size_sqm: number | null
+          status: Database["public"]["Enums"]["vacant_unit_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          asking_rate_per_sqm?: number | null
+          availability_date?: string | null
+          building_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          shop_number?: string | null
+          size_sqm?: number | null
+          status?: Database["public"]["Enums"]["vacant_unit_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          asking_rate_per_sqm?: number | null
+          availability_date?: string | null
+          building_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          shop_number?: string | null
+          size_sqm?: number | null
+          status?: Database["public"]["Enums"]["vacant_unit_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacant_units_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacant_units_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2244,6 +2600,13 @@ export type Database = {
         | "signed"
         | "declined"
         | "withdrawn"
+      leasing_target_status:
+        | "to_approach"
+        | "contacted"
+        | "meeting_set"
+        | "interested"
+        | "not_interested"
+        | "converted"
       meeting_status:
         | "draft"
         | "scheduled"
@@ -2257,6 +2620,7 @@ export type Database = {
         | "in_progress"
         | "waiting_on_feedback"
         | "complete"
+      vacant_unit_status: "vacant" | "under_offer" | "leased"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2437,6 +2801,14 @@ export const Constants = {
         "declined",
         "withdrawn",
       ],
+      leasing_target_status: [
+        "to_approach",
+        "contacted",
+        "meeting_set",
+        "interested",
+        "not_interested",
+        "converted",
+      ],
       meeting_status: [
         "draft",
         "scheduled",
@@ -2452,6 +2824,7 @@ export const Constants = {
         "waiting_on_feedback",
         "complete",
       ],
+      vacant_unit_status: ["vacant", "under_offer", "leased"],
     },
   },
 } as const

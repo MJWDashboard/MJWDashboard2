@@ -6,6 +6,7 @@ import { StatusBadge, Badge } from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { formatNumber } from "@/lib/format";
 import { computeMonthlyStatus, STATUS_LABELS, STATUS_CLASSES } from "@/lib/turnovers";
+import { LEASING_STAGE_CLASSES, enumLabel } from "@/lib/status";
 import { BuildingFormButton } from "../BuildingForm";
 
 export default async function BuildingDetailPage({
@@ -25,7 +26,7 @@ export default async function BuildingDetailPage({
 
   const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
 
-  const [tenantsRes, actionsRes, arrearsRes, siteVisitsRes, turnoversRes, meetingsRes] = await Promise.all([
+  const [tenantsRes, actionsRes, arrearsRes, siteVisitsRes, turnoversRes, meetingsRes, leasingRes, vacantUnitsRes] = await Promise.all([
     supabase
       .from("tenants")
       .select("id, trading_name, shop_number, monthly_rental, status")
@@ -62,6 +63,20 @@ export default async function BuildingDetailPage({
       .eq("building_id", params.id)
       .order("meeting_date", { ascending: false })
       .limit(5),
+    supabase
+      .from("leasing_deals")
+      .select("id, prospect_name, stage, tenants(trading_name)")
+      .eq("building_id", params.id)
+      .is("archived_at", null)
+      .not("stage", "in", "(signed,declined,withdrawn)")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("vacant_units")
+      .select("id", { count: "exact", head: true })
+      .eq("building_id", params.id)
+      .eq("status", "vacant")
+      .is("archived_at", null),
   ]);
 
   const totalArrears = (arrearsRes.data ?? []).reduce(
@@ -79,7 +94,7 @@ export default async function BuildingDetailPage({
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div className="card">
           <p className="text-xs uppercase text-charcoal-400">GLA</p>
           <p className="mt-1 text-lg font-semibold">{formatNumber(building.gla)} m²</p>
@@ -97,6 +112,10 @@ export default async function BuildingDetailPage({
           <p className="mt-1 text-lg font-semibold text-status-risk">
             {formatCurrency(totalArrears)}
           </p>
+        </div>
+        <div className="card">
+          <p className="text-xs uppercase text-charcoal-400">Vacant Units</p>
+          <p className="mt-1 text-lg font-semibold">{vacantUnitsRes.count ?? 0}</p>
         </div>
       </div>
 
@@ -257,6 +276,32 @@ export default async function BuildingDetailPage({
             </ul>
           ) : (
             <p className="text-sm text-charcoal-400">No meetings recorded.</p>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Leasing Pipeline</h2>
+            <Link
+              href={`/dashboard/leasing?building_id=${building.id}`}
+              className="text-xs text-cyan-400 hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+          {leasingRes.data && leasingRes.data.length > 0 ? (
+            <ul className="space-y-2">
+              {leasingRes.data.map((d: any) => (
+                <li key={d.id} className="flex items-center justify-between text-sm">
+                  <Link href={`/dashboard/leasing/${d.id}`} className="text-cyan-400 hover:underline">
+                    {d.tenants?.trading_name ?? d.prospect_name ?? "—"}
+                  </Link>
+                  <Badge label={enumLabel(d.stage)} className={LEASING_STAGE_CLASSES[d.stage] ?? ""} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-charcoal-400">No active leasing deals.</p>
           )}
         </section>
 

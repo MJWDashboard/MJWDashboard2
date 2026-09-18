@@ -1,15 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
 import { PageHeader } from "@/components/PageHeader";
-import { EmptyState } from "@/components/EmptyState";
-import { Badge } from "@/components/StatusBadge";
-import { LEASING_STAGE_CLASSES, enumLabel } from "@/lib/status";
-import { formatCurrency } from "@/lib/format";
-import { LeasingDealFormButton } from "./LeasingDealForm";
+import { FilterChip } from "@/components/FilterChip";
+import { LeasingTabs } from "./LeasingTabs";
 
-export default async function LeasingPage() {
+export default async function LeasingPage({
+  searchParams,
+}: {
+  searchParams: { building_id?: string };
+}) {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
+  const buildingId = searchParams.building_id;
 
   const { data: buildings } = await supabase
     .from("buildings")
@@ -22,74 +24,73 @@ export default async function LeasingPage() {
       ? null
       : (buildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
-  let query = supabase
-    .from("leasing_deals")
-    .select("id, prospect_name, shop_number, stage, deal_value, notes, building_id, tenant_id, buildings(name), tenants(trading_name)")
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
+  const applyScope = (query: any) => {
+    if (buildingId) return query.eq("building_id", buildingId);
+    if (scopedIds) return query.in("building_id", scopedIds);
+    return query;
+  };
 
-  if (scopedIds) query = query.in("building_id", scopedIds);
+  const [{ data: deals }, { data: vacantUnits }, { data: targets }, { data: approvedRates }, { data: templates }, { data: tenants }] =
+    await Promise.all([
+      applyScope(
+        supabase
+          .from("leasing_deals")
+          .select(
+            "id, building_id, tenant_id, prospect_name, shop_number, stage, deal_value, rate_per_sqm, buildings(name), tenants(trading_name)"
+          )
+          .is("archived_at", null)
+          .order("created_at", { ascending: false })
+      ),
+      applyScope(
+        supabase
+          .from("vacant_units")
+          .select("id, building_id, shop_number, size_sqm, asking_rate_per_sqm, availability_date, status, buildings(name)")
+          .is("archived_at", null)
+          .order("created_at", { ascending: false })
+      ),
+      applyScope(
+        supabase
+          .from("leasing_targets")
+          .select("id, building_id, company_name, trade_category, contact_name, contact_email, contact_phone, status, buildings(name)")
+          .is("archived_at", null)
+          .order("created_at", { ascending: false })
+      ),
+      applyScope(
+        supabase
+          .from("leasing_approved_rates")
+          .select("id, building_id, category, rate_per_sqm, effective_date, notes, buildings(name)")
+          .is("archived_at", null)
+          .order("category")
+      ),
+      supabase.from("leasing_document_templates").select("id, name, items").is("archived_at", null).order("name"),
+      supabase.from("tenants").select("id, trading_name").is("archived_at", null).order("trading_name"),
+    ]);
 
-  const [{ data: deals }, { data: tenants }] = await Promise.all([
-    query,
-    supabase.from("tenants").select("id, trading_name").is("archived_at", null).order("trading_name"),
-  ]);
-
-  const buildingOptions = buildings ?? [];
-  const tenantOptions = tenants ?? [];
+  const buildingOptions = (buildings ?? []).map((b) => ({ id: b.id, name: b.name }));
 
   return (
     <div>
       <PageHeader
         title="Leasing"
-        description={`${deals?.length ?? 0} deals`}
-        action={
-          <LeasingDealFormButton label="+ Add Deal" buildings={buildingOptions} tenants={tenantOptions} />
-        }
+        description="Enquiries, vacancies, targets, rates and document requirements - one operational record per building"
       />
 
-      {deals && deals.length > 0 ? (
-        <div className="table-shell">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Prospect / Tenant</th>
-                <th>Building</th>
-                <th>Shop</th>
-                <th>Stage</th>
-                <th>Deal Value</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {deals.map((d: any) => (
-                <tr key={d.id}>
-                  <td className="font-medium">{d.tenants?.trading_name ?? d.prospect_name ?? "—"}</td>
-                  <td>{d.buildings?.name ?? "—"}</td>
-                  <td>{d.shop_number ?? "—"}</td>
-                  <td>
-                    <Badge
-                      label={enumLabel(d.stage)}
-                      className={LEASING_STAGE_CLASSES[d.stage] ?? "bg-charcoal-600/60 text-charcoal-200"}
-                    />
-                  </td>
-                  <td>{formatCurrency(d.deal_value)}</td>
-                  <td className="text-right">
-                    <LeasingDealFormButton
-                      deal={d}
-                      label="Edit"
-                      buildings={buildingOptions}
-                      tenants={tenantOptions}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <EmptyState title="No leasing deals yet" />
+      {buildingId && (
+        <FilterChip
+          label={buildingOptions.find((b) => b.id === buildingId)?.name ?? "building"}
+          clearHref="/dashboard/leasing"
+        />
       )}
+
+      <LeasingTabs
+        deals={deals ?? []}
+        vacantUnits={vacantUnits ?? []}
+        targets={targets ?? []}
+        approvedRates={approvedRates ?? []}
+        templates={templates ?? []}
+        buildings={buildingOptions}
+        tenants={tenants ?? []}
+      />
     </div>
   );
 }
