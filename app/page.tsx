@@ -54,11 +54,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-charcoal-950">
       <header className="border-b border-charcoal-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center px-6 py-5">
           <Logo size="sm" />
-          <Link href="/login" className="btn-secondary">
-            Sign In
-          </Link>
         </div>
       </header>
 
@@ -113,10 +110,15 @@ export default function LandingPage() {
             Owners, partners and administrators each get access scoped to
             their own portfolios - nothing more, nothing less.
           </p>
-          <Link href="/login" className="btn-primary mt-2 px-6 py-3 text-base">
-            Sign In to Vorexa
+          <a
+            href="https://www.vorexa.co.za"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary mt-2 px-6 py-3 text-base"
+          >
+            Learn More at Vorexa.co.za
             <ArrowRight size={18} />
-          </Link>
+          </a>
         </div>
       </section>
 

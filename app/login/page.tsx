@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
 
-type Mode = "sign-in" | "sign-up";
+type Mode = "sign-in" | "activate";
 
 function LoginForm() {
   const router = useRouter();
@@ -61,31 +61,6 @@ function LoginForm() {
       </div>
 
       <div className="card">
-        <div className="mb-4 flex rounded-md border border-charcoal-600 p-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setMode("sign-in")}
-            className={`flex-1 rounded px-3 py-1.5 transition-colors ${
-              mode === "sign-in"
-                ? "bg-cyan-600 text-charcoal-950"
-                : "text-charcoal-300"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("sign-up")}
-            className={`flex-1 rounded px-3 py-1.5 transition-colors ${
-              mode === "sign-up"
-                ? "bg-cyan-600 text-charcoal-950"
-                : "text-charcoal-300"
-            }`}
-          >
-            Sign Up
-          </button>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label" htmlFor="email">
@@ -125,15 +100,29 @@ function LoginForm() {
               ? "Please wait…"
               : mode === "sign-in"
                 ? "Sign In"
-                : "Create Account"}
+                : "Activate Account"}
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "sign-in" ? "activate" : "sign-in");
+            setError(null);
+            setInfo(null);
+          }}
+          className="mt-4 w-full text-center text-xs text-charcoal-400 hover:text-cyan-400"
+        >
+          {mode === "sign-in"
+            ? "Activating an invitation for the first time? Set up your account"
+            : "Already have an account? Sign in"}
+        </button>
       </div>
 
-      {mode === "sign-up" && (
+      {mode === "activate" && (
         <p className="mt-4 text-center text-xs text-charcoal-400">
-          Access is by invitation only. Sign up with the email address your
-          administrator invited.
+          Access is by invitation only. Use the email address your
+          administrator invited to activate your account.
         </p>
       )}
     </div>
