@@ -1,0 +1,45 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Vercel's own deploy for this same push may still be in progress; give
+      # it a head start so the suite isn't racing a stale/mid-deploy version.
+      - name: Wait for deploy to settle
+        run: sleep 90
+
+      - name: Run smoke suite
+        env:
+          SMOKE_BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
+          CI_TEST_EMAIL: ${{ secrets.CI_TEST_EMAIL }}
+          CI_TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
+          CI_TEST_MEMBER_EMAIL: ${{ secrets.CI_TEST_MEMBER_EMAIL }}
+          CI_TEST_MEMBER_PASSWORD: ${{ secrets.CI_TEST_MEMBER_PASSWORD }}
+        run: npm run test:smoke
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
