@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
 import { PageHeader } from "@/components/PageHeader";
 import { formatCurrency } from "@/lib/format";
+import { PortfolioBreakdown } from "./PortfolioBreakdown";
 
 export default async function ReportsPage() {
   const supabase = createClient();
@@ -92,6 +93,106 @@ export default async function ReportsPage() {
     return buildingIds ? bId && buildingIds.includes(bId) : true;
   }).length;
 
+  // Per-portfolio / per-building breakdown - deliberately ignores the top-nav
+  // portfolio filter above and instead shows everything RLS lets this user
+  // see, so a portfolio manager gets full oversight regardless of which
+  // portfolio happens to be selected.
+  const [
+    { data: allBuildings },
+    { data: allArrears },
+    { data: allTenants },
+    { data: allTurnoversThisMonth },
+    { data: allOpenActions },
+    { data: allHighRiskItems },
+  ] = await Promise.all([
+    supabase
+      .from("buildings")
+      .select("id, name, portfolio_id, portfolios(name)")
+      .is("archived_at", null)
+      .order("name"),
+    supabase.from("arrears_current").select("building_id, current_balance"),
+    supabase
+      .from("tenants")
+      .select("id, building_id, monthly_turnover_required")
+      .is("archived_at", null),
+    supabase
+      .from("turnovers")
+      .select("tenant_id, building_id")
+      .gte("period", monthStart)
+      .lt("period", nextMonthStart),
+    supabase.from("action_items").select("building_id").neq("status", "complete"),
+    supabase
+      .from("site_visit_items")
+      .select("id, site_visits(building_id)")
+      .in("risk_level", ["high", "critical"])
+      .neq("status", "resolved"),
+  ]);
+
+  const arrearsByBuilding = new Map<string, number>();
+  for (const r of allArrears ?? []) {
+    arrearsByBuilding.set(r.building_id, (arrearsByBuilding.get(r.building_id) ?? 0) + Number(r.current_balance ?? 0));
+  }
+
+  const tenantCountByBuilding = new Map<string, number>();
+  const turnoverRequiredByBuilding = new Map<string, Set<string>>();
+  for (const t of allTenants ?? []) {
+    if (!t.building_id) continue;
+    tenantCountByBuilding.set(t.building_id, (tenantCountByBuilding.get(t.building_id) ?? 0) + 1);
+    if (t.monthly_turnover_required) {
+      if (!turnoverRequiredByBuilding.has(t.building_id)) turnoverRequiredByBuilding.set(t.building_id, new Set());
+      turnoverRequiredByBuilding.get(t.building_id)!.add(t.id);
+    }
+  }
+
+  const submittedTenantIdsByBuilding = new Map<string, Set<string>>();
+  for (const t of allTurnoversThisMonth ?? []) {
+    if (!t.building_id) continue;
+    if (!submittedTenantIdsByBuilding.has(t.building_id)) submittedTenantIdsByBuilding.set(t.building_id, new Set());
+    submittedTenantIdsByBuilding.get(t.building_id)!.add(t.tenant_id);
+  }
+
+  const openActionsByBuilding = new Map<string, number>();
+  for (const a of allOpenActions ?? []) {
+    if (!a.building_id) continue;
+    openActionsByBuilding.set(a.building_id, (openActionsByBuilding.get(a.building_id) ?? 0) + 1);
+  }
+
+  const highRiskByBuilding = new Map<string, number>();
+  for (const i of (allHighRiskItems ?? []) as any[]) {
+    const bId = i.site_visits?.building_id;
+    if (!bId) continue;
+    highRiskByBuilding.set(bId, (highRiskByBuilding.get(bId) ?? 0) + 1);
+  }
+
+  const portfolioGroups = new Map<
+    string,
+    { portfolioName: string; buildings: { id: string; name: string; tenants: number; arrears: number; missingTurnovers: number; openActions: number; highRiskItems: number }[] }
+  >();
+
+  for (const b of (allBuildings ?? []) as any[]) {
+    const portfolioName = b.portfolios?.name ?? "Unassigned Portfolio";
+    if (!portfolioGroups.has(b.portfolio_id)) {
+      portfolioGroups.set(b.portfolio_id, { portfolioName, buildings: [] });
+    }
+    const required = turnoverRequiredByBuilding.get(b.id) ?? new Set<string>();
+    const submitted = submittedTenantIdsByBuilding.get(b.id) ?? new Set<string>();
+    const missingTurnovers = Array.from(required).filter((id) => !submitted.has(id)).length;
+
+    portfolioGroups.get(b.portfolio_id)!.buildings.push({
+      id: b.id,
+      name: b.name,
+      tenants: tenantCountByBuilding.get(b.id) ?? 0,
+      arrears: arrearsByBuilding.get(b.id) ?? 0,
+      missingTurnovers,
+      openActions: openActionsByBuilding.get(b.id) ?? 0,
+      highRiskItems: highRiskByBuilding.get(b.id) ?? 0,
+    });
+  }
+
+  const breakdown = Array.from(portfolioGroups.values()).sort((a, b) =>
+    a.portfolioName.localeCompare(b.portfolioName)
+  );
+
   const reports = [
     {
       title: "Arrears Report",
@@ -149,6 +250,10 @@ export default async function ReportsPage() {
             <p className="mt-2 text-sm text-charcoal-300">{report.description}</p>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <PortfolioBreakdown groups={breakdown} />
       </div>
     </div>
   );
