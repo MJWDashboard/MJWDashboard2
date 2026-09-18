@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { MAX_DOCUMENT_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 export async function uploadDocument(formData: FormData) {
   const user = await getCurrentUser();
@@ -15,6 +16,9 @@ export async function uploadDocument(formData: FormData) {
   const category = (formData.get("category") as string) || null;
 
   if (!file || file.size === 0) return { error: "Please choose a file." };
+  if (file.size > MAX_DOCUMENT_BYTES) {
+    return { error: `File is ${formatBytes(file.size)} - documents are limited to 20 MB.` };
+  }
 
   const supabase = createClient();
   const path = `${user.organizationId}/${Date.now()}-${file.name}`;

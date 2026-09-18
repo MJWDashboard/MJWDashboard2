@@ -2540,6 +2540,21 @@ export type Database = {
     }
     Functions: {
       bootstrap_first_admin: { Args: never; Returns: undefined }
+      contractor_buildings_accessible: {
+        Args: { target_contractor_id: string }
+        Returns: boolean
+      }
+      contractor_org_check: {
+        Args: { target_contractor_id: string }
+        Returns: boolean
+      }
+      find_org_member_by_email: {
+        Args: { target_email: string }
+        Returns: {
+          already_org_member: boolean
+          user_id: string
+        }[]
+      }
       org_member_emails: {
         Args: never
         Returns: {

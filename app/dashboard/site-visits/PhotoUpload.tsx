@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, X } from "lucide-react";
 import { compressImage } from "@/lib/imageCompression";
 import { uploadSiteVisitPhoto, removeSiteVisitPhoto } from "./actions";
+import { MAX_PHOTO_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 type Photo = {
   id: string;
@@ -24,6 +25,7 @@ export function PhotoGallery({
   signedUrls: Record<string, string>;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -31,12 +33,18 @@ export function PhotoGallery({
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setUploading(true);
+    setError(null);
 
     for (const file of Array.from(files)) {
       const compressed = await compressImage(file);
+      if (compressed.size > MAX_PHOTO_BYTES) {
+        setError(`${file.name} is ${formatBytes(compressed.size)} even after compression - photos are limited to 4 MB.`);
+        continue;
+      }
       const formData = new FormData();
       formData.append("file", compressed);
-      await uploadSiteVisitPhoto(itemId, siteVisitId, formData);
+      const result = await uploadSiteVisitPhoto(itemId, siteVisitId, formData);
+      if (result.error) setError(result.error);
     }
 
     setUploading(false);
@@ -85,6 +93,7 @@ export function PhotoGallery({
           />
         </label>
       </div>
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
     </div>
   );
 }

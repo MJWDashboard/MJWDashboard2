@@ -31,7 +31,11 @@ export function InviteForm({ portfolios }: { portfolios: { id: string; name: str
       setError(result.error);
       return;
     }
-    setSuccess(`Invitation created for ${email}. They can sign up with this email to get access.`);
+    setSuccess(
+      result.grantedImmediately
+        ? `${email} already has an account - access to this portfolio was granted immediately.`
+        : `Invitation created for ${email}. They'll get access as soon as they sign up.`
+    );
     setEmail("");
     router.refresh();
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { uploadDocument } from "@/app/dashboard/documents/actions";
 import { DocumentLink } from "@/app/dashboard/documents/DocumentLink";
+import { MAX_DOCUMENT_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 type Doc = { id: string; file_name: string; file_path: string; category: string | null };
 
@@ -24,10 +25,16 @@ export function DealDocuments({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const file = formData.get("file") as File | null;
+    if (file && file.size > MAX_DOCUMENT_BYTES) {
+      setError(`File is ${formatBytes(file.size)} - documents are limited to 20 MB.`);
+      return;
+    }
+
+    setLoading(true);
     formData.set("building_id", buildingId);
     formData.set("leasing_deal_id", dealId);
     const result = await uploadDocument(formData);

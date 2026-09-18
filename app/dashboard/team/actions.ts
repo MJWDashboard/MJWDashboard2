@@ -36,24 +36,53 @@ export type InviteInput = {
 
 export async function inviteToPortfolio(input: InviteInput) {
   const user = await requireAdmin();
-  if (!user) return { error: "Only an administrator can invite people." };
+  if (!user) return { error: "Only an administrator can invite people.", grantedImmediately: false };
 
-  if (!input.email.trim()) return { error: "Email is required." };
-  if (!input.portfolioId) return { error: "Choose a portfolio." };
+  const email = input.email.trim().toLowerCase();
+  if (!email) return { error: "Email is required.", grantedImmediately: false };
+  if (!input.portfolioId) return { error: "Choose a portfolio.", grantedImmediately: false };
 
   const supabase = createClient();
+
+  // If this email already belongs to the org (an existing teammate being
+  // added to another portfolio), grant access to that portfolio directly -
+  // an invitation would just sit unconsumed, since it's only ever accepted
+  // by the brand-new-signup trigger.
+  const { data: existing } = await supabase.rpc("find_org_member_by_email", {
+    target_email: email,
+  });
+  const match = existing?.[0];
+
+  if (match?.already_org_member) {
+    const { error } = await supabase
+      .from("portfolio_users")
+      .upsert(
+        {
+          portfolio_id: input.portfolioId,
+          user_id: match.user_id,
+          role: input.portfolioRole as any,
+          created_by: user.id,
+        },
+        { onConflict: "portfolio_id,user_id" }
+      );
+
+    if (error) return { error: error.message, grantedImmediately: false };
+    revalidatePath("/dashboard/team");
+    return { error: null, grantedImmediately: true };
+  }
+
   const { error } = await supabase.from("organization_invitations").insert({
     organization_id: user.organizationId,
-    email: input.email.trim().toLowerCase(),
+    email,
     role: "property_manager",
     portfolio_id: input.portfolioId,
     portfolio_role: input.portfolioRole,
     invited_by: user.id,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: error.message, grantedImmediately: false };
   revalidatePath("/dashboard/team");
-  return { error: null };
+  return { error: null, grantedImmediately: false };
 }
 
 export async function revokeInvitation(invitationId: string) {

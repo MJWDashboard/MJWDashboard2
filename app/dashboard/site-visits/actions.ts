@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { MAX_PHOTO_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 export type SiteVisitInput = {
   building_id: string;
@@ -151,6 +152,9 @@ export async function uploadSiteVisitPhoto(itemId: string, siteVisitId: string, 
   const file = formData.get("file") as File | null;
   const caption = (formData.get("caption") as string) || null;
   if (!file || file.size === 0) return { error: "No file provided." };
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { error: `Photo is ${formatBytes(file.size)} - photos are limited to 4 MB.` };
+  }
 
   const supabase = createClient();
   const path = `site-visits/${siteVisitId}/${itemId}/${Date.now()}-${file.name}`;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { uploadDocument } from "./actions";
+import { MAX_DOCUMENT_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 export function DocumentUploadButton({
   buildings,
@@ -21,10 +22,16 @@ export function DocumentUploadButton({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const file = formData.get("file") as File | null;
+    if (file && file.size > MAX_DOCUMENT_BYTES) {
+      setError(`File is ${formatBytes(file.size)} - documents are limited to 20 MB.`);
+      return;
+    }
+
+    setLoading(true);
     const result = await uploadDocument(formData);
 
     setLoading(false);
@@ -49,6 +56,7 @@ export function DocumentUploadButton({
             <div>
               <label className="label">File</label>
               <input type="file" name="file" required className="input" />
+              <p className="mt-1 text-xs text-charcoal-400">Maximum 20 MB.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
