@@ -3216,6 +3216,10 @@ export type Database = {
         Args: { target_contractor_id: string }
         Returns: boolean
       }
+      create_tenant_with_lease: {
+        Args: { lease_data: Json; tenant_data: Json }
+        Returns: string
+      }
       find_org_member_by_email: {
         Args: { target_email: string }
         Returns: {

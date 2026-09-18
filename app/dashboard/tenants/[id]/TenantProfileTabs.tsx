@@ -5,7 +5,7 @@ import Link from "next/link";
 import { StatusBadge, Badge } from "@/components/StatusBadge";
 import { formatCurrency, formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { enumLabel } from "@/lib/status";
-import { addTenantNote, addTenantContact, removeTenantContact } from "../actions";
+import { addTenantNote, addTenantContact, removeTenantContact, renewLease, type RenewLeaseInput } from "../actions";
 import { useRouter } from "next/navigation";
 import { DocumentLink } from "../../documents/DocumentLink";
 
@@ -157,6 +157,9 @@ export function TenantProfileTabs({
               <Row label="Surety Name" value={tenant.surety_name} />
               <Row label="Surety Expiry" value={formatDate(tenant.surety_expiry)} />
             </dl>
+          </section>
+          <section className="card lg:col-span-2">
+            <RenewLeaseForm tenantId={tenant.id} buildingId={tenant.building_id} currentLease={tenant} />
           </section>
           <section className="card lg:col-span-2">
             <h2 className="mb-4 text-sm font-semibold">Lease History</h2>
@@ -421,6 +424,138 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="flex justify-between gap-4 border-b border-charcoal-800 py-1 last:border-b-0">
       <dt className="text-charcoal-400">{label}</dt>
       <dd className="text-right text-charcoal-100">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
+function RenewLeaseForm({
+  tenantId,
+  buildingId,
+  currentLease,
+}: {
+  tenantId: string;
+  buildingId: string;
+  currentLease: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<RenewLeaseInput>({
+    lease_start: "",
+    lease_end: "",
+    option_period: currentLease.option_period ?? "",
+    monthly_rental: currentLease.monthly_rental ?? "",
+    escalation_pct: currentLease.escalation_pct ?? "",
+    escalation_date: "",
+  });
+  const router = useRouter();
+
+  function set<K extends keyof RenewLeaseInput>(key: K, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.lease_start || !form.lease_end) {
+      setError("Lease start and end dates are required.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const result = await renewLease(tenantId, buildingId, form);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setOpen(false);
+    router.refresh();
+  }
+
+  if (!open) {
+    return (
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Renew Lease</h2>
+        <button onClick={() => setOpen(true)} className="btn-secondary">
+          Renew Lease
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="mb-4 text-sm font-semibold">Renew Lease</h2>
+      <p className="mb-4 text-xs text-charcoal-400">
+        This creates a new lease record and retires the current one. Shop, security, compliance and turnover
+        terms carry forward unchanged - only the fields below are new.
+      </p>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label">New Lease Start</label>
+          <input
+            type="date"
+            className="input"
+            value={form.lease_start}
+            onChange={(e) => set("lease_start", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">New Lease End</label>
+          <input
+            type="date"
+            className="input"
+            value={form.lease_end}
+            onChange={(e) => set("lease_end", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Option Period</label>
+          <input
+            className="input"
+            value={form.option_period}
+            onChange={(e) => set("option_period", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Monthly Rental</label>
+          <input
+            type="number"
+            step="0.01"
+            className="input"
+            value={form.monthly_rental}
+            onChange={(e) => set("monthly_rental", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Escalation %</label>
+          <input
+            type="number"
+            step="0.01"
+            className="input"
+            value={form.escalation_pct}
+            onChange={(e) => set("escalation_pct", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label">Escalation Date</label>
+          <input
+            type="date"
+            className="input"
+            value={form.escalation_date}
+            onChange={(e) => set("escalation_date", e.target.value)}
+          />
+        </div>
+        {error && <p className="col-span-full text-sm text-red-400">{error}</p>}
+        <div className="col-span-full flex justify-end gap-3">
+          <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+            Cancel
+          </button>
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Saving…" : "Confirm Renewal"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
