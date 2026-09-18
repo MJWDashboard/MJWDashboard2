@@ -7,6 +7,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { BuildingFormButton } from "./BuildingForm";
 import { ExportButton } from "@/components/ExportButton";
+import { TemplateDownloadButton } from "@/components/TemplateDownloadButton";
+import { BuildingsImportButton } from "./BuildingsImport";
 
 export default async function BuildingsPage() {
   const supabase = createClient();
@@ -43,6 +45,8 @@ export default async function BuildingsPage() {
         description={`${buildings?.length ?? 0} buildings`}
         action={
           <div className="flex gap-3">
+            <BuildingsImportButton />
+            <TemplateDownloadButton filename="VOREXA-BUILDINGS-v1.xlsx" sheetName="Buildings" headers={["Portfolio", "Building Code", "Building Name", "Address Line 1", "Address Line 2", "Suburb", "City", "Province", "Postal Code", "GLA (m²)", "Budget Year", "Annual Budget (R)", "Active", "Notes"]} />
             <ExportButton
               filename="buildings"
               sheetName="Buildings"
