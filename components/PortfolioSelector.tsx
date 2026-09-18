@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PORTFOLIO_COOKIE } from "@/lib/portfolio";
+import { PORTFOLIO_COOKIE } from "@/lib/portfolio-cookie";
 
 export function PortfolioSelector({
   portfolios,
