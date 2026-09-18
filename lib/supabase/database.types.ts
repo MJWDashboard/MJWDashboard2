@@ -99,6 +99,36 @@ export type Database = {
           },
         ]
       }
+      app_errors: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          stack: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          stack?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          stack?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       arrears_comments: {
         Row: {
           archived_at: string | null

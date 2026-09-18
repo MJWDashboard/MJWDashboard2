@@ -22,6 +22,8 @@ import {
   MessageSquare,
   LifeBuoy,
   ScrollText,
+  Activity,
+  KeyRound,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -43,6 +45,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/dashboard/support", label: "Support Tickets", icon: LifeBuoy },
+  { href: "/dashboard/security", label: "Security", icon: KeyRound },
 ];
 
 export function Sidebar({
@@ -60,7 +63,11 @@ export function Sidebar({
     ? [...NAV_ITEMS, { href: "/dashboard/team", label: "Team & Access", icon: ShieldCheck }]
     : NAV_ITEMS;
   if (canViewAuditLog) {
-    items = [...items, { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText }];
+    items = [
+      ...items,
+      { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText },
+      { href: "/dashboard/system-health", label: "System Health", icon: Activity },
+    ];
   }
 
   return (
