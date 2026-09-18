@@ -146,7 +146,10 @@ export async function deleteTeamMessage(messageId: string) {
   if (!user) return { error: "You must be signed in." };
 
   const supabase = createClient();
-  const { error } = await supabase.from("team_messages").delete().eq("id", messageId);
+  const { error } = await supabase
+    .from("team_messages")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", messageId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/messages");

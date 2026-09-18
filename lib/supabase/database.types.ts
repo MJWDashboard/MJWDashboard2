@@ -2638,6 +2638,7 @@ export type Database = {
       }
       team_messages: {
         Row: {
+          archived_at: string | null
           assigned_to: string
           body: string | null
           building_id: string | null
@@ -2653,6 +2654,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           assigned_to: string
           body?: string | null
           building_id?: string | null
@@ -2668,6 +2670,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           assigned_to?: string
           body?: string | null
           building_id?: string | null

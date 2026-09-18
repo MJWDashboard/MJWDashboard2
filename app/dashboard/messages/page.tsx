@@ -21,6 +21,7 @@ export default async function MessagesPage() {
       .from("team_messages")
       .select("id, type, subject, status, due_date, updated_at, assigned_to, created_by, portfolios(name), buildings(name)")
       .or(`assigned_to.eq.${userId},created_by.eq.${userId}`)
+      .is("archived_at", null)
       .order("updated_at", { ascending: false }),
     supabase.from("team_message_reads").select("message_id, last_read_at").eq("user_id", userId),
     supabase.rpc("org_member_emails"),
