@@ -38,6 +38,8 @@ export default async function ActionsPage({
 
   const buildingOptions = buildings ?? [];
   const tenantOptions = tenants ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+  const isOverdue = (a: any) => a.status !== "complete" && a.due_date && a.due_date < today;
   const filterLabel =
     (tenantId && tenantOptions.find((t) => t.id === tenantId)?.trading_name) ||
     (buildingId && buildingOptions.find((b) => b.id === buildingId)?.name);
@@ -101,7 +103,12 @@ export default async function ActionsPage({
                       className={PRIORITY_CLASSES[a.priority] ?? "bg-charcoal-600/60 text-charcoal-200"}
                     />
                   </td>
-                  <td>{formatDate(a.due_date)}</td>
+                  <td>
+                    {formatDate(a.due_date)}
+                    {isOverdue(a) && (
+                      <Badge label="Overdue" className="ml-2 bg-red-500/20 text-red-400" />
+                    )}
+                  </td>
                   <td>
                     <StatusBadge status={a.status} />
                   </td>

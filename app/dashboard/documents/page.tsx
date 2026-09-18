@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/format";
 import { DocumentUploadButton } from "./DocumentUpload";
 import { DocumentLink } from "./DocumentLink";
 import { getSelectedBuilding } from "@/lib/building";
+import { DOCUMENT_CATEGORIES } from "@/lib/documentCategories";
 
 function formatSize(bytes: number | null): string {
   if (!bytes) return "—";
@@ -18,12 +19,13 @@ function formatSize(bytes: number | null): string {
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: { building_id?: string; tenant_id?: string };
+  searchParams: { building_id?: string; tenant_id?: string; category?: string };
 }) {
   const supabase = createClient();
   const selectedBuilding = getSelectedBuilding();
   const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
   const tenantId = searchParams.tenant_id;
+  const category = searchParams.category;
 
   let query = supabase
     .from("documents")
@@ -35,6 +37,7 @@ export default async function DocumentsPage({
 
   if (buildingId) query = query.eq("building_id", buildingId);
   if (tenantId) query = query.eq("tenant_id", tenantId);
+  if (category) query = query.eq("category", category);
 
   const [{ data: documents }, { data: buildings }, { data: tenants }] = await Promise.all([
     query,
@@ -55,6 +58,27 @@ export default async function DocumentsPage({
       />
 
       {filterLabel && <FilterChip label={filterLabel} clearHref="/dashboard/documents" />}
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {DOCUMENT_CATEGORIES.map((c) => (
+          <Link
+            key={c}
+            href={`/dashboard/documents?category=${encodeURIComponent(c)}`}
+            className={`rounded-full border px-3 py-1 text-xs ${
+              category === c
+                ? "border-cyan-500 text-cyan-400"
+                : "border-charcoal-700 text-charcoal-300 hover:border-cyan-500/50 hover:text-cyan-400"
+            }`}
+          >
+            {c}
+          </Link>
+        ))}
+        {category && (
+          <Link href="/dashboard/documents" className="rounded-full border border-charcoal-700 px-3 py-1 text-xs text-charcoal-400 hover:text-charcoal-100">
+            Clear category
+          </Link>
+        )}
+      </div>
 
       {documents && documents.length > 0 ? (
         <div className="table-shell">

@@ -6,6 +6,7 @@ import { Upload } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { uploadDocument } from "./actions";
 import { MAX_DOCUMENT_BYTES, formatBytes } from "@/lib/uploadLimits";
+import { DOCUMENT_CATEGORIES } from "@/lib/documentCategories";
 
 export function DocumentUploadButton({
   buildings,
@@ -84,7 +85,14 @@ export function DocumentUploadButton({
             </div>
             <div>
               <label className="label">Category</label>
-              <input name="category" className="input" placeholder="e.g. Lease, Compliance, Invoice" />
+              <select name="category" className="input" defaultValue="">
+                <option value="">None</option>
+                {DOCUMENT_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <div className="flex justify-end gap-3 pt-2">
