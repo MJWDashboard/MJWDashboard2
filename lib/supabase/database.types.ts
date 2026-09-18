@@ -388,6 +388,69 @@ export type Database = {
           },
         ]
       }
+      building_service_providers: {
+        Row: {
+          building_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          hours_on_site: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          provider_name: string
+          service_type: string
+          site_senior: string | null
+          updated_at: string
+        }
+        Insert: {
+          building_id: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          hours_on_site?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          provider_name: string
+          service_type: string
+          site_senior?: string | null
+          updated_at?: string
+        }
+        Update: {
+          building_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          hours_on_site?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          provider_name?: string
+          service_type?: string
+          site_senior?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_service_providers_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_service_providers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           address: string | null

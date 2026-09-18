@@ -8,6 +8,8 @@ import { formatNumber } from "@/lib/format";
 import { computeMonthlyStatus, STATUS_LABELS, STATUS_CLASSES } from "@/lib/turnovers";
 import { LEASING_STAGE_CLASSES, enumLabel } from "@/lib/status";
 import { BuildingFormButton } from "../BuildingForm";
+import { ServiceProviders } from "./ServiceProviders";
+import { BuildingPlans } from "./BuildingPlans";
 
 export default async function BuildingDetailPage({
   params,
@@ -26,7 +28,7 @@ export default async function BuildingDetailPage({
 
   const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
 
-  const [tenantsRes, actionsRes, arrearsRes, siteVisitsRes, turnoversRes, meetingsRes, leasingRes, vacantUnitsRes] = await Promise.all([
+  const [tenantsRes, actionsRes, arrearsRes, siteVisitsRes, turnoversRes, meetingsRes, leasingRes, vacantUnitsRes, serviceProvidersRes, buildingPlansRes] = await Promise.all([
     supabase
       .from("tenants")
       .select("id, trading_name, shop_number, monthly_rental, status")
@@ -77,6 +79,18 @@ export default async function BuildingDetailPage({
       .eq("building_id", params.id)
       .eq("status", "vacant")
       .is("archived_at", null),
+    supabase
+      .from("building_service_providers")
+      .select("id, service_type, provider_name, site_senior, contact_phone, contact_email, hours_on_site, notes")
+      .eq("building_id", params.id)
+      .order("service_type"),
+    supabase
+      .from("documents")
+      .select("id, file_name, file_path, uploaded_at")
+      .eq("building_id", params.id)
+      .eq("category", "Building Plan")
+      .is("archived_at", null)
+      .order("uploaded_at", { ascending: false }),
   ]);
 
   const totalArrears = (arrearsRes.data ?? []).reduce(
@@ -117,6 +131,11 @@ export default async function BuildingDetailPage({
           <p className="text-xs uppercase text-charcoal-400">Vacant Units</p>
           <p className="mt-1 text-lg font-semibold">{vacantUnitsRes.count ?? 0}</p>
         </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ServiceProviders buildingId={building.id} providers={serviceProvidersRes.data ?? []} />
+        <BuildingPlans buildingId={building.id} plans={buildingPlansRes.data ?? []} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
