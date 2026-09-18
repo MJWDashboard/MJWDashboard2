@@ -1753,6 +1753,21 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio_users: {
         Row: {
           created_at: string
@@ -2100,6 +2115,104 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          building_id: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          priority: string
+          reported_by: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          ticket_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          building_id?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          reported_by: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          building_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          reported_by?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2718,8 +2831,16 @@ export type Database = {
         Args: { target_portfolio_id: string }
         Returns: boolean
       }
+      can_view_audit_entry: {
+        Args: { entry_actor_id: string }
+        Returns: boolean
+      }
       can_view_portfolio_team: {
         Args: { target_portfolio_id: string }
+        Returns: boolean
+      }
+      can_view_support_ticket: {
+        Args: { target_ticket_id: string }
         Returns: boolean
       }
       can_view_team_message: {
@@ -2741,6 +2862,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      is_platform_admin: { Args: never; Returns: boolean }
       org_member_emails: {
         Args: never
         Returns: {

@@ -20,6 +20,8 @@ import {
   BookOpen,
   ShieldCheck,
   MessageSquare,
+  LifeBuoy,
+  ScrollText,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -40,20 +42,26 @@ const NAV_ITEMS = [
   { href: "/dashboard/contacts", label: "Contacts", icon: Contact2 },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+  { href: "/dashboard/support", label: "Support Tickets", icon: LifeBuoy },
 ];
 
 export function Sidebar({
   canAccessTeam,
   messagesUnreadCount = 0,
+  canViewAuditLog = false,
 }: {
   canAccessTeam: boolean;
   messagesUnreadCount?: number;
+  canViewAuditLog?: boolean;
 }) {
   const pathname = usePathname();
 
-  const items = canAccessTeam
+  let items = canAccessTeam
     ? [...NAV_ITEMS, { href: "/dashboard/team", label: "Team & Access", icon: ShieldCheck }]
     : NAV_ITEMS;
+  if (canViewAuditLog) {
+    items = [...items, { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText }];
+  }
 
   return (
     <aside className="flex h-screen w-60 flex-none flex-col border-r border-charcoal-700 bg-charcoal-900">
