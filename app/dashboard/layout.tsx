@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { PortfolioSelector } from "@/components/PortfolioSelector";
 import { SignOutButton } from "@/components/SignOutButton";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { OnboardingTour } from "./OnboardingTour";
 
 export default async function DashboardLayout({
   children,
@@ -70,6 +71,7 @@ export default async function DashboardLayout({
         </header>
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+      <OnboardingTour show={!user.onboardingCompletedAt} canManageTeam={canAccessTeam} />
     </div>
   );
 }

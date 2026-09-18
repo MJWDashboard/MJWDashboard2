@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/org";
 import { getSelectedPortfolio } from "@/lib/portfolio";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -9,9 +10,21 @@ import { ExportButton } from "@/components/ExportButton";
 
 export default async function BuildingsPage() {
   const supabase = createClient();
+  const user = await getCurrentUser();
   const portfolioId = getSelectedPortfolio();
 
   const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
+
+  let isUnassignedTeamMember = false;
+  if (user && user.role !== "admin") {
+    const { data: portfolioRoles } = await supabase
+      .from("portfolio_users")
+      .select("role")
+      .eq("user_id", user.id);
+    isUnassignedTeamMember = (portfolioRoles ?? []).every(
+      (r) => r.role !== "portfolio_manager" && r.role !== "portfolio_administrator"
+    );
+  }
 
   let query = supabase
     .from("buildings")
@@ -81,11 +94,13 @@ export default async function BuildingsPage() {
         </div>
       ) : (
         <EmptyState
-          title="No buildings yet"
+          title={isUnassignedTeamMember ? "No buildings assigned to you yet" : "No buildings yet"}
           description={
-            portfolios && portfolios.length > 0
-              ? "Add your first building to get started."
-              : "Ask your administrator to create a portfolio first."
+            isUnassignedTeamMember
+              ? "Ask your portfolio manager to assign you to a building in Team & Access."
+              : portfolios && portfolios.length > 0
+                ? "Add your first building to get started."
+                : "Ask your administrator to create a portfolio first."
           }
         />
       )}

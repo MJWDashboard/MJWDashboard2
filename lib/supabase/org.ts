@@ -6,6 +6,7 @@ export type CurrentUser = {
   organizationId: string;
   organizationName: string;
   role: string;
+  onboardingCompletedAt: string | null;
 };
 
 /**
@@ -24,7 +25,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: membership } = await supabase
     .from("organization_users")
-    .select("organization_id, role, organizations ( name )")
+    .select("organization_id, role, onboarding_completed_at, organizations ( name )")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -37,5 +38,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     organizationName:
       (membership.organizations as { name: string } | null)?.name ?? "Portfolio",
     role: membership.role,
+    onboardingCompletedAt: membership.onboarding_completed_at,
   };
 }
