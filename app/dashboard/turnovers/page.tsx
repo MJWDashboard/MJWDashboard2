@@ -7,6 +7,9 @@ import { FilterChip } from "@/components/FilterChip";
 import { TurnoverFormButton } from "./TurnoverForm";
 import { TurnoversTable } from "./TurnoversTable";
 import { SyncCertificatesButton, AnnualCertificatesTable } from "./AnnualCertificates";
+import { TurnoverImportButton } from "./TurnoverImport";
+import { TemplateDownloadButton } from "@/components/TemplateDownloadButton";
+import { ExportButton } from "@/components/ExportButton";
 
 export default async function TurnoversPage({
   searchParams,
@@ -72,7 +75,7 @@ export default async function TurnoversPage({
       <PageHeader
         title="Turnovers"
         description={`${turnovers?.length ?? 0} records - monthly compliance register`}
-        action={<TurnoverFormButton label="+ Add Turnover" tenants={tenants ?? []} />}
+        action={<div className="flex flex-wrap gap-3"><TurnoverImportButton /><TemplateDownloadButton filename="VOREXA-TURNOVERS-v1.xlsx" sheetName="Turnovers" headers={["Building Code", "Tenant Account Number", "Trading Name", "Shop Number", "Period", "Turnover Amount (R)", "Turnover Rental (R)", "Submitted by Tenant", "Submission Date", "Penalty Applicable", "Penalty Amount (R)", "Annual Certificate Required", "Financial Year End", "Annual Certificate Due Date", "Annual Certificate Received Date", "Notes"]}/><ExportButton filename="turnovers" sheetName="Turnovers" rows={(turnovers ?? []).map((item: any) => ({ Building: item.buildings?.name, Tenant: item.tenants?.trading_name, Period: item.period, "Turnover Amount (R)": item.turnover_amount, "Turnover Rental (R)": item.turnover_rental, Status: item.status }))}/><TurnoverFormButton label="+ Add Turnover" tenants={tenants ?? []} /></div>}
       />
 
       {missingThisMonth.length > 0 && (

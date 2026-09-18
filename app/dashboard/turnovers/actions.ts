@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
 import { computeMonthlyDueDate, computeAnnualDueDate, currentFinancialYear } from "@/lib/turnovers";
+import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
+import type { ImportPreviewRow } from "@/lib/imports";
 
 export type TurnoverInput = {
   tenant_id: string;
@@ -78,6 +80,59 @@ export async function updateTurnover(id: string, input: TurnoverInput) {
   if (error) return { error: error.message };
   revalidatePath("/dashboard/turnovers");
   return { error: null };
+}
+
+export type TurnoverImportData = {
+  buildingId: string; tenantId: string; buildingCode: string; accountNumber: string; tradingName: string;
+  shopNumber: string; period: string; turnoverAmount: number | null; turnoverRental: number | null;
+  submitted: boolean; submissionDate: string | null; penaltyApplicable: boolean; penaltyAmount: number | null; notes: string;
+};
+
+export async function getTurnoverImportMatchingData() {
+  const supabase = createClient() as any;
+  const [{ data: buildings }, { data: tenants }, { data: turnovers }] = await Promise.all([
+    supabase.from("buildings").select("id, building_code, name").is("archived_at", null),
+    supabase.from("tenants").select("id, building_id, account_number, trading_name, shop_number, turnover_pct, turnover_penalty_clause, turnover_penalty_amount, monthly_turnover_required").is("archived_at", null),
+    supabase.from("turnovers").select("id, tenant_id, period, turnover_amount, turnover_rental, submitted, submitted_at, penalty_applicable, penalty_amount, notes").is("archived_at", null),
+  ]);
+  return {
+    buildings: (buildings ?? []) as { id: string; building_code: string | null; name: string }[],
+    tenants: (tenants ?? []) as { id: string; building_id: string; account_number: string | null; trading_name: string; shop_number: string | null; turnover_pct: number | null; turnover_penalty_clause: string | null; turnover_penalty_amount: number | null; monthly_turnover_required: boolean }[],
+    turnovers: (turnovers ?? []) as { id: string; tenant_id: string; period: string; turnover_amount: number | null; turnover_rental: number | null; submitted: boolean; submitted_at: string | null; penalty_applicable: boolean; penalty_amount: number | null; notes: string | null }[],
+  };
+}
+
+export async function commitTurnoverImport(rows: ImportPreviewRow<TurnoverImportData>[], filename: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized.", created: 0, updated: 0, rejected: rows.length };
+  const valid = rows.filter((row) => !row.errors.length && row.action !== "skip");
+  const batch = await createImportBatch({ module: "turnovers", filename, templateVersion: "VOREXA-TURNOVERS-v1", rows });
+  if (batch.error || !batch.batchId) return { error: batch.error, created: 0, updated: 0, rejected: rows.length };
+  const supabase = createClient() as any;
+  let created = 0; let updated = 0;
+  for (const row of valid) {
+    const payload = {
+      tenant_id: row.data.tenantId, building_id: row.data.buildingId, unit: row.data.shopNumber || null,
+      period: `${row.data.period}-01`, due_date: computeMonthlyDueDate(`${row.data.period}-01`),
+      turnover_amount: row.data.turnoverAmount, turnover_rental: row.data.turnoverRental,
+      submitted: row.data.submitted, submitted_at: row.data.submissionDate,
+      status: row.data.submitted ? "submitted" : "outstanding", penalty_applicable: row.data.penaltyApplicable,
+      penalty_amount: row.data.penaltyAmount, notes: row.data.notes || null, import_source: `batch:${batch.batchId}`,
+      updated_by: user.id, updated_at: new Date().toISOString(),
+    };
+    let recordId = row.recordId; let previous: any = null; let error: any = null;
+    if (row.action === "update" && recordId) {
+      const before = await supabase.from("turnovers").select("*").eq("id", recordId).single(); previous = before.data;
+      ({ error } = await supabase.from("turnovers").update(payload).eq("id", recordId)); if (!error) updated += 1;
+    } else {
+      const inserted = await supabase.from("turnovers").insert({ ...payload, created_by: user.id }).select("id").single();
+      error = inserted.error; recordId = inserted.data?.id; if (!error) created += 1;
+    }
+    await supabase.from("import_batch_rows").update({ status: error ? "rejected" : "applied", record_table: "turnovers", record_id: recordId || null, previous_data: previous, applied_data: error ? null : payload, errors: error ? [{ field: "row", value: row.matchKey, reason: error.message }] : [] }).eq("batch_id", batch.batchId).eq("row_number", row.rowNumber);
+    if (!error && recordId) await supabase.from("audit_log").insert({ table_name: "turnovers", record_id: recordId, action: row.action === "update" ? "import_update" : "import_create", field_changes: { previous, applied: payload }, import_source: filename, import_batch_id: batch.batchId, performed_by: user.id });
+  }
+  await finalizeImportBatch(batch.batchId, created, updated); revalidatePath("/dashboard/turnovers"); revalidatePath("/dashboard");
+  return { error: null, batchId: batch.batchId, created, updated, rejected: rows.length - valid.length };
 }
 
 export async function markCertificateReceived(id: string, received: boolean) {
