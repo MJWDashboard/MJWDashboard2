@@ -167,47 +167,62 @@ export type Database = {
       }
       arrears_current: {
         Row: {
+          account_number: string | null
           as_of_month: string | null
+          assigned_to: string | null
           building_id: string
           current_balance: number
           days_30: number | null
           days_60: number | null
           days_90_plus: number | null
+          debtor_name: string | null
           id: string
           last_imported_at: string | null
           last_imported_source: string | null
+          match_status: string
+          risk: boolean
           status: Database["public"]["Enums"]["record_status"]
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          account_number?: string | null
           as_of_month?: string | null
+          assigned_to?: string | null
           building_id: string
           current_balance?: number
           days_30?: number | null
           days_60?: number | null
           days_90_plus?: number | null
+          debtor_name?: string | null
           id?: string
           last_imported_at?: string | null
           last_imported_source?: string | null
+          match_status?: string
+          risk?: boolean
           status?: Database["public"]["Enums"]["record_status"]
-          tenant_id: string
+          tenant_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          account_number?: string | null
           as_of_month?: string | null
+          assigned_to?: string | null
           building_id?: string
           current_balance?: number
           days_30?: number | null
           days_60?: number | null
           days_90_plus?: number | null
+          debtor_name?: string | null
           id?: string
           last_imported_at?: string | null
           last_imported_source?: string | null
+          match_status?: string
+          risk?: boolean
           status?: Database["public"]["Enums"]["record_status"]
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -222,7 +237,7 @@ export type Database = {
           {
             foreignKeyName: "arrears_current_tenant_id_fkey"
             columns: ["tenant_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -230,40 +245,46 @@ export type Database = {
       }
       arrears_history: {
         Row: {
+          account_number: string | null
           as_of_month: string
           balance: number
           building_id: string
           days_30: number | null
           days_60: number | null
           days_90_plus: number | null
+          debtor_name: string | null
           id: string
           import_source: string | null
           imported_at: string
-          tenant_id: string
+          tenant_id: string | null
         }
         Insert: {
+          account_number?: string | null
           as_of_month: string
           balance: number
           building_id: string
           days_30?: number | null
           days_60?: number | null
           days_90_plus?: number | null
+          debtor_name?: string | null
           id?: string
           import_source?: string | null
           imported_at?: string
-          tenant_id: string
+          tenant_id?: string | null
         }
         Update: {
+          account_number?: string | null
           as_of_month?: string
           balance?: number
           building_id?: string
           days_30?: number | null
           days_60?: number | null
           days_90_plus?: number | null
+          debtor_name?: string | null
           id?: string
           import_source?: string | null
           imported_at?: string
-          tenant_id?: string
+          tenant_id?: string | null
         }
         Relationships: [
           {
@@ -380,15 +401,19 @@ export type Database = {
       }
       contacts: {
         Row: {
+          active: boolean
+          after_hours_number: string | null
           archived_at: string | null
           building_id: string | null
           company: string | null
           created_at: string
           created_by: string | null
           email: string | null
+          emergency_number: string | null
           id: string
           name: string
           notes: string | null
+          office_number: string | null
           organization_id: string | null
           phone: string | null
           type: Database["public"]["Enums"]["contact_type"]
@@ -396,15 +421,19 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          active?: boolean
+          after_hours_number?: string | null
           archived_at?: string | null
           building_id?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          emergency_number?: string | null
           id?: string
           name: string
           notes?: string | null
+          office_number?: string | null
           organization_id?: string | null
           phone?: string | null
           type?: Database["public"]["Enums"]["contact_type"]
@@ -412,15 +441,19 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          active?: boolean
+          after_hours_number?: string | null
           archived_at?: string | null
           building_id?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
+          emergency_number?: string | null
           id?: string
           name?: string
           notes?: string | null
+          office_number?: string | null
           organization_id?: string | null
           phone?: string | null
           type?: Database["public"]["Enums"]["contact_type"]
@@ -1081,6 +1114,7 @@ export type Database = {
       }
       meeting_notes: {
         Row: {
+          category: string
           converted_to_action_id: string | null
           created_at: string
           created_by: string | null
@@ -1090,6 +1124,7 @@ export type Database = {
           tenant_id: string | null
         }
         Insert: {
+          category?: string
           converted_to_action_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1099,6 +1134,7 @@ export type Database = {
           tenant_id?: string | null
         }
         Update: {
+          category?: string
           converted_to_action_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1140,9 +1176,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          location: string | null
           meeting_date: string
+          meeting_type: string | null
           organization_id: string | null
-          status: Database["public"]["Enums"]["record_status"]
+          pre_meeting_notes: string | null
+          raw_transcript: string | null
+          status: Database["public"]["Enums"]["meeting_status"]
+          summary: string | null
           title: string
           updated_at: string
           updated_by: string | null
@@ -1155,9 +1196,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          location?: string | null
           meeting_date: string
+          meeting_type?: string | null
           organization_id?: string | null
-          status?: Database["public"]["Enums"]["record_status"]
+          pre_meeting_notes?: string | null
+          raw_transcript?: string | null
+          status?: Database["public"]["Enums"]["meeting_status"]
+          summary?: string | null
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -1170,9 +1216,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          location?: string | null
           meeting_date?: string
+          meeting_type?: string | null
           organization_id?: string | null
-          status?: Database["public"]["Enums"]["record_status"]
+          pre_meeting_notes?: string | null
+          raw_transcript?: string | null
+          status?: Database["public"]["Enums"]["meeting_status"]
+          summary?: string | null
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -1371,48 +1422,279 @@ export type Database = {
           },
         ]
       }
+      risks: {
+        Row: {
+          archived_at: string | null
+          building_id: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string
+          escalation_flag: boolean
+          id: string
+          meeting_id: string | null
+          mitigation: string | null
+          organization_id: string
+          owner: string | null
+          severity: string
+          site_visit_item_id: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          building_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description: string
+          escalation_flag?: boolean
+          id?: string
+          meeting_id?: string | null
+          mitigation?: string | null
+          organization_id: string
+          owner?: string | null
+          severity?: string
+          site_visit_item_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          building_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string
+          escalation_flag?: boolean
+          id?: string
+          meeting_id?: string | null
+          mitigation?: string | null
+          organization_id?: string
+          owner?: string | null
+          severity?: string
+          site_visit_item_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risks_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_site_visit_item_id_fkey"
+            columns: ["site_visit_item_id"]
+            isOneToOne: false
+            referencedRelation: "site_visit_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_visit_items: {
+        Row: {
+          category: string
+          contractor_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          location: string | null
+          notes: string | null
+          priority: string
+          responsible_person: string | null
+          risk_level: string
+          site_visit_id: string
+          status: string
+          target_date: string | null
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          contractor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          priority?: string
+          responsible_person?: string | null
+          risk_level?: string
+          site_visit_id: string
+          status?: string
+          target_date?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          contractor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          priority?: string
+          responsible_person?: string | null
+          risk_level?: string
+          site_visit_id?: string
+          status?: string
+          target_date?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_visit_items_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visit_items_site_visit_id_fkey"
+            columns: ["site_visit_id"]
+            isOneToOne: false
+            referencedRelation: "site_visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visit_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_visit_photos: {
+        Row: {
+          caption: string | null
+          created_by: string | null
+          file_path: string
+          id: string
+          site_visit_item_id: string
+          taken_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_by?: string | null
+          file_path: string
+          id?: string
+          site_visit_item_id: string
+          taken_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_by?: string | null
+          file_path?: string
+          id?: string
+          site_visit_item_id?: string
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_visit_photos_site_visit_item_id_fkey"
+            columns: ["site_visit_item_id"]
+            isOneToOne: false
+            referencedRelation: "site_visit_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_visits: {
         Row: {
           archived_at: string | null
+          attendees: string | null
           building_id: string
           created_at: string
           created_by: string | null
           id: string
           observations: string | null
           photos: string[] | null
+          property_manager: string | null
           risks: string | null
+          start_time: string | null
           status: Database["public"]["Enums"]["record_status"]
           updated_at: string
           updated_by: string | null
           visit_date: string
+          visit_type: string | null
+          weather: string | null
         }
         Insert: {
           archived_at?: string | null
+          attendees?: string | null
           building_id: string
           created_at?: string
           created_by?: string | null
           id?: string
           observations?: string | null
           photos?: string[] | null
+          property_manager?: string | null
           risks?: string | null
+          start_time?: string | null
           status?: Database["public"]["Enums"]["record_status"]
           updated_at?: string
           updated_by?: string | null
           visit_date: string
+          visit_type?: string | null
+          weather?: string | null
         }
         Update: {
           archived_at?: string | null
+          attendees?: string | null
           building_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
           observations?: string | null
           photos?: string[] | null
+          property_manager?: string | null
           risks?: string | null
+          start_time?: string | null
           status?: Database["public"]["Enums"]["record_status"]
           updated_at?: string
           updated_by?: string | null
           visit_date?: string
+          visit_type?: string | null
+          weather?: string | null
         }
         Relationships: [
           {
@@ -1424,61 +1706,225 @@ export type Database = {
           },
         ]
       }
+      tenant_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          role: string
+          tenant_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          role: string
+          tenant_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          role?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
+          account_number: string | null
+          annual_turnover_required: boolean
           archived_at: string | null
+          bank_guarantee_reference: string | null
           building_id: string
           contact_id: string | null
           created_at: string
           created_by: string | null
+          deposit_amount: number | null
+          deposit_received: boolean
+          deposit_type: string | null
+          escalation_date: string | null
+          escalation_pct: number | null
+          fica_status: string | null
+          financial_year_end_day: number | null
+          financial_year_end_month: number | null
           gla: number | null
+          guarantee_received: boolean
           id: string
           import_source: string | null
+          insurance_status: string | null
           lease_end: string | null
+          lease_signed: boolean
           lease_start: string | null
+          marketing_charge: number | null
           monthly_rental: number | null
+          monthly_turnover_required: boolean
           notes: string | null
+          operating_costs: number | null
+          option_period: string | null
+          other_charges: number | null
+          rates: number | null
+          registered_entity: string | null
+          security_notes: string | null
           shop_number: string | null
           status: Database["public"]["Enums"]["record_status"]
+          surety_expiry: string | null
+          surety_name: string | null
+          surety_received: boolean
           trading_name: string
+          turnover_pct: number | null
+          turnover_penalty_amount: number | null
+          turnover_penalty_clause: string | null
+          turnover_reporting_required: boolean
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          account_number?: string | null
+          annual_turnover_required?: boolean
           archived_at?: string | null
+          bank_guarantee_reference?: string | null
           building_id: string
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
+          deposit_amount?: number | null
+          deposit_received?: boolean
+          deposit_type?: string | null
+          escalation_date?: string | null
+          escalation_pct?: number | null
+          fica_status?: string | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           gla?: number | null
+          guarantee_received?: boolean
           id?: string
           import_source?: string | null
+          insurance_status?: string | null
           lease_end?: string | null
+          lease_signed?: boolean
           lease_start?: string | null
+          marketing_charge?: number | null
           monthly_rental?: number | null
+          monthly_turnover_required?: boolean
           notes?: string | null
+          operating_costs?: number | null
+          option_period?: string | null
+          other_charges?: number | null
+          rates?: number | null
+          registered_entity?: string | null
+          security_notes?: string | null
           shop_number?: string | null
           status?: Database["public"]["Enums"]["record_status"]
+          surety_expiry?: string | null
+          surety_name?: string | null
+          surety_received?: boolean
           trading_name: string
+          turnover_pct?: number | null
+          turnover_penalty_amount?: number | null
+          turnover_penalty_clause?: string | null
+          turnover_reporting_required?: boolean
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          account_number?: string | null
+          annual_turnover_required?: boolean
           archived_at?: string | null
+          bank_guarantee_reference?: string | null
           building_id?: string
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
+          deposit_amount?: number | null
+          deposit_received?: boolean
+          deposit_type?: string | null
+          escalation_date?: string | null
+          escalation_pct?: number | null
+          fica_status?: string | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           gla?: number | null
+          guarantee_received?: boolean
           id?: string
           import_source?: string | null
+          insurance_status?: string | null
           lease_end?: string | null
+          lease_signed?: boolean
           lease_start?: string | null
+          marketing_charge?: number | null
           monthly_rental?: number | null
+          monthly_turnover_required?: boolean
           notes?: string | null
+          operating_costs?: number | null
+          option_period?: string | null
+          other_charges?: number | null
+          rates?: number | null
+          registered_entity?: string | null
+          security_notes?: string | null
           shop_number?: string | null
           status?: Database["public"]["Enums"]["record_status"]
+          surety_expiry?: string | null
+          surety_name?: string | null
+          surety_received?: boolean
           trading_name?: string
+          turnover_pct?: number | null
+          turnover_penalty_amount?: number | null
+          turnover_penalty_clause?: string | null
+          turnover_reporting_required?: boolean
           updated_at?: string
           updated_by?: string | null
         }
@@ -1499,21 +1945,98 @@ export type Database = {
           },
         ]
       }
+      turnover_annual_certificates: {
+        Row: {
+          building_id: string
+          created_at: string
+          created_by: string | null
+          document_id: string | null
+          due_date: string
+          financial_year: number
+          id: string
+          notes: string | null
+          received_at: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          due_date: string
+          financial_year: number
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          due_date?: string
+          financial_year?: number
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turnover_annual_certificates_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turnover_annual_certificates_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turnover_annual_certificates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turnovers: {
         Row: {
           archived_at: string | null
           building_id: string
           created_at: string
           created_by: string | null
+          document_id: string | null
+          due_date: string | null
           id: string
           import_source: string | null
           notes: string | null
+          penalty_amount: number | null
+          penalty_applicable: boolean
+          penalty_status: string | null
           period: string
+          status: string
           submitted: boolean
           submitted_at: string | null
           tenant_id: string
           turnover_amount: number | null
           turnover_rental: number | null
+          unit: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1522,15 +2045,22 @@ export type Database = {
           building_id: string
           created_at?: string
           created_by?: string | null
+          document_id?: string | null
+          due_date?: string | null
           id?: string
           import_source?: string | null
           notes?: string | null
+          penalty_amount?: number | null
+          penalty_applicable?: boolean
+          penalty_status?: string | null
           period: string
+          status?: string
           submitted?: boolean
           submitted_at?: string | null
           tenant_id: string
           turnover_amount?: number | null
           turnover_rental?: number | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1539,15 +2069,22 @@ export type Database = {
           building_id?: string
           created_at?: string
           created_by?: string | null
+          document_id?: string | null
+          due_date?: string | null
           id?: string
           import_source?: string | null
           notes?: string | null
+          penalty_amount?: number | null
+          penalty_applicable?: boolean
+          penalty_status?: string | null
           period?: string
+          status?: string
           submitted?: boolean
           submitted_at?: string | null
           tenant_id?: string
           turnover_amount?: number | null
           turnover_rental?: number | null
+          unit?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1557,6 +2094,13 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turnovers_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
           {
@@ -1593,6 +2137,20 @@ export type Database = {
         | "attorney"
         | "internal"
         | "other"
+        | "tenant_owner"
+        | "tenant_manager"
+        | "emergency"
+        | "security"
+        | "cleaning"
+        | "facilities"
+        | "electrician"
+        | "plumber"
+        | "fire"
+        | "asset_manager"
+        | "property_manager"
+        | "leasing"
+        | "legal"
+        | "municipal"
       fault_priority: "low" | "normal" | "high" | "critical" | "emergency"
       fault_status:
         | "new"
@@ -1620,6 +2178,13 @@ export type Database = {
         | "signed"
         | "declined"
         | "withdrawn"
+      meeting_status:
+        | "draft"
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "archived"
       priority_level: "low" | "medium" | "high" | "critical"
       record_status:
         | "not_started"
@@ -1761,6 +2326,20 @@ export const Constants = {
         "attorney",
         "internal",
         "other",
+        "tenant_owner",
+        "tenant_manager",
+        "emergency",
+        "security",
+        "cleaning",
+        "facilities",
+        "electrician",
+        "plumber",
+        "fire",
+        "asset_manager",
+        "property_manager",
+        "leasing",
+        "legal",
+        "municipal",
       ],
       fault_priority: ["low", "normal", "high", "critical", "emergency"],
       fault_status: [
@@ -1791,6 +2370,14 @@ export const Constants = {
         "signed",
         "declined",
         "withdrawn",
+      ],
+      meeting_status: [
+        "draft",
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "archived",
       ],
       priority_level: ["low", "medium", "high", "critical"],
       record_status: [
