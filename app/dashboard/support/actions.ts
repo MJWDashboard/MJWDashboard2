@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { sendEmail, absoluteUrl } from "@/lib/email";
 
 export type TicketCategory = "fault" | "bug" | "question" | "other";
 export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
@@ -38,6 +39,19 @@ export async function createSupportTicket(input: CreateTicketInput) {
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/support");
+
+  const { data: adminEmail } = await supabase.rpc("platform_admin_email");
+  if (adminEmail) {
+    await sendEmail({
+      to: adminEmail,
+      subject: `${data.ticket_number}: ${input.subject}`,
+      html: `<p><strong>${user.email}</strong> logged a new ${input.category} ticket.</p>
+<p><strong>${data.ticket_number}</strong> — ${input.subject}</p>
+${input.description ? `<p>${input.description}</p>` : ""}
+<p><a href="${absoluteUrl(`/dashboard/support/${data.id}`)}">View ticket</a></p>`,
+    });
+  }
+
   return { error: null, id: data.id, ticketNumber: data.ticket_number };
 }
 
@@ -56,6 +70,32 @@ export async function replyToTicket(ticketId: string, body: string) {
   if (error) return { error: error.message };
   revalidatePath(`/dashboard/support/${ticketId}`);
   revalidatePath("/dashboard/support");
+
+  const { data: ticket } = await supabase
+    .from("support_tickets")
+    .select("ticket_number, subject, reported_by, assigned_to")
+    .eq("id", ticketId)
+    .maybeSingle();
+
+  if (ticket) {
+    const recipientId = user.id === ticket.reported_by ? ticket.assigned_to : ticket.reported_by;
+    if (recipientId) {
+      const { data: emails } = await supabase.rpc("org_member_emails");
+      const recipientEmail =
+        emails?.find((e) => e.user_id === recipientId)?.email ??
+        (recipientId === ticket.assigned_to ? await supabase.rpc("platform_admin_email").then((r) => r.data) : null);
+      if (recipientEmail) {
+        await sendEmail({
+          to: recipientEmail,
+          subject: `Re: ${ticket.ticket_number}: ${ticket.subject}`,
+          html: `<p><strong>${user.email}</strong> replied to ${ticket.ticket_number}.</p>
+<p>${body.trim()}</p>
+<p><a href="${absoluteUrl(`/dashboard/support/${ticketId}`)}">View ticket</a></p>`,
+        });
+      }
+    }
+  }
+
   return { error: null };
 }
 

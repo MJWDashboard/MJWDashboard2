@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { sendEmail, absoluteUrl } from "@/lib/email";
 import type { Database } from "@/lib/supabase/database.types";
 
 type MessageStatus = Database["public"]["Enums"]["record_status"];
@@ -49,6 +50,20 @@ export async function createTeamMessage(input: CreateMessageInput) {
   }
 
   revalidatePath("/dashboard/messages");
+
+  const { data: emails } = await supabase.rpc("org_member_emails");
+  const assigneeEmail = emails?.find((e) => e.user_id === input.assignedTo)?.email;
+  if (assigneeEmail) {
+    await sendEmail({
+      to: assigneeEmail,
+      subject: `${input.type === "task" ? "New task" : "New message"}: ${input.subject}`,
+      html: `<p><strong>${user.email}</strong> assigned you a ${input.type}.</p>
+<p><strong>${input.subject.trim()}</strong></p>
+${input.body.trim() ? `<p>${input.body.trim()}</p>` : ""}
+<p><a href="${absoluteUrl(`/dashboard/messages/${data.id}`)}">View in Vorexa</a></p>`,
+    });
+  }
+
   return { error: null, id: data.id };
 }
 
@@ -75,6 +90,28 @@ export async function replyToMessage(messageId: string, body: string) {
 
   revalidatePath(`/dashboard/messages/${messageId}`);
   revalidatePath("/dashboard/messages");
+
+  const { data: message } = await supabase
+    .from("team_messages")
+    .select("subject, created_by, assigned_to")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (message) {
+    const recipientId = user.id === message.created_by ? message.assigned_to : message.created_by;
+    const { data: emails } = await supabase.rpc("org_member_emails");
+    const recipientEmail = emails?.find((e) => e.user_id === recipientId)?.email;
+    if (recipientEmail) {
+      await sendEmail({
+        to: recipientEmail,
+        subject: `Re: ${message.subject}`,
+        html: `<p><strong>${user.email}</strong> replied.</p>
+<p>${body.trim()}</p>
+<p><a href="${absoluteUrl(`/dashboard/messages/${messageId}`)}">View in Vorexa</a></p>`,
+      });
+    }
+  }
+
   return { error: null };
 }
 

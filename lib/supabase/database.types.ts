@@ -3231,6 +3231,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      platform_admin_email: { Args: never; Returns: string }
       user_accessible_building_ids: { Args: never; Returns: string[] }
       user_accessible_portfolio_ids: { Args: never; Returns: string[] }
       user_org_ids: { Args: never; Returns: string[] }
