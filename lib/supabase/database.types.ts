@@ -487,57 +487,113 @@ export type Database = {
           },
         ]
       }
-      contractors: {
+      contractor_buildings: {
         Row: {
-          archived_at: string | null
-          building_id: string | null
-          contact_id: string | null
+          building_id: string
+          contractor_id: string
           created_at: string
-          created_by: string | null
           id: string
-          notes: string | null
-          organization_id: string | null
-          rating: number | null
-          trade: string | null
-          updated_at: string
-          updated_by: string | null
         }
         Insert: {
-          archived_at?: string | null
-          building_id?: string | null
-          contact_id?: string | null
+          building_id: string
+          contractor_id: string
           created_at?: string
-          created_by?: string | null
           id?: string
-          notes?: string | null
-          organization_id?: string | null
-          rating?: number | null
-          trade?: string | null
-          updated_at?: string
-          updated_by?: string | null
         }
         Update: {
-          archived_at?: string | null
-          building_id?: string | null
-          contact_id?: string | null
+          building_id?: string
+          contractor_id?: string
           created_at?: string
-          created_by?: string | null
           id?: string
-          notes?: string | null
-          organization_id?: string | null
-          rating?: number | null
-          trade?: string | null
-          updated_at?: string
-          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "contractors_building_id_fkey"
+            foreignKeyName: "contractor_buildings_building_id_fkey"
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contractor_buildings_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractors: {
+        Row: {
+          alt_phone: string | null
+          archived_at: string | null
+          company_name: string | null
+          contact_id: string | null
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          import_source: string | null
+          last_imported_at: string | null
+          notes: string | null
+          organization_id: string | null
+          phone: string | null
+          rating: number | null
+          registration_number: string | null
+          standard_rate: number | null
+          trade: string | null
+          updated_at: string
+          updated_by: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          alt_phone?: string | null
+          archived_at?: string | null
+          company_name?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          import_source?: string | null
+          last_imported_at?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          rating?: number | null
+          registration_number?: string | null
+          standard_rate?: number | null
+          trade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          alt_phone?: string | null
+          archived_at?: string | null
+          company_name?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          import_source?: string | null
+          last_imported_at?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          rating?: number | null
+          registration_number?: string | null
+          standard_rate?: number | null
+          trade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+        }
+        Relationships: [
           {
             foreignKeyName: "contractors_contact_id_fkey"
             columns: ["contact_id"]

@@ -74,10 +74,9 @@ export async function generateHandoverSummary(buildingId: string) {
         .eq("building_id", buildingId)
         .is("archived_at", null),
       supabase
-        .from("contractors")
-        .select("trade, rating, contacts(name, phone)")
-        .eq("building_id", buildingId)
-        .is("archived_at", null),
+        .from("contractor_buildings")
+        .select("contractors(company_name, contact_name, trade, rating, phone)")
+        .eq("building_id", buildingId),
       supabase
         .from("action_items")
         .select("title, priority, due_date")
@@ -128,8 +127,12 @@ export async function generateHandoverSummary(buildingId: string) {
   }
   lines.push("");
   lines.push(`## Contractors`);
-  for (const c of contractors ?? []) {
-    lines.push(`- ${(c as any).contacts?.name ?? "Unknown"} — ${c.trade ?? "—"}${c.rating ? ` (${c.rating}★)` : ""}`);
+  for (const link of contractors ?? []) {
+    const c = (link as any).contractors;
+    if (!c) continue;
+    lines.push(
+      `- ${c.company_name ?? c.contact_name ?? "Unknown"} — ${c.trade ?? "—"}${c.rating ? ` (${c.rating}★)` : ""}`
+    );
   }
   lines.push(`- Building notes: ${building.notes ?? "None recorded."}`);
 

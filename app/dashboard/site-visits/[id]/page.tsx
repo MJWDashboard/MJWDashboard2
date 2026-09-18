@@ -25,7 +25,7 @@ export default async function SiteVisitDetailPage({ params }: { params: { id: st
     supabase
       .from("site_visit_items")
       .select(
-        "id, category, location, tenant_id, description, risk_level, priority, contractor_id, target_date, status, notes, tenants(trading_name), contractors(contacts(name)), site_visit_photos(id, file_path, caption)"
+        "id, category, location, tenant_id, description, risk_level, priority, contractor_id, target_date, status, notes, tenants(trading_name), contractors(company_name, contact_name), site_visit_photos(id, file_path, caption)"
       )
       .eq("site_visit_id", params.id)
       .order("created_at", { ascending: true }),
@@ -38,7 +38,7 @@ export default async function SiteVisitDetailPage({ params }: { params: { id: st
       .order("trading_name"),
     supabase
       .from("contractors")
-      .select("id, trade, contacts(name)")
+      .select("id, company_name, contact_name, trade")
       .is("archived_at", null),
   ]);
 
@@ -113,7 +113,9 @@ export default async function SiteVisitDetailPage({ params }: { params: { id: st
               </div>
               {(item.target_date || item.contractors) && (
                 <p className="mb-2 text-xs text-charcoal-400">
-                  {item.contractors?.contacts?.name ? `Contractor: ${item.contractors.contacts.name} · ` : ""}
+                  {item.contractors?.company_name || item.contractors?.contact_name
+                    ? `Contractor: ${item.contractors.company_name ?? item.contractors.contact_name} · `
+                    : ""}
                   {item.target_date ? `Target: ${formatDate(item.target_date)}` : ""}
                 </p>
               )}

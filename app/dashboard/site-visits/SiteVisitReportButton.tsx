@@ -17,7 +17,7 @@ type Item = {
   status: string;
   notes: string | null;
   tenants: { trading_name: string } | null;
-  contractors: { contacts: { name: string } | null } | null;
+  contractors: { company_name: string | null; contact_name: string | null } | null;
   site_visit_photos: Photo[];
 };
 

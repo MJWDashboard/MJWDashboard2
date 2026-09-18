@@ -60,7 +60,7 @@ export function InspectionItemFormButton({
   item?: Item;
   label: string;
   tenants: { id: string; trading_name: string }[];
-  contractors: { id: string; trade: string | null; contacts: { name: string } | null }[];
+  contractors: { id: string; company_name: string | null; contact_name: string | null; trade: string | null }[];
 }) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(toInput(item));
@@ -150,7 +150,7 @@ export function InspectionItemFormButton({
                   <option value="">None</option>
                   {contractors.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.contacts?.name ?? c.trade ?? "Contractor"}
+                      {c.company_name ?? c.contact_name ?? c.trade ?? "Contractor"}
                     </option>
                   ))}
                 </select>
