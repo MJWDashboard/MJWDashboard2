@@ -57,3 +57,19 @@ export function enumLabel(value: string | null | undefined): string {
   if (!value) return "—";
   return titleCase(value);
 }
+
+export const MEETING_STATUS_CLASSES: Record<string, string> = {
+  draft: "bg-charcoal-600/60 text-charcoal-200",
+  scheduled: "bg-cyan-600/20 text-cyan-400",
+  in_progress: "bg-yellow-500/20 text-yellow-400",
+  completed: "bg-green-500/20 text-green-400",
+  cancelled: "bg-red-500/20 text-red-400",
+  archived: "bg-charcoal-600/60 text-charcoal-400",
+};
+
+export const RISK_SEVERITY_CLASSES: Record<string, string> = {
+  low: "bg-charcoal-600/60 text-charcoal-200",
+  medium: "bg-cyan-600/20 text-cyan-400",
+  high: "bg-orange-500/20 text-orange-400",
+  critical: "bg-red-500/20 text-red-400",
+};

@@ -10,18 +10,35 @@ type Meeting = {
   title: string;
   building_id: string | null;
   meeting_date: string;
+  location: string | null;
+  meeting_type: string | null;
   attendees: string[] | null;
   agenda: string | null;
+  pre_meeting_notes: string | null;
   status: string;
 };
+
+const MEETING_TYPES = [
+  "Routine",
+  "Monthly Review",
+  "Handover",
+  "Tenant Meeting",
+  "Maintenance",
+  "Project",
+  "Emergency",
+  "Other",
+];
 
 const EMPTY: MeetingInput = {
   title: "",
   building_id: "",
   meeting_date: "",
+  location: "",
+  meeting_type: "",
   attendees: "",
   agenda: "",
-  status: "not_started",
+  pre_meeting_notes: "",
+  status: "scheduled",
 };
 
 function toInput(m?: Meeting | null): MeetingInput {
@@ -30,9 +47,12 @@ function toInput(m?: Meeting | null): MeetingInput {
     title: m.title ?? "",
     building_id: m.building_id ?? "",
     meeting_date: m.meeting_date ? m.meeting_date.slice(0, 16) : "",
+    location: m.location ?? "",
+    meeting_type: m.meeting_type ?? "",
     attendees: (m.attendees ?? []).join(", "),
     agenda: m.agenda ?? "",
-    status: m.status ?? "not_started",
+    pre_meeting_notes: m.pre_meeting_notes ?? "",
+    status: m.status ?? "scheduled",
   };
 }
 
@@ -135,6 +155,31 @@ export function MeetingFormButton({
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Meeting Type</label>
+                <select
+                  className="input"
+                  value={values.meeting_type}
+                  onChange={(e) => setValues({ ...values, meeting_type: e.target.value })}
+                >
+                  <option value="">—</option>
+                  {MEETING_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Location</label>
+                <input
+                  className="input"
+                  value={values.location}
+                  onChange={(e) => setValues({ ...values, location: e.target.value })}
+                />
+              </div>
+            </div>
             <div>
               <label className="label">Attendees (comma separated)</label>
               <input
@@ -153,16 +198,27 @@ export function MeetingFormButton({
               />
             </div>
             <div>
+              <label className="label">Pre-Meeting Notes</label>
+              <textarea
+                rows={2}
+                className="input"
+                value={values.pre_meeting_notes}
+                onChange={(e) => setValues({ ...values, pre_meeting_notes: e.target.value })}
+              />
+            </div>
+            <div>
               <label className="label">Status</label>
               <select
                 className="input"
                 value={values.status}
                 onChange={(e) => setValues({ ...values, status: e.target.value })}
               >
-                <option value="not_started">Not Started</option>
+                <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled</option>
                 <option value="in_progress">In Progress</option>
-                <option value="waiting_on_feedback">Waiting</option>
-                <option value="complete">Complete</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
