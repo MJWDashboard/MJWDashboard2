@@ -3,15 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import type { PortfolioRole } from "./roles";
 
-async function requireAdmin() {
+async function requireSignedIn() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return user;
+}
+
+async function requireOrgAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") return null;
   return user;
 }
 
 export async function createPortfolio(name: string) {
-  const user = await requireAdmin();
+  const user = await requireOrgAdmin();
   if (!user) return { error: "Only an administrator can create portfolios." };
   if (!name.trim()) return { error: "Portfolio name is required." };
 
@@ -31,12 +38,12 @@ export async function createPortfolio(name: string) {
 export type InviteInput = {
   email: string;
   portfolioId: string;
-  portfolioRole: string;
+  portfolioRole: PortfolioRole;
 };
 
 export async function inviteToPortfolio(input: InviteInput) {
-  const user = await requireAdmin();
-  if (!user) return { error: "Only an administrator can invite people.", grantedImmediately: false };
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in.", grantedImmediately: false };
 
   const email = input.email.trim().toLowerCase();
   if (!email) return { error: "Email is required.", grantedImmediately: false };
@@ -60,7 +67,7 @@ export async function inviteToPortfolio(input: InviteInput) {
         {
           portfolio_id: input.portfolioId,
           user_id: match.user_id,
-          role: input.portfolioRole as any,
+          role: input.portfolioRole,
           created_by: user.id,
         },
         { onConflict: "portfolio_id,user_id" }
@@ -86,8 +93,8 @@ export async function inviteToPortfolio(input: InviteInput) {
 }
 
 export async function revokeInvitation(invitationId: string) {
-  const user = await requireAdmin();
-  if (!user) return { error: "Only an administrator can revoke invitations." };
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in." };
 
   const supabase = createClient();
   const { error } = await supabase
@@ -102,8 +109,8 @@ export async function revokeInvitation(invitationId: string) {
 }
 
 export async function removePortfolioMember(portfolioUserId: string) {
-  const user = await requireAdmin();
-  if (!user) return { error: "Only an administrator can remove access." };
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in." };
 
   const supabase = createClient();
   const { error } = await supabase.from("portfolio_users").delete().eq("id", portfolioUserId);
@@ -113,15 +120,53 @@ export async function removePortfolioMember(portfolioUserId: string) {
   return { error: null };
 }
 
-export async function updatePortfolioMemberRole(portfolioUserId: string, role: string) {
-  const user = await requireAdmin();
-  if (!user) return { error: "Only an administrator can change roles." };
+export async function updatePortfolioMemberRole(portfolioUserId: string, role: PortfolioRole) {
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in." };
 
   const supabase = createClient();
   const { error } = await supabase
     .from("portfolio_users")
-    .update({ role: role as any })
+    .update({ role })
     .eq("id", portfolioUserId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/team");
+  return { error: null };
+}
+
+export async function assignBuildingToMember(input: {
+  portfolioId: string;
+  buildingId: string;
+  userId: string;
+}) {
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in." };
+
+  const supabase = createClient();
+  const { error } = await supabase.from("building_assignments").insert({
+    portfolio_id: input.portfolioId,
+    building_id: input.buildingId,
+    user_id: input.userId,
+    assigned_by: user.id,
+  });
+
+  if (error) {
+    if (error.code === "23505") return { error: "That person is already assigned to this building." };
+    if (error.code === "42501" || error.message.toLowerCase().includes("row-level security"))
+      return { error: "You don't have permission to assign that building." };
+    return { error: error.message };
+  }
+  revalidatePath("/dashboard/team");
+  return { error: null };
+}
+
+export async function unassignBuildingFromMember(assignmentId: string) {
+  const user = await requireSignedIn();
+  if (!user) return { error: "You must be signed in." };
+
+  const supabase = createClient();
+  const { error } = await supabase.from("building_assignments").delete().eq("id", assignmentId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/team");

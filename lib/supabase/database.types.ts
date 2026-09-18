@@ -346,6 +346,48 @@ export type Database = {
         }
         Relationships: []
       }
+      building_assignments: {
+        Row: {
+          assigned_by: string | null
+          building_id: string
+          created_at: string
+          id: string
+          portfolio_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          building_id: string
+          created_at?: string
+          id?: string
+          portfolio_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          building_id?: string
+          created_at?: string
+          id?: string
+          portfolio_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_assignments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_assignments_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           address: string | null
@@ -2540,6 +2582,10 @@ export type Database = {
     }
     Functions: {
       bootstrap_first_admin: { Args: never; Returns: undefined }
+      can_manage_building_assignment: {
+        Args: { target_building_id: string }
+        Returns: boolean
+      }
       contractor_buildings_accessible: {
         Args: { target_contractor_id: string }
         Returns: boolean
@@ -2562,8 +2608,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      user_accessible_building_ids: { Args: never; Returns: string[] }
       user_accessible_portfolio_ids: { Args: never; Returns: string[] }
       user_org_ids: { Args: never; Returns: string[] }
+      user_portfolio_wide_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       contact_type:

@@ -40,10 +40,10 @@ const NAV_ITEMS = [
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
 ];
 
-export function Sidebar({ isMasterAdmin }: { isMasterAdmin: boolean }) {
+export function Sidebar({ canAccessTeam }: { canAccessTeam: boolean }) {
   const pathname = usePathname();
 
-  const items = isMasterAdmin
+  const items = canAccessTeam
     ? [...NAV_ITEMS, { href: "/dashboard/team", label: "Team & Access", icon: ShieldCheck }]
     : NAV_ITEMS;
 
