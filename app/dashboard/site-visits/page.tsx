@@ -6,6 +6,7 @@ import { FilterChip } from "@/components/FilterChip";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
 import { SiteVisitFormButton } from "./SiteVisitForm";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function SiteVisitsPage({
   searchParams,
@@ -13,7 +14,8 @@ export default async function SiteVisitsPage({
   searchParams: { building_id?: string };
 }) {
   const supabase = createClient();
-  const buildingId = searchParams.building_id;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
 
   let query = supabase
     .from("site_visits")

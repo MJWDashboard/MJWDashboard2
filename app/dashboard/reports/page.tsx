@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { PageHeader } from "@/components/PageHeader";
 import { formatCurrency } from "@/lib/format";
 import { PortfolioBreakdown } from "./PortfolioBreakdown";
@@ -8,9 +9,12 @@ import { PortfolioBreakdown } from "./PortfolioBreakdown";
 export default async function ReportsPage() {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
+  const selectedBuilding = getSelectedBuilding();
 
   let buildingIds: string[] | null = null;
-  if (portfolioId !== "all") {
+  if (selectedBuilding !== "all") {
+    buildingIds = [selectedBuilding];
+  } else if (portfolioId !== "all") {
     const { data } = await supabase.from("buildings").select("id").eq("portfolio_id", portfolioId);
     buildingIds = (data ?? []).map((b) => b.id);
   }

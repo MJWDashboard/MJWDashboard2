@@ -6,10 +6,18 @@ import { getCurrentUser } from "@/lib/supabase/org";
 import { MAX_DOCUMENT_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 export type BuildingInput = {
+  building_code: string;
   name: string;
-  address: string;
+  address_line_1: string;
+  address_line_2: string;
+  suburb: string;
+  city: string;
+  province: string;
+  postal_code: string;
   gla: string;
-  budget: string;
+  budget_year: string;
+  annual_budget: string;
+  active: boolean;
   portfolio_id: string;
   notes: string;
 };
@@ -27,16 +35,24 @@ export async function createBuilding(input: BuildingInput) {
 
   const supabase = createClient();
   const { error } = await supabase.from("buildings").insert({
+    building_code: input.building_code.trim().toUpperCase(),
     name: input.name,
-    address: input.address || null,
+    address_line_1: input.address_line_1 || null,
+    address_line_2: input.address_line_2 || null,
+    suburb: input.suburb || null,
+    city: input.city || null,
+    province: input.province || null,
+    postal_code: input.postal_code || null,
     gla: toNumeric(input.gla),
-    budget: toNumeric(input.budget),
+    budget_year: toNumeric(input.budget_year),
+    annual_budget: toNumeric(input.annual_budget),
+    active: input.active,
     portfolio_id: input.portfolio_id,
     notes: input.notes || null,
     organization_id: user.organizationId,
     created_by: user.id,
     updated_by: user.id,
-  });
+  } as any);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/buildings");
@@ -52,15 +68,23 @@ export async function updateBuilding(id: string, input: BuildingInput) {
   const { error } = await supabase
     .from("buildings")
     .update({
+      building_code: input.building_code.trim().toUpperCase(),
       name: input.name,
-      address: input.address || null,
+      address_line_1: input.address_line_1 || null,
+      address_line_2: input.address_line_2 || null,
+      suburb: input.suburb || null,
+      city: input.city || null,
+      province: input.province || null,
+      postal_code: input.postal_code || null,
       gla: toNumeric(input.gla),
-      budget: toNumeric(input.budget),
+      budget_year: toNumeric(input.budget_year),
+      annual_budget: toNumeric(input.annual_budget),
+      active: input.active,
       portfolio_id: input.portfolio_id,
       notes: input.notes || null,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
-    })
+    } as any)
     .eq("id", id);
 
   if (error) return { error: error.message };

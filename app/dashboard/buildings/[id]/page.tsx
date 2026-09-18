@@ -25,6 +25,7 @@ export default async function BuildingDetailPage({
     .maybeSingle();
 
   if (!building) notFound();
+  const buildingRecord = building as any;
 
   const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
 
@@ -102,9 +103,9 @@ export default async function BuildingDetailPage({
     <div>
       <PageHeader
         title={building.name}
-        description={building.address ?? undefined}
+        description={[buildingRecord.address_line_1, buildingRecord.suburb, buildingRecord.city].filter(Boolean).join(", ") || undefined}
         action={
-          <BuildingFormButton building={building} label="Edit Building" portfolios={portfolios ?? []} />
+          <BuildingFormButton building={buildingRecord} label="Edit Building" portfolios={portfolios ?? []} />
         }
       />
 
@@ -115,7 +116,7 @@ export default async function BuildingDetailPage({
         </div>
         <div className="card">
           <p className="text-xs uppercase text-charcoal-400">Budget</p>
-          <p className="mt-1 text-lg font-semibold">{formatCurrency(building.budget)}</p>
+          <p className="mt-1 text-lg font-semibold">{formatCurrency(buildingRecord.annual_budget)}</p>
         </div>
         <div className="card">
           <p className="text-xs uppercase text-charcoal-400">Tenants</p>

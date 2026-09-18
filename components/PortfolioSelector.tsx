@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { PORTFOLIO_COOKIE } from "@/lib/portfolio-cookie";
+import { BUILDING_COOKIE } from "@/lib/building-cookie";
 
 export function PortfolioSelector({
   portfolios,
@@ -14,6 +15,7 @@ export function PortfolioSelector({
 
   function onChange(value: string) {
     document.cookie = `${PORTFOLIO_COOKIE}=${encodeURIComponent(value)}; path=/; max-age=31536000`;
+    document.cookie = `${BUILDING_COOKIE}=all; path=/; max-age=31536000; samesite=lax`;
     router.refresh();
   }
 

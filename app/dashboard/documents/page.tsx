@@ -6,6 +6,7 @@ import { FilterChip } from "@/components/FilterChip";
 import { formatDate } from "@/lib/format";
 import { DocumentUploadButton } from "./DocumentUpload";
 import { DocumentLink } from "./DocumentLink";
+import { getSelectedBuilding } from "@/lib/building";
 
 function formatSize(bytes: number | null): string {
   if (!bytes) return "—";
@@ -20,7 +21,9 @@ export default async function DocumentsPage({
   searchParams: { building_id?: string; tenant_id?: string };
 }) {
   const supabase = createClient();
-  const { building_id: buildingId, tenant_id: tenantId } = searchParams;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
+  const tenantId = searchParams.tenant_id;
 
   let query = supabase
     .from("documents")

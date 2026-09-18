@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { ExportButton } from "@/components/ExportButton";
@@ -17,15 +18,17 @@ export default async function ArrearsPage({
 }) {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
-  const buildingId = searchParams.building_id;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
 
   const { data: allBuildings } = await supabase
     .from("buildings")
     .select("id, name, portfolio_id")
     .is("archived_at", null);
 
-  const scopedIds =
-    portfolioId === "all"
+  const scopedIds = buildingId
+      ? [buildingId]
+      : portfolioId === "all"
       ? null
       : (allBuildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
@@ -44,7 +47,7 @@ export default async function ArrearsPage({
   ]);
 
   const total = (arrears ?? []).reduce((sum: number, r: any) => sum + Number(r.current_balance ?? 0), 0);
-  const buildingOptions = (allBuildings ?? []).map((b) => ({ id: b.id, name: b.name }));
+  const buildingOptions = (allBuildings ?? []).filter((b) => !scopedIds || scopedIds.includes(b.id)).map((b) => ({ id: b.id, name: b.name }));
 
   return (
     <div>

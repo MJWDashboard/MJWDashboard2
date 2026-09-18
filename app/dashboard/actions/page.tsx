@@ -7,6 +7,7 @@ import { StatusBadge, Badge } from "@/components/StatusBadge";
 import { PRIORITY_CLASSES, enumLabel } from "@/lib/status";
 import { formatDate } from "@/lib/format";
 import { ActionItemFormButton } from "./ActionItemForm";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function ActionsPage({
   searchParams,
@@ -14,7 +15,9 @@ export default async function ActionsPage({
   searchParams: { building_id?: string; tenant_id?: string };
 }) {
   const supabase = createClient();
-  const { building_id: buildingId, tenant_id: tenantId } = searchParams;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
+  const tenantId = searchParams.tenant_id;
 
   let query = supabase
     .from("action_items")

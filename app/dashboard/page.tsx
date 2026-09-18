@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/StatusBadge";
 import { RISK_SEVERITY_CLASSES, enumLabel } from "@/lib/status";
@@ -55,7 +56,9 @@ function ExceptionCard({
 export default async function DashboardPage() {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
-  const buildingIds = await getBuildingIdsForPortfolio(supabase, portfolioId);
+  const selectedBuilding = getSelectedBuilding();
+  const buildingIds = selectedBuilding !== "all" ? [selectedBuilding] : await getBuildingIdsForPortfolio(supabase, portfolioId);
+  const { data: selectedBuildingRow } = selectedBuilding === "all" ? { data: null } : await supabase.from("buildings").select("name").eq("id", selectedBuilding).maybeSingle();
   const { data: selectedPortfolioRow } =
     portfolioId === "all"
       ? { data: null }
@@ -182,7 +185,9 @@ export default async function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description={
-          portfolioId === "all"
+          selectedBuilding !== "all"
+            ? `Building: ${selectedBuildingRow?.name ?? "Unknown"}`
+            : portfolioId === "all"
             ? "All portfolios"
             : `Portfolio: ${selectedPortfolioRow?.name ?? "Unknown"}`
         }

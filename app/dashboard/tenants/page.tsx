@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -13,6 +14,7 @@ import { TenantImportButton } from "./TenantImport";
 export default async function TenantsPage() {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
+  const selectedBuilding = getSelectedBuilding();
 
   const { data: buildings } = await supabase
     .from("buildings")
@@ -20,8 +22,9 @@ export default async function TenantsPage() {
     .is("archived_at", null)
     .order("name");
 
-  const scopedBuildingIds =
-    portfolioId === "all"
+  const scopedBuildingIds = selectedBuilding !== "all"
+      ? [selectedBuilding]
+      : portfolioId === "all"
       ? null
       : (buildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
@@ -34,7 +37,7 @@ export default async function TenantsPage() {
   if (scopedBuildingIds) query = query.in("building_id", scopedBuildingIds);
 
   const { data: tenants } = await query;
-  const buildingOptions = (buildings ?? []).map((b) => ({ id: b.id, name: b.name }));
+  const buildingOptions = (buildings ?? []).filter((b) => !scopedBuildingIds || scopedBuildingIds.includes(b.id)).map((b) => ({ id: b.id, name: b.name }));
 
   return (
     <div>

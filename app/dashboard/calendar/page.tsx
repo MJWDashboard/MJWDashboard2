@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/PageHeader";
 import { CalendarGrid } from "./CalendarGrid";
 import { ImportantDateFormButton } from "./ImportantDateForm";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function CalendarPage({
   searchParams,
@@ -9,6 +10,7 @@ export default async function CalendarPage({
   searchParams: { month?: string };
 }) {
   const supabase = createClient();
+  const selectedBuilding = getSelectedBuilding();
 
   const now = new Date();
   let year = now.getFullYear();
@@ -23,13 +25,16 @@ export default async function CalendarPage({
   const rangeStart = new Date(year, month, 1).toISOString().slice(0, 10);
   const rangeEnd = new Date(year, month + 1, 1).toISOString().slice(0, 10);
 
-  const [{ data: events }, { data: buildings }, { data: tenants }] = await Promise.all([
-    supabase
+  let eventsQuery = supabase
       .from("important_dates")
       .select("id, title, due_date, status, date_type, building_id, tenant_id, buildings(name), tenants(trading_name)")
       .gte("due_date", rangeStart)
       .lt("due_date", rangeEnd)
-      .order("due_date"),
+      .order("due_date");
+  if (selectedBuilding !== "all") eventsQuery = eventsQuery.eq("building_id", selectedBuilding);
+
+  const [{ data: events }, { data: buildings }, { data: tenants }] = await Promise.all([
+    eventsQuery,
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
     supabase.from("tenants").select("id, trading_name").is("archived_at", null).order("trading_name"),
   ]);
