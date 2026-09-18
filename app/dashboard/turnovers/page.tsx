@@ -2,15 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { Badge } from "@/components/StatusBadge";
-import { formatCurrency, formatDate } from "@/lib/format";
 import { TurnoverFormButton } from "./TurnoverForm";
+import { TurnoversTable } from "./TurnoversTable";
+import { SyncCertificatesButton, AnnualCertificatesTable } from "./AnnualCertificates";
 
 export default async function TurnoversPage() {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
 
-  const { data: buildings } = await supabase
+  const { data: allBuildings } = await supabase
     .from("buildings")
     .select("id, name, portfolio_id")
     .is("archived_at", null);
@@ -18,69 +18,79 @@ export default async function TurnoversPage() {
   const scopedIds =
     portfolioId === "all"
       ? null
-      : (buildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
+      : (allBuildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
   let query = supabase
     .from("turnovers")
-    .select("id, tenant_id, building_id, period, turnover_amount, turnover_rental, submitted, notes, tenants(trading_name), buildings(name)")
+    .select(
+      "id, tenant_id, building_id, unit, period, turnover_amount, turnover_rental, submitted, due_date, status, penalty_applicable, penalty_amount, penalty_status, notes, tenants(trading_name), buildings(name)"
+    )
     .is("archived_at", null)
     .order("period", { ascending: false });
 
-  if (scopedIds) query = query.in("building_id", scopedIds);
+  let certQuery = supabase
+    .from("turnover_annual_certificates")
+    .select("id, financial_year, due_date, received_at, status, tenant_id, building_id, tenants(trading_name), buildings(name)")
+    .order("due_date", { ascending: true });
 
-  const [{ data: turnovers }, { data: tenants }] = await Promise.all([
+  if (scopedIds) {
+    query = query.in("building_id", scopedIds);
+    certQuery = certQuery.in("building_id", scopedIds);
+  }
+
+  const [{ data: turnovers }, { data: tenants }, { data: certificates }] = await Promise.all([
     query,
-    supabase.from("tenants").select("id, trading_name, building_id").is("archived_at", null).order("trading_name"),
+    supabase
+      .from("tenants")
+      .select("id, trading_name, building_id, shop_number, monthly_turnover_required")
+      .is("archived_at", null)
+      .order("trading_name"),
+    certQuery,
   ]);
+
+  const buildingOptions = (allBuildings ?? []).map((b) => ({ id: b.id, name: b.name }));
+
+  const currentPeriod = new Date().toISOString().slice(0, 7);
+  const missingThisMonth = (tenants ?? []).filter(
+    (t) =>
+      t.monthly_turnover_required &&
+      (scopedIds === null || scopedIds.includes(t.building_id)) &&
+      !(turnovers ?? []).some((tu) => tu.tenant_id === t.id && tu.period.slice(0, 7) === currentPeriod)
+  );
 
   return (
     <div>
       <PageHeader
         title="Turnovers"
-        description={`${turnovers?.length ?? 0} records`}
+        description={`${turnovers?.length ?? 0} records - monthly compliance register`}
         action={<TurnoverFormButton label="+ Add Turnover" tenants={tenants ?? []} />}
       />
 
-      {turnovers && turnovers.length > 0 ? (
-        <div className="table-shell">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Tenant</th>
-                <th>Building</th>
-                <th>Period</th>
-                <th>Turnover</th>
-                <th>Turnover Rental</th>
-                <th>Submitted</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {turnovers.map((t: any) => (
-                <tr key={t.id}>
-                  <td className="font-medium">{t.tenants?.trading_name ?? "—"}</td>
-                  <td>{t.buildings?.name ?? "—"}</td>
-                  <td>{formatDate(t.period)}</td>
-                  <td>{formatCurrency(t.turnover_amount)}</td>
-                  <td>{formatCurrency(t.turnover_rental)}</td>
-                  <td>
-                    {t.submitted ? (
-                      <Badge label="Submitted" className="bg-green-500/20 text-green-400" />
-                    ) : (
-                      <Badge label="Pending" className="bg-charcoal-600/60 text-charcoal-200" />
-                    )}
-                  </td>
-                  <td className="text-right">
-                    <TurnoverFormButton turnover={t} label="Edit" tenants={tenants ?? []} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {missingThisMonth.length > 0 && (
+        <div className="card mb-6 border-yellow-500/30 bg-yellow-500/5">
+          <h2 className="mb-2 text-sm font-semibold text-yellow-400">
+            {missingThisMonth.length} tenant{missingThisMonth.length === 1 ? "" : "s"} missing this month&apos;s
+            turnover
+          </h2>
+          <p className="text-sm text-charcoal-300">
+            {missingThisMonth.map((t) => t.trading_name).join(", ")}
+          </p>
         </div>
+      )}
+
+      {turnovers && turnovers.length > 0 ? (
+        <TurnoversTable turnovers={turnovers} tenants={tenants ?? []} buildings={buildingOptions} />
       ) : (
         <EmptyState title="No turnover records yet" />
       )}
+
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-charcoal-100">Annual Turnover Certificates</h2>
+          <SyncCertificatesButton />
+        </div>
+        <AnnualCertificatesTable certificates={certificates ?? []} />
+      </div>
     </div>
   );
 }
