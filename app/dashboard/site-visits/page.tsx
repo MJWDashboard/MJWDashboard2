@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -11,7 +12,7 @@ export default async function SiteVisitsPage() {
   const [{ data: visits }, { data: buildings }] = await Promise.all([
     supabase
       .from("site_visits")
-      .select("id, building_id, visit_date, observations, risks, status, buildings(name)")
+      .select("id, building_id, visit_date, visit_type, status, buildings(name), site_visit_items(id)")
       .is("archived_at", null)
       .order("visit_date", { ascending: false }),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
@@ -31,9 +32,9 @@ export default async function SiteVisitsPage() {
             <thead>
               <tr>
                 <th>Building</th>
+                <th>Type</th>
                 <th>Date</th>
-                <th>Observations</th>
-                <th>Risks</th>
+                <th>Items</th>
                 <th>Status</th>
                 <th />
               </tr>
@@ -41,15 +42,21 @@ export default async function SiteVisitsPage() {
             <tbody>
               {visits.map((v: any) => (
                 <tr key={v.id}>
-                  <td className="font-medium">{v.buildings?.name ?? "—"}</td>
+                  <td className="font-medium">
+                    <Link href={`/dashboard/site-visits/${v.id}`} className="text-cyan-400 hover:underline">
+                      {v.buildings?.name ?? "—"}
+                    </Link>
+                  </td>
+                  <td>{v.visit_type ?? "—"}</td>
                   <td>{formatDate(v.visit_date)}</td>
-                  <td className="max-w-xs truncate">{v.observations ?? "—"}</td>
-                  <td className="max-w-xs truncate">{v.risks ?? "—"}</td>
+                  <td>{v.site_visit_items?.length ?? 0}</td>
                   <td>
                     <StatusBadge status={v.status} />
                   </td>
                   <td className="text-right">
-                    <SiteVisitFormButton visit={v} label="Edit" buildings={buildings ?? []} />
+                    <Link href={`/dashboard/site-visits/${v.id}`} className="text-xs text-cyan-400 hover:underline">
+                      Open
+                    </Link>
                   </td>
                 </tr>
               ))}
