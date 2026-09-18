@@ -72,7 +72,8 @@ export function TenantImportButton({
         leaseEnd: r.leaseEnd,
         accountNumber: r.accountNumber,
         registeredEntity: r.registeredEntity,
-      }))
+      })),
+      fileName ?? "tenants-import.xlsx"
     );
 
     setLoading(false);

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
+import type { ImportPreviewRow } from "@/lib/imports";
 
 export type TenantInput = {
   // Identification
@@ -340,14 +342,35 @@ export type ImportRow = {
   registeredEntity: string;
 };
 
-export async function commitTenantImport(rows: ImportRow[]) {
+export async function commitTenantImport(rows: ImportRow[], filename: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Not authorized.", imported: 0 };
 
   const supabase = createClient();
   let imported = 0;
+  let created = 0;
+  let updated = 0;
 
-  for (const row of rows) {
+  const previewRows: ImportPreviewRow<ImportRow>[] = rows.map((row, i) => ({
+    rowNumber: i + 1,
+    action: row.category === "update" ? "update" : "create",
+    matchKey: row.accountNumber || `${row.tradingName} @ ${row.buildingId}`,
+    data: row,
+    recordId: row.tenantId,
+    errors: [],
+    warnings: [],
+  }));
+  const batchResult = await createImportBatch({
+    module: "tenants",
+    filename,
+    templateVersion: "VOREXA-TENANTS-v1",
+    portfolioId: null,
+    rows: previewRows,
+  });
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 1;
     const leasePayload = {
       building_id: row.buildingId,
       shop_number: row.shopNumber || null,
@@ -360,7 +383,14 @@ export async function commitTenantImport(rows: ImportRow[]) {
       updated_at: new Date().toISOString(),
     };
 
+    let recordId: string | null | undefined = row.tenantId;
+    let previous: any = null;
+    let rowError: string | null = null;
+
     if (row.category === "update" && row.tenantId) {
+      const before = await supabase.from("tenants").select("*").eq("id", row.tenantId).single();
+      previous = before.data;
+
       const { error: tenantError } = await supabase
         .from("tenants")
         .update({
@@ -372,21 +402,27 @@ export async function commitTenantImport(rows: ImportRow[]) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", row.tenantId);
-      if (tenantError) continue;
+      rowError = tenantError?.message ?? null;
 
-      const { data: currentLease } = await supabase
-        .from("leases")
-        .select("id")
-        .eq("tenant_id", row.tenantId)
-        .eq("status", "active")
-        .maybeSingle();
+      if (!rowError) {
+        const { data: currentLease } = await supabase
+          .from("leases")
+          .select("id")
+          .eq("tenant_id", row.tenantId)
+          .eq("status", "active")
+          .maybeSingle();
 
-      const { error: leaseError } = currentLease
-        ? await supabase.from("leases").update(leasePayload).eq("id", currentLease.id)
-        : await supabase.from("leases").insert({ ...leasePayload, tenant_id: row.tenantId, created_by: user.id });
-      if (!leaseError) imported += 1;
+        const { error: leaseError } = currentLease
+          ? await supabase.from("leases").update(leasePayload).eq("id", currentLease.id)
+          : await supabase.from("leases").insert({ ...leasePayload, tenant_id: row.tenantId, created_by: user.id });
+        rowError = leaseError?.message ?? null;
+      }
+      if (!rowError) {
+        imported += 1;
+        updated += 1;
+      }
     } else {
-      const { error } = await supabase.rpc("create_tenant_with_lease", {
+      const { data, error } = await supabase.rpc("create_tenant_with_lease", {
         tenant_data: {
           building_id: row.buildingId,
           trading_name: row.tradingName,
@@ -398,11 +434,46 @@ export async function commitTenantImport(rows: ImportRow[]) {
         },
         lease_data: { ...leasePayload, created_by: user.id, updated_by: user.id },
       });
-      if (!error) imported += 1;
+      rowError = error?.message ?? null;
+      recordId = data;
+      if (!rowError) {
+        imported += 1;
+        created += 1;
+      }
     }
+
+    if (batchResult.batchId) {
+      await supabase
+        .from("import_batch_rows")
+        .update({
+          status: rowError ? "rejected" : "applied",
+          record_table: "tenants",
+          record_id: recordId || null,
+          previous_data: previous,
+          applied_data: rowError ? null : { ...leasePayload, trading_name: row.tradingName },
+          errors: rowError ? [{ field: "row", value: row.tradingName, reason: rowError }] : [],
+        })
+        .eq("batch_id", batchResult.batchId)
+        .eq("row_number", rowNumber);
+      if (!rowError && recordId) {
+        await supabase.from("audit_log").insert({
+          table_name: "tenants",
+          record_id: recordId,
+          action: row.category === "update" ? "import_update" : "import_create",
+          field_changes: { previous, applied: { ...leasePayload, trading_name: row.tradingName } },
+          import_source: filename,
+          import_batch_id: batchResult.batchId,
+          performed_by: user.id,
+        });
+      }
+    }
+  }
+
+  if (batchResult.batchId) {
+    await finalizeImportBatch(batchResult.batchId, created, updated);
   }
 
   revalidatePath("/dashboard/tenants");
   revalidatePath("/dashboard");
-  return { error: null, imported };
+  return { error: null, imported, batchId: batchResult.batchId };
 }

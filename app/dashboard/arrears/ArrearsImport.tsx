@@ -17,6 +17,7 @@ export function ArrearsImportButton({ buildings }: { buildings: { id: string; na
   const [tenantsByBuilding, setTenantsByBuilding] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<Record<number, string>>({});
   const [asOfMonth, setAsOfMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<number | null>(null);
@@ -24,6 +25,7 @@ export function ArrearsImportButton({ buildings }: { buildings: { id: string; na
 
   function reset() {
     setRows(null);
+    setFileName(null);
     setError(null);
     setDone(null);
     setSelectedTenant({});
@@ -32,6 +34,7 @@ export function ArrearsImportButton({ buildings }: { buildings: { id: string; na
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFileName(file.name);
     setLoading(true);
     setError(null);
     try {
@@ -78,7 +81,8 @@ export function ArrearsImportButton({ buildings }: { buildings: { id: string; na
           tenantId,
           matchStatus: tenantId ? "matched" : "unmatched",
         };
-      })
+      }),
+      fileName ?? "arrears-import.xlsx"
     );
     setLoading(false);
     if (result.error) {

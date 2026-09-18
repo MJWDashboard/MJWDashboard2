@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
+import type { ImportPreviewRow } from "@/lib/imports";
 
 export async function getArrearsComments(arrearsCurrentId: string) {
   const supabase = createClient();
@@ -190,15 +192,36 @@ export type ArrearsImportRow = {
   matchStatus: "matched" | "possible" | "unmatched";
 };
 
-export async function commitArrearsImport(rows: ArrearsImportRow[]) {
+export async function commitArrearsImport(rows: ArrearsImportRow[], filename: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Not authorized.", imported: 0 };
 
   const supabase = createClient();
   let imported = 0;
+  let created = 0;
+  let updated = 0;
   const asOfMonth = rows[0]?.asOfMonth || new Date().toISOString().slice(0, 10);
 
-  for (const row of rows) {
+  const previewRows: ImportPreviewRow<ArrearsImportRow>[] = rows.map((row, i) => ({
+    rowNumber: i + 1,
+    action: row.existingId ? "update" : "create",
+    matchKey: row.accountNumber || row.debtorName,
+    data: row,
+    recordId: row.existingId,
+    errors: [],
+    warnings: [],
+  }));
+  const batchResult = await createImportBatch({
+    module: "arrears",
+    filename,
+    templateVersion: "VOREXA-ARREARS-v1",
+    portfolioId: null,
+    rows: previewRows,
+  });
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 1;
     const financials = {
       building_id: row.buildingId,
       debtor_name: row.debtorName || null,
@@ -214,12 +237,20 @@ export async function commitArrearsImport(rows: ArrearsImportRow[]) {
     };
 
     let currentId = row.existingId;
+    let previous: any = null;
+    let rowError: string | null = null;
 
     if (currentId) {
       // Financial fields are overwritten on import - notes (arrears_comments)
       // are a separate table keyed off this row's id and are never touched here.
+      const before = await supabase.from("arrears_current").select("*").eq("id", currentId).single();
+      previous = before.data;
       const { error } = await supabase.from("arrears_current").update(financials).eq("id", currentId);
-      if (!error) imported += 1;
+      rowError = error?.message ?? null;
+      if (!rowError) {
+        imported += 1;
+        updated += 1;
+      }
     } else {
       const { data, error } = await supabase
         .from("arrears_current")
@@ -230,13 +261,15 @@ export async function commitArrearsImport(rows: ArrearsImportRow[]) {
         })
         .select("id")
         .single();
-      if (!error) {
+      rowError = error?.message ?? null;
+      if (!rowError && data) {
         imported += 1;
+        created += 1;
         currentId = data.id;
       }
     }
 
-    if (currentId) {
+    if (!rowError && currentId) {
       await supabase.from("arrears_history").insert({
         tenant_id: row.tenantId,
         building_id: row.buildingId,
@@ -250,8 +283,38 @@ export async function commitArrearsImport(rows: ArrearsImportRow[]) {
         import_source: "excel_import",
       });
     }
+
+    if (batchResult.batchId) {
+      await supabase
+        .from("import_batch_rows")
+        .update({
+          status: rowError ? "rejected" : "applied",
+          record_table: "arrears_current",
+          record_id: currentId || null,
+          previous_data: previous,
+          applied_data: rowError ? null : financials,
+          errors: rowError ? [{ field: "row", value: row.debtorName, reason: rowError }] : [],
+        })
+        .eq("batch_id", batchResult.batchId)
+        .eq("row_number", rowNumber);
+      if (!rowError && currentId) {
+        await supabase.from("audit_log").insert({
+          table_name: "arrears_current",
+          record_id: currentId,
+          action: row.existingId ? "import_update" : "import_create",
+          field_changes: { previous, applied: financials },
+          import_source: filename,
+          import_batch_id: batchResult.batchId,
+          performed_by: user.id,
+        });
+      }
+    }
+  }
+
+  if (batchResult.batchId) {
+    await finalizeImportBatch(batchResult.batchId, created, updated);
   }
 
   revalidatePath("/dashboard/arrears");
-  return { error: null, imported };
+  return { error: null, imported, batchId: batchResult.batchId };
 }

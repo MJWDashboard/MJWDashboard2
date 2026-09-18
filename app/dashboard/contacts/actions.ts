@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
+import type { ImportPreviewRow } from "@/lib/imports";
 
 export type ContactInput = {
   name: string;
@@ -93,14 +95,35 @@ export type ContactImportRow = {
   officeNumber: string;
 };
 
-export async function commitContactImport(rows: ContactImportRow[]) {
+export async function commitContactImport(rows: ContactImportRow[], filename: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Not authorized.", imported: 0 };
 
   const supabase = createClient();
   let imported = 0;
+  let created = 0;
+  let updated = 0;
 
-  for (const row of rows) {
+  const previewRows: ImportPreviewRow<ContactImportRow>[] = rows.map((row, i) => ({
+    rowNumber: i + 1,
+    action: row.category === "update" ? "update" : "create",
+    matchKey: `${row.name} @ ${row.buildingId ?? "org"}`,
+    data: row,
+    recordId: row.contactId,
+    errors: [],
+    warnings: [],
+  }));
+  const batchResult = await createImportBatch({
+    module: "contacts",
+    filename,
+    templateVersion: "VOREXA-CONTACTS-v1",
+    portfolioId: null,
+    rows: previewRows,
+  });
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 1;
     const payload = {
       name: row.name,
       type: row.type as any,
@@ -113,19 +136,64 @@ export async function commitContactImport(rows: ContactImportRow[]) {
       updated_at: new Date().toISOString(),
     };
 
+    let recordId: string | null | undefined = row.contactId;
+    let previous: any = null;
+    let rowError: string | null = null;
+
     if (row.category === "update" && row.contactId) {
+      const before = await supabase.from("contacts").select("*").eq("id", row.contactId).single();
+      previous = before.data;
       const { error } = await supabase.from("contacts").update(payload).eq("id", row.contactId);
-      if (!error) imported += 1;
+      rowError = error?.message ?? null;
+      if (!rowError) {
+        imported += 1;
+        updated += 1;
+      }
     } else {
-      const { error } = await supabase.from("contacts").insert({
-        ...payload,
-        organization_id: user.organizationId,
-        created_by: user.id,
-      });
-      if (!error) imported += 1;
+      const { data, error } = await supabase
+        .from("contacts")
+        .insert({ ...payload, organization_id: user.organizationId, created_by: user.id })
+        .select("id")
+        .single();
+      rowError = error?.message ?? null;
+      recordId = data?.id;
+      if (!rowError) {
+        imported += 1;
+        created += 1;
+      }
+    }
+
+    if (batchResult.batchId) {
+      await supabase
+        .from("import_batch_rows")
+        .update({
+          status: rowError ? "rejected" : "applied",
+          record_table: "contacts",
+          record_id: recordId || null,
+          previous_data: previous,
+          applied_data: rowError ? null : payload,
+          errors: rowError ? [{ field: "row", value: row.name, reason: rowError }] : [],
+        })
+        .eq("batch_id", batchResult.batchId)
+        .eq("row_number", rowNumber);
+      if (!rowError && recordId) {
+        await supabase.from("audit_log").insert({
+          table_name: "contacts",
+          record_id: recordId,
+          action: row.category === "update" ? "import_update" : "import_create",
+          field_changes: { previous, applied: payload },
+          import_source: filename,
+          import_batch_id: batchResult.batchId,
+          performed_by: user.id,
+        });
+      }
     }
   }
 
+  if (batchResult.batchId) {
+    await finalizeImportBatch(batchResult.batchId, created, updated);
+  }
+
   revalidatePath("/dashboard/contacts");
-  return { error: null, imported };
+  return { error: null, imported, batchId: batchResult.batchId };
 }

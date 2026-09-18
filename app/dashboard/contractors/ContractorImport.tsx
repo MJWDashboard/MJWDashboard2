@@ -15,6 +15,7 @@ import { getExistingContractorsForImport, commitContractorImport } from "./actio
 export function ContractorImportButton({ buildings }: { buildings: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<CategorizedContractorRow[] | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<number | null>(null);
@@ -22,6 +23,7 @@ export function ContractorImportButton({ buildings }: { buildings: { id: string;
 
   function reset() {
     setRows(null);
+    setFileName(null);
     setError(null);
     setDone(null);
   }
@@ -29,6 +31,7 @@ export function ContractorImportButton({ buildings }: { buildings: { id: string;
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFileName(file.name);
     setLoading(true);
     setError(null);
     try {
@@ -67,7 +70,8 @@ export function ContractorImportButton({ buildings }: { buildings: { id: string;
         standardRate: r.standardRate,
         notes: r.notes,
         buildingIds: r.buildingIds,
-      }))
+      })),
+      fileName ?? "contractors-import.xlsx"
     );
     setLoading(false);
     if (result.error) {

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
+import type { ImportPreviewRow } from "@/lib/imports";
 
 export type ContractorInput = {
   company_name: string;
@@ -144,15 +146,41 @@ export type ContractorImportRow = {
   buildingIds: string[];
 };
 
-export async function commitContractorImport(rows: ContractorImportRow[]) {
+export async function commitContractorImport(rows: ContractorImportRow[], filename: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Not authorized.", imported: 0 };
 
   const supabase = createClient();
   let imported = 0;
+  let created = 0;
+  let updated = 0;
   const now = new Date().toISOString();
 
-  for (const row of rows) {
+  const previewRows: ImportPreviewRow<ContractorImportRow>[] = rows.map((row, i) => ({
+    rowNumber: i + 1,
+    action: row.category === "update" ? "update" : "create",
+    matchKey: row.registrationNumber || row.companyName || row.contactName,
+    data: row,
+    recordId: row.contractorId,
+    errors: [],
+    warnings: [],
+  }));
+  const batchResult = await createImportBatch({
+    module: "contractors",
+    filename,
+    templateVersion: "VOREXA-CONTRACTORS-v1",
+    portfolioId: null,
+    rows: previewRows,
+  });
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNumber = i + 1;
+    let recordId: string | null | undefined = row.contractorId;
+    let previous: any = null;
+    let rowError: string | null = null;
+    let applied: any = null;
+
     if (row.category === "update" && row.contractorId) {
       const { data: existing } = await supabase
         .from("contractors")
@@ -161,6 +189,7 @@ export async function commitContractorImport(rows: ContractorImportRow[]) {
         )
         .eq("id", row.contractorId)
         .maybeSingle();
+      previous = existing;
 
       // Coalesce merge: an imported value only ever fills in, never blanks
       // out data that is already recorded against this contractor.
@@ -181,42 +210,76 @@ export async function commitContractorImport(rows: ContractorImportRow[]) {
         updated_by: user.id,
         updated_at: now,
       };
+      applied = merged;
 
       const { error } = await supabase.from("contractors").update(merged).eq("id", row.contractorId);
-      if (!error) {
+      rowError = error?.message ?? null;
+      if (!rowError) {
         imported += 1;
+        updated += 1;
         await addBuildings(supabase, row.contractorId, row.buildingIds);
       }
     } else {
-      const { data, error } = await supabase
-        .from("contractors")
-        .insert({
-          company_name: row.companyName || null,
-          contact_name: row.contactName || null,
-          trade: row.trade || null,
-          email: row.email || null,
-          phone: row.phone || null,
-          alt_phone: row.altPhone || null,
-          vat_number: row.vatNumber || null,
-          registration_number: row.registrationNumber || null,
-          rating: toNumeric(row.rating),
-          standard_rate: toNumeric(row.standardRate),
-          notes: row.notes || null,
-          import_source: "excel",
-          last_imported_at: now,
-          organization_id: user.organizationId,
-          created_by: user.id,
-          updated_by: user.id,
-        })
-        .select("id")
-        .single();
-      if (!error && data) {
+      const payload = {
+        company_name: row.companyName || null,
+        contact_name: row.contactName || null,
+        trade: row.trade || null,
+        email: row.email || null,
+        phone: row.phone || null,
+        alt_phone: row.altPhone || null,
+        vat_number: row.vatNumber || null,
+        registration_number: row.registrationNumber || null,
+        rating: toNumeric(row.rating),
+        standard_rate: toNumeric(row.standardRate),
+        notes: row.notes || null,
+        import_source: "excel",
+        last_imported_at: now,
+        organization_id: user.organizationId,
+        created_by: user.id,
+        updated_by: user.id,
+      };
+      applied = payload;
+      const { data, error } = await supabase.from("contractors").insert(payload).select("id").single();
+      rowError = error?.message ?? null;
+      recordId = data?.id;
+      if (!rowError && data) {
         imported += 1;
+        created += 1;
         await addBuildings(supabase, data.id, row.buildingIds);
+      }
+    }
+
+    if (batchResult.batchId) {
+      await supabase
+        .from("import_batch_rows")
+        .update({
+          status: rowError ? "rejected" : "applied",
+          record_table: "contractors",
+          record_id: recordId || null,
+          previous_data: previous,
+          applied_data: rowError ? null : applied,
+          errors: rowError ? [{ field: "row", value: row.companyName || row.contactName, reason: rowError }] : [],
+        })
+        .eq("batch_id", batchResult.batchId)
+        .eq("row_number", rowNumber);
+      if (!rowError && recordId) {
+        await supabase.from("audit_log").insert({
+          table_name: "contractors",
+          record_id: recordId,
+          action: row.category === "update" ? "import_update" : "import_create",
+          field_changes: { previous, applied },
+          import_source: filename,
+          import_batch_id: batchResult.batchId,
+          performed_by: user.id,
+        });
       }
     }
   }
 
+  if (batchResult.batchId) {
+    await finalizeImportBatch(batchResult.batchId, created, updated);
+  }
+
   revalidatePath("/dashboard/contractors");
-  return { error: null, imported };
+  return { error: null, imported, batchId: batchResult.batchId };
 }

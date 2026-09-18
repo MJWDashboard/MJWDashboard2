@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
+import { REVERSIBLE_IMPORT_MODULES } from "@/lib/import-modules";
 
-const SUPPORTED_TABLES = new Set(["buildings", "turnovers"]);
+const SUPPORTED_TABLES = new Set(["buildings", "turnovers", "contacts", "contractors"]);
 
 export async function reverseImportBatch(batchId: string) {
   const user = await getCurrentUser();
@@ -15,6 +16,9 @@ export async function reverseImportBatch(batchId: string) {
   const { data: batch, error: batchError } = await supabase.from("import_batches").select("id, status, module").eq("id", batchId).single();
   if (batchError || !batch) return { error: batchError?.message ?? "Import batch not found." };
   if (batch.status !== "committed") return { error: "Only a committed batch can be reversed." };
+  if (!REVERSIBLE_IMPORT_MODULES.has(batch.module)) {
+    return { error: `Reversal isn't supported for ${batch.module} imports yet.` };
+  }
   const { data: rows, error: rowError } = await supabase.from("import_batch_rows").select("*").eq("batch_id", batchId).eq("status", "applied").order("row_number", { ascending: false });
   if (rowError) return { error: rowError.message };
 
