@@ -327,7 +327,7 @@ export type Database = {
           name: string
           notes: string | null
           organization_id: string
-          portfolio: string | null
+          portfolio_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -342,7 +342,7 @@ export type Database = {
           name: string
           notes?: string | null
           organization_id: string
-          portfolio?: string | null
+          portfolio_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -357,7 +357,7 @@ export type Database = {
           name?: string
           notes?: string | null
           organization_id?: string
-          portfolio?: string | null
+          portfolio_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -367,6 +367,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buildings_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
             referencedColumns: ["id"]
           },
         ]
@@ -1196,6 +1203,8 @@ export type Database = {
           id: string
           invited_by: string | null
           organization_id: string
+          portfolio_id: string | null
+          portfolio_role: string | null
           role: string
           token: string
         }
@@ -1207,6 +1216,8 @@ export type Database = {
           id?: string
           invited_by?: string | null
           organization_id: string
+          portfolio_id?: string | null
+          portfolio_role?: string | null
           role?: string
           token?: string
         }
@@ -1218,6 +1229,8 @@ export type Database = {
           id?: string
           invited_by?: string | null
           organization_id?: string
+          portfolio_id?: string | null
+          portfolio_role?: string | null
           role?: string
           token?: string
         }
@@ -1227,6 +1240,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
             referencedColumns: ["id"]
           },
         ]
@@ -1283,6 +1303,73 @@ export type Database = {
           slug?: string | null
         }
         Relationships: []
+      }
+      portfolio_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          portfolio_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          portfolio_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          portfolio_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_users_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_visits: {
         Row: {
@@ -1487,6 +1574,14 @@ export type Database = {
     }
     Functions: {
       bootstrap_first_admin: { Args: never; Returns: undefined }
+      org_member_emails: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      user_accessible_portfolio_ids: { Args: never; Returns: string[] }
       user_org_ids: { Args: never; Returns: string[] }
     }
     Enums: {

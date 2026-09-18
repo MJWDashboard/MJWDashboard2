@@ -7,7 +7,7 @@ export function PortfolioSelector({
   portfolios,
   selected,
 }: {
-  portfolios: string[];
+  portfolios: { id: string; name: string }[];
   selected: string;
 }) {
   const router = useRouter();
@@ -25,8 +25,8 @@ export function PortfolioSelector({
     >
       <option value="all">All Portfolios</option>
       {portfolios.map((p) => (
-        <option key={p} value={p}>
-          {p}
+        <option key={p.id} value={p.id}>
+          {p.name}
         </option>
       ))}
     </select>

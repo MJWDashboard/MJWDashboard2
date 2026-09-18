@@ -29,7 +29,7 @@ export async function createContractor(input: ContractorInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/contractors");
+  revalidatePath("/dashboard/contractors");
   return { error: null };
 }
 
@@ -52,6 +52,6 @@ export async function updateContractor(id: string, input: ContractorInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/contractors");
+  revalidatePath("/dashboard/contractors");
   return { error: null };
 }

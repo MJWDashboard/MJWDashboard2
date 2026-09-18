@@ -6,20 +6,24 @@ import { formatCurrency, formatDate } from "@/lib/format";
 
 async function getBuildingIdsForPortfolio(
   supabase: ReturnType<typeof createClient>,
-  portfolio: string
+  portfolioId: string
 ) {
-  if (portfolio === "all") return null;
+  if (portfolioId === "all") return null;
   const { data } = await supabase
     .from("buildings")
     .select("id")
-    .eq("portfolio", portfolio);
+    .eq("portfolio_id", portfolioId);
   return (data ?? []).map((b) => b.id);
 }
 
 export default async function DashboardPage() {
   const supabase = createClient();
-  const portfolio = getSelectedPortfolio();
-  const buildingIds = await getBuildingIdsForPortfolio(supabase, portfolio);
+  const portfolioId = getSelectedPortfolio();
+  const buildingIds = await getBuildingIdsForPortfolio(supabase, portfolioId);
+  const { data: selectedPortfolioRow } =
+    portfolioId === "all"
+      ? { data: null }
+      : await supabase.from("portfolios").select("name").eq("id", portfolioId).maybeSingle();
   const scoped = (query: any) =>
     buildingIds ? query.in("building_id", buildingIds) : query;
 
@@ -80,7 +84,9 @@ export default async function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description={
-          portfolio === "all" ? "All portfolios" : `Portfolio: ${portfolio}`
+          portfolioId === "all"
+            ? "All portfolios"
+            : `Portfolio: ${selectedPortfolioRow?.name ?? "Unknown"}`
         }
       />
 

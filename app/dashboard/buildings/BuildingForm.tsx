@@ -11,27 +11,29 @@ type Building = {
   address: string | null;
   gla: number | null;
   budget: number | null;
-  portfolio: string | null;
+  portfolio_id: string | null;
   notes: string | null;
 };
 
-const EMPTY: BuildingInput = {
-  name: "",
-  address: "",
-  gla: "",
-  budget: "",
-  portfolio: "",
-  notes: "",
-};
+function emptyInput(defaultPortfolioId?: string): BuildingInput {
+  return {
+    name: "",
+    address: "",
+    gla: "",
+    budget: "",
+    portfolio_id: defaultPortfolioId ?? "",
+    notes: "",
+  };
+}
 
-function toInput(building?: Building | null): BuildingInput {
-  if (!building) return EMPTY;
+function toInput(building?: Building | null, defaultPortfolioId?: string): BuildingInput {
+  if (!building) return emptyInput(defaultPortfolioId);
   return {
     name: building.name ?? "",
     address: building.address ?? "",
     gla: building.gla?.toString() ?? "",
     budget: building.budget?.toString() ?? "",
-    portfolio: building.portfolio ?? "",
+    portfolio_id: building.portfolio_id ?? "",
     notes: building.notes ?? "",
   };
 }
@@ -39,18 +41,22 @@ function toInput(building?: Building | null): BuildingInput {
 export function BuildingFormButton({
   building,
   label,
+  portfolios,
+  defaultPortfolioId,
 }: {
   building?: Building;
   label: string;
+  portfolios: { id: string; name: string }[];
+  defaultPortfolioId?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<BuildingInput>(toInput(building));
+  const [values, setValues] = useState<BuildingInput>(toInput(building, defaultPortfolioId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   function openModal() {
-    setValues(toInput(building));
+    setValues(toInput(building, defaultPortfolioId));
     setError(null);
     setOpen(true);
   }
@@ -78,6 +84,8 @@ export function BuildingFormButton({
       <button
         onClick={openModal}
         className={building ? "btn-secondary" : "btn-primary"}
+        disabled={portfolios.length === 0}
+        title={portfolios.length === 0 ? "Ask your administrator to create a portfolio first" : undefined}
       >
         {label}
       </button>
@@ -126,11 +134,21 @@ export function BuildingFormButton({
             </div>
             <div>
               <label className="label">Portfolio</label>
-              <input
+              <select
+                required
                 className="input"
-                value={values.portfolio}
-                onChange={(e) => setValues({ ...values, portfolio: e.target.value })}
-              />
+                value={values.portfolio_id}
+                onChange={(e) => setValues({ ...values, portfolio_id: e.target.value })}
+              >
+                <option value="" disabled>
+                  Select a portfolio
+                </option>
+                {portfolios.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">Notes</label>

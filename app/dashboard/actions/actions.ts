@@ -35,8 +35,8 @@ export async function createActionItem(input: ActionItemInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/actions");
-  revalidatePath("/");
+  revalidatePath("/dashboard/actions");
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -62,8 +62,8 @@ export async function updateActionItem(id: string, input: ActionItemInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/actions");
-  revalidatePath("/");
+  revalidatePath("/dashboard/actions");
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -78,7 +78,7 @@ export async function setActionItemStatus(id: string, status: string) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/actions");
-  revalidatePath("/");
+  revalidatePath("/dashboard/actions");
+  revalidatePath("/dashboard");
   return { error: null };
 }

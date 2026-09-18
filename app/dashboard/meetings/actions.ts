@@ -37,7 +37,7 @@ export async function createMeeting(input: MeetingInput) {
     .single();
 
   if (error) return { error: error.message, id: null };
-  revalidatePath("/meetings");
+  revalidatePath("/dashboard/meetings");
   return { error: null, id: data.id as string };
 }
 
@@ -63,8 +63,8 @@ export async function updateMeeting(id: string, input: MeetingInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/meetings");
-  revalidatePath(`/meetings/${id}`);
+  revalidatePath("/dashboard/meetings");
+  revalidatePath(`/dashboard/meetings/${id}`);
   return { error: null };
 }
 
@@ -81,7 +81,7 @@ export async function addMeetingNote(meetingId: string, tenantId: string | null,
   });
 
   if (error) return { error: error.message };
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidatePath(`/dashboard/meetings/${meetingId}`);
   return { error: null };
 }
 
@@ -121,7 +121,7 @@ export async function convertNoteToAction(
 
   if (noteError) return { error: noteError.message };
 
-  revalidatePath(`/meetings/${meetingId}`);
-  revalidatePath("/actions");
+  revalidatePath(`/dashboard/meetings/${meetingId}`);
+  revalidatePath("/dashboard/actions");
   return { error: null };
 }

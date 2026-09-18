@@ -39,7 +39,7 @@ export async function createLeasingDeal(input: LeasingDealInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/leasing");
+  revalidatePath("/dashboard/leasing");
   return { error: null };
 }
 
@@ -64,6 +64,6 @@ export async function updateLeasingDeal(id: string, input: LeasingDealInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/leasing");
+  revalidatePath("/dashboard/leasing");
   return { error: null };
 }

@@ -38,7 +38,7 @@ export async function uploadDocument(formData: FormData) {
 
   if (insertError) return { error: insertError.message };
 
-  revalidatePath("/documents");
+  revalidatePath("/dashboard/documents");
   return { error: null };
 }
 

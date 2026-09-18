@@ -33,7 +33,7 @@ export async function createImportantDate(input: ImportantDateInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/calendar");
+  revalidatePath("/dashboard/calendar");
   return { error: null };
 }
 
@@ -58,6 +58,6 @@ export async function updateImportantDate(id: string, input: ImportantDateInput)
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/calendar");
+  revalidatePath("/dashboard/calendar");
   return { error: null };
 }

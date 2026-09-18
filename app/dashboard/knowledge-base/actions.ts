@@ -28,7 +28,7 @@ export async function createArticle(input: ArticleInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/knowledge-base");
+  revalidatePath("/dashboard/knowledge-base");
   return { error: null };
 }
 
@@ -50,7 +50,7 @@ export async function updateArticle(id: string, input: ArticleInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/knowledge-base");
+  revalidatePath("/dashboard/knowledge-base");
   return { error: null };
 }
 
@@ -62,7 +62,7 @@ export async function generateHandoverSummary(buildingId: string) {
 
   const [{ data: building }, { data: tenants }, { data: contacts }, { data: contractors }, { data: openActions }, { data: arrears }] =
     await Promise.all([
-      supabase.from("buildings").select("*").eq("id", buildingId).maybeSingle(),
+      supabase.from("buildings").select("*, portfolios(name)").eq("id", buildingId).maybeSingle(),
       supabase
         .from("tenants")
         .select("trading_name, shop_number, monthly_rental, lease_end, status")
@@ -103,7 +103,7 @@ export async function generateHandoverSummary(buildingId: string) {
   lines.push(`- Address: ${building.address ?? "—"}`);
   lines.push(`- GLA: ${building.gla ?? "—"} m²`);
   lines.push(`- Budget: ${formatCurrency(building.budget)}`);
-  lines.push(`- Portfolio: ${building.portfolio ?? "—"}`);
+  lines.push(`- Portfolio: ${(building as any).portfolios?.name ?? "—"}`);
   lines.push("");
   lines.push(`## Tenants (${tenants?.length ?? 0})`);
   for (const t of tenants ?? []) {
@@ -162,6 +162,6 @@ export async function generateHandoverSummary(buildingId: string) {
     if (error) return { error: error.message };
   }
 
-  revalidatePath("/knowledge-base");
+  revalidatePath("/dashboard/knowledge-base");
   return { error: null };
 }

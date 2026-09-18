@@ -47,8 +47,8 @@ export async function createTenant(input: TenantInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/tenants");
-  revalidatePath("/");
+  revalidatePath("/dashboard/tenants");
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -75,9 +75,9 @@ export async function updateTenant(id: string, input: TenantInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/tenants");
-  revalidatePath(`/tenants/${id}`);
-  revalidatePath("/");
+  revalidatePath("/dashboard/tenants");
+  revalidatePath(`/dashboard/tenants/${id}`);
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -136,7 +136,7 @@ export async function commitTenantImport(rows: ImportRow[]) {
     }
   }
 
-  revalidatePath("/tenants");
-  revalidatePath("/");
+  revalidatePath("/dashboard/tenants");
+  revalidatePath("/dashboard");
   return { error: null, imported };
 }

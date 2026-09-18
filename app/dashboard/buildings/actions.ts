@@ -9,7 +9,7 @@ export type BuildingInput = {
   address: string;
   gla: string;
   budget: string;
-  portfolio: string;
+  portfolio_id: string;
   notes: string;
 };
 
@@ -30,7 +30,7 @@ export async function createBuilding(input: BuildingInput) {
     address: input.address || null,
     gla: toNumeric(input.gla),
     budget: toNumeric(input.budget),
-    portfolio: input.portfolio || null,
+    portfolio_id: input.portfolio_id,
     notes: input.notes || null,
     organization_id: user.organizationId,
     created_by: user.id,
@@ -38,8 +38,8 @@ export async function createBuilding(input: BuildingInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/buildings");
-  revalidatePath("/");
+  revalidatePath("/dashboard/buildings");
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -55,7 +55,7 @@ export async function updateBuilding(id: string, input: BuildingInput) {
       address: input.address || null,
       gla: toNumeric(input.gla),
       budget: toNumeric(input.budget),
-      portfolio: input.portfolio || null,
+      portfolio_id: input.portfolio_id,
       notes: input.notes || null,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
@@ -63,9 +63,9 @@ export async function updateBuilding(id: string, input: BuildingInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/buildings");
-  revalidatePath(`/buildings/${id}`);
-  revalidatePath("/");
+  revalidatePath("/dashboard/buildings");
+  revalidatePath(`/dashboard/buildings/${id}`);
+  revalidatePath("/dashboard");
   return { error: null };
 }
 
@@ -80,6 +80,6 @@ export async function archiveBuilding(id: string) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/buildings");
+  revalidatePath("/dashboard/buildings");
   return { error: null };
 }

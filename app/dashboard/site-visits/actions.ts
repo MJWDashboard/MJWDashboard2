@@ -28,7 +28,7 @@ export async function createSiteVisit(input: SiteVisitInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/site-visits");
+  revalidatePath("/dashboard/site-visits");
   return { error: null };
 }
 
@@ -51,6 +51,6 @@ export async function updateSiteVisit(id: string, input: SiteVisitInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/site-visits");
+  revalidatePath("/dashboard/site-visits");
   return { error: null };
 }

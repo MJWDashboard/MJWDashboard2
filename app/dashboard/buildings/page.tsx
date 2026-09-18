@@ -9,15 +9,17 @@ import { ExportButton } from "@/components/ExportButton";
 
 export default async function BuildingsPage() {
   const supabase = createClient();
-  const portfolio = getSelectedPortfolio();
+  const portfolioId = getSelectedPortfolio();
+
+  const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
 
   let query = supabase
     .from("buildings")
-    .select("id, name, address, gla, budget, portfolio, notes")
+    .select("id, name, address, gla, budget, portfolio_id, notes, portfolios(name)")
     .is("archived_at", null)
     .order("name");
 
-  if (portfolio !== "all") query = query.eq("portfolio", portfolio);
+  if (portfolioId !== "all") query = query.eq("portfolio_id", portfolioId);
 
   const { data: buildings } = await query;
 
@@ -31,15 +33,15 @@ export default async function BuildingsPage() {
             <ExportButton
               filename="buildings"
               sheetName="Buildings"
-              rows={(buildings ?? []).map((b) => ({
+              rows={(buildings ?? []).map((b: any) => ({
                 Name: b.name,
                 Address: b.address,
                 "GLA (m²)": b.gla,
                 Budget: b.budget,
-                Portfolio: b.portfolio,
+                Portfolio: b.portfolios?.name,
               }))}
             />
-            <BuildingFormButton label="+ Add Building" />
+            <BuildingFormButton label="+ Add Building" portfolios={portfolios ?? []} />
           </div>
         }
       />
@@ -58,7 +60,7 @@ export default async function BuildingsPage() {
               </tr>
             </thead>
             <tbody>
-              {buildings.map((b) => (
+              {buildings.map((b: any) => (
                 <tr key={b.id}>
                   <td>
                     <Link href={`/dashboard/buildings/${b.id}`} className="font-medium text-cyan-400 hover:underline">
@@ -68,9 +70,9 @@ export default async function BuildingsPage() {
                   <td>{b.address ?? "—"}</td>
                   <td>{formatNumber(b.gla)}</td>
                   <td>{formatCurrency(b.budget)}</td>
-                  <td>{b.portfolio ?? "—"}</td>
+                  <td>{b.portfolios?.name ?? "—"}</td>
                   <td className="text-right">
-                    <BuildingFormButton building={b} label="Edit" />
+                    <BuildingFormButton building={b} label="Edit" portfolios={portfolios ?? []} />
                   </td>
                 </tr>
               ))}
@@ -80,7 +82,11 @@ export default async function BuildingsPage() {
       ) : (
         <EmptyState
           title="No buildings yet"
-          description="Add your first building to get started."
+          description={
+            portfolios && portfolios.length > 0
+              ? "Add your first building to get started."
+              : "Ask your administrator to create a portfolio first."
+          }
         />
       )}
     </div>

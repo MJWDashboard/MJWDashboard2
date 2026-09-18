@@ -12,18 +12,18 @@ import { TenantImportButton } from "./TenantImport";
 
 export default async function TenantsPage() {
   const supabase = createClient();
-  const portfolio = getSelectedPortfolio();
+  const portfolioId = getSelectedPortfolio();
 
   const { data: buildings } = await supabase
     .from("buildings")
-    .select("id, name, portfolio")
+    .select("id, name, portfolio_id")
     .is("archived_at", null)
     .order("name");
 
   const scopedBuildingIds =
-    portfolio === "all"
+    portfolioId === "all"
       ? null
-      : (buildings ?? []).filter((b) => b.portfolio === portfolio).map((b) => b.id);
+      : (buildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
   let query = supabase
     .from("tenants")

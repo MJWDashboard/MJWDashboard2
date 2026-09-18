@@ -17,12 +17,12 @@ export default async function DashboardLayout({
       <div className="flex min-h-screen items-center justify-center bg-charcoal-950 px-4">
         <div className="card max-w-md text-center">
           <h1 className="mb-2 text-lg font-semibold text-charcoal-100">
-            Waiting for an invitation
+            Waiting for access
           </h1>
           <p className="text-sm text-charcoal-300">
-            Your account was created, but you haven&apos;t been added to a
-            portfolio yet. Ask an admin to invite your email address, then
-            sign in again.
+            Your account was created, but you haven&apos;t been granted access
+            yet. Ask your Vorexa administrator to invite your email address,
+            then sign in again.
           </p>
           <div className="mt-4">
             <SignOutButton />
@@ -33,14 +33,10 @@ export default async function DashboardLayout({
   }
 
   const supabase = createClient();
-  const { data: buildings } = await supabase
-    .from("buildings")
-    .select("portfolio")
-    .not("portfolio", "is", null);
-
-  const portfolios = Array.from(
-    new Set((buildings ?? []).map((b) => b.portfolio).filter(Boolean) as string[])
-  ).sort();
+  const { data: portfolios } = await supabase
+    .from("portfolios")
+    .select("id, name")
+    .order("name");
 
   const selectedPortfolio = getSelectedPortfolio();
 
@@ -49,7 +45,7 @@ export default async function DashboardLayout({
       <Sidebar isMasterAdmin={user.role === "admin"} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 flex-none items-center justify-between border-b border-charcoal-700 bg-charcoal-900/60 px-6">
-          <PortfolioSelector portfolios={portfolios} selected={selectedPortfolio} />
+          <PortfolioSelector portfolios={portfolios ?? []} selected={selectedPortfolio} />
           <div className="flex items-center gap-4">
             <div className="text-right text-sm">
               <div className="text-charcoal-100">{user.organizationName}</div>

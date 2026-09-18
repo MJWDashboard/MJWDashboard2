@@ -44,7 +44,7 @@ export async function addArrearsComment(input: ArrearsCommentInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/arrears");
+  revalidatePath("/dashboard/arrears");
   return { error: null };
 }
 
@@ -59,6 +59,6 @@ export async function updateArrearsStatus(tenantId: string, status: string) {
     .eq("tenant_id", tenantId);
 
   if (error) return { error: error.message };
-  revalidatePath("/arrears");
+  revalidatePath("/dashboard/arrears");
   return { error: null };
 }

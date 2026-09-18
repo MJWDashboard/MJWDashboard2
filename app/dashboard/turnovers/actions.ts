@@ -40,7 +40,7 @@ export async function createTurnover(input: TurnoverInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/turnovers");
+  revalidatePath("/dashboard/turnovers");
   return { error: null };
 }
 
@@ -65,6 +65,6 @@ export async function updateTurnover(id: string, input: TurnoverInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/turnovers");
+  revalidatePath("/dashboard/turnovers");
   return { error: null };
 }

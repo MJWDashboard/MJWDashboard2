@@ -8,15 +8,17 @@ import { TurnoverFormButton } from "./TurnoverForm";
 
 export default async function TurnoversPage() {
   const supabase = createClient();
-  const portfolio = getSelectedPortfolio();
+  const portfolioId = getSelectedPortfolio();
 
   const { data: buildings } = await supabase
     .from("buildings")
-    .select("id, name, portfolio")
+    .select("id, name, portfolio_id")
     .is("archived_at", null);
 
   const scopedIds =
-    portfolio === "all" ? null : (buildings ?? []).filter((b) => b.portfolio === portfolio).map((b) => b.id);
+    portfolioId === "all"
+      ? null
+      : (buildings ?? []).filter((b) => b.portfolio_id === portfolioId).map((b) => b.id);
 
   let query = supabase
     .from("turnovers")

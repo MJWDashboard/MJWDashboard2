@@ -33,7 +33,7 @@ export async function createContact(input: ContactInput) {
   });
 
   if (error) return { error: error.message };
-  revalidatePath("/contacts");
+  revalidatePath("/dashboard/contacts");
   return { error: null };
 }
 
@@ -58,6 +58,6 @@ export async function updateContact(id: string, input: ContactInput) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/contacts");
+  revalidatePath("/dashboard/contacts");
   return { error: null };
 }

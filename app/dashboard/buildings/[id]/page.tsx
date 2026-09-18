@@ -21,6 +21,8 @@ export default async function BuildingDetailPage({
 
   if (!building) notFound();
 
+  const { data: portfolios } = await supabase.from("portfolios").select("id, name").order("name");
+
   const [tenantsRes, actionsRes, arrearsRes, siteVisitsRes] = await Promise.all([
     supabase
       .from("tenants")
@@ -58,7 +60,9 @@ export default async function BuildingDetailPage({
       <PageHeader
         title={building.name}
         description={building.address ?? undefined}
-        action={<BuildingFormButton building={building} label="Edit Building" />}
+        action={
+          <BuildingFormButton building={building} label="Edit Building" portfolios={portfolios ?? []} />
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
