@@ -27,7 +27,7 @@ export async function globalSearch(rawQuery: string): Promise<SearchResult[]> {
 
   const scope = (q: any) => (buildingIds ? q.in("building_id", buildingIds) : q);
 
-  const [tenants, buildings, contacts, meetings, arrears, actions, documents, siteVisits] =
+  const [tenants, buildings, contacts, meetings, arrears, actions, documents, siteVisits, contractors] =
     await Promise.all([
       scope(
         supabase
@@ -82,6 +82,12 @@ export async function globalSearch(rawQuery: string): Promise<SearchResult[]> {
           .select("id, visit_type, visit_date, buildings(name)")
           .ilike("visit_type", term)
       ).limit(6),
+      supabase
+        .from("contractors")
+        .select("id, company_name, contact_name, trade")
+        .is("archived_at", null)
+        .or(`company_name.ilike.${term},contact_name.ilike.${term}`)
+        .limit(6),
     ]);
 
   const results: SearchResult[] = [];
@@ -156,6 +162,15 @@ export async function globalSearch(rawQuery: string): Promise<SearchResult[]> {
       label: v.visit_type ?? "Site Visit",
       sublabel: v.buildings?.name ?? null,
       href: `/dashboard/site-visits/${v.id}`,
+    });
+  }
+  for (const c of contractors.data ?? []) {
+    results.push({
+      type: "Contractor",
+      id: c.id,
+      label: c.company_name ?? c.contact_name ?? "Unnamed contractor",
+      sublabel: c.trade ?? null,
+      href: `/dashboard/contractors`,
     });
   }
 
