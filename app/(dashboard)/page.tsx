@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   ]);
 
   const totalArrears = (arrearsRes.data ?? []).reduce(
-    (sum, row) => sum + Number(row.current_balance ?? 0),
+    (sum: number, row: any) => sum + Number(row.current_balance ?? 0),
     0
   );
 

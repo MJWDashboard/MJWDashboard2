@@ -92,7 +92,7 @@ export async function generateHandoverSummary(buildingId: string) {
 
   if (!building) return { error: "Building not found." };
 
-  const totalArrears = (arrears ?? []).reduce((sum, r) => sum + Number(r.current_balance ?? 0), 0);
+  const totalArrears = (arrears ?? []).reduce((sum: number, r: any) => sum + Number(r.current_balance ?? 0), 0);
 
   const lines: string[] = [];
   lines.push(`# Handover Summary — ${building.name}`);

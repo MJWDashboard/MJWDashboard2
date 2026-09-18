@@ -30,7 +30,7 @@ export default async function ArrearsPage() {
   if (scopedIds) query = query.in("building_id", scopedIds);
 
   const { data: arrears } = await query;
-  const total = (arrears ?? []).reduce((sum, r) => sum + Number(r.current_balance ?? 0), 0);
+  const total = (arrears ?? []).reduce((sum: number, r: any) => sum + Number(r.current_balance ?? 0), 0);
 
   return (
     <div>

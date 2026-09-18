@@ -23,7 +23,7 @@ export default async function ReportsPage() {
     ]);
 
   const totalArrears = (arrearsRes.data ?? []).reduce(
-    (sum, r) => sum + Number(r.current_balance ?? 0),
+    (sum: number, r: any) => sum + Number(r.current_balance ?? 0),
     0
   );
 

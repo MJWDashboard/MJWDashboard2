@@ -49,7 +49,7 @@ export default async function BuildingDetailPage({
   ]);
 
   const totalArrears = (arrearsRes.data ?? []).reduce(
-    (sum, row) => sum + Number(row.current_balance ?? 0),
+    (sum: number, row: any) => sum + Number(row.current_balance ?? 0),
     0
   );
 
@@ -87,7 +87,7 @@ export default async function BuildingDetailPage({
           <h2 className="mb-4 text-sm font-semibold">Tenants</h2>
           {tenantsRes.data && tenantsRes.data.length > 0 ? (
             <ul className="space-y-2">
-              {tenantsRes.data.map((t) => (
+              {tenantsRes.data.map((t: any) => (
                 <li key={t.id} className="flex items-center justify-between text-sm">
                   <Link href={`/tenants/${t.id}`} className="text-cyan-400 hover:underline">
                     {t.trading_name} {t.shop_number ? `· ${t.shop_number}` : ""}
@@ -108,7 +108,7 @@ export default async function BuildingDetailPage({
           <h2 className="mb-4 text-sm font-semibold">Open Actions</h2>
           {actionsRes.data && actionsRes.data.length > 0 ? (
             <ul className="space-y-2">
-              {actionsRes.data.map((a) => (
+              {actionsRes.data.map((a: any) => (
                 <li key={a.id} className="flex items-center justify-between text-sm">
                   <span>{a.title}</span>
                   <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default async function BuildingDetailPage({
           <h2 className="mb-4 text-sm font-semibold">Recent Site Visits</h2>
           {siteVisitsRes.data && siteVisitsRes.data.length > 0 ? (
             <ul className="space-y-2">
-              {siteVisitsRes.data.map((v) => (
+              {siteVisitsRes.data.map((v: any) => (
                 <li key={v.id} className="text-sm">
                   <p className="text-charcoal-100">{formatDate(v.visit_date)}</p>
                   <p className="line-clamp-1 text-xs text-charcoal-400">

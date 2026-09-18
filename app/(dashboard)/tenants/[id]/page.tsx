@@ -81,7 +81,7 @@ export default async function TenantDetailPage({
         <div className="card">
           <p className="text-xs uppercase text-charcoal-400">Current Arrears</p>
           <p className="mt-1 text-lg font-semibold text-status-risk">
-            {formatCurrency(arrearsCurrentRes.data?.current_balance ?? 0)}
+            {formatCurrency((arrearsCurrentRes.data as any)?.current_balance ?? 0)}
           </p>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default async function TenantDetailPage({
           <h2 className="mb-4 text-sm font-semibold">Lease History</h2>
           {leasesRes.data && leasesRes.data.length > 0 ? (
             <ul className="space-y-3">
-              {leasesRes.data.map((l) => (
+              {leasesRes.data.map((l: any) => (
                 <li key={l.id} className="text-sm">
                   <div className="flex items-center justify-between">
                     <span>
@@ -115,7 +115,7 @@ export default async function TenantDetailPage({
           <h2 className="mb-4 text-sm font-semibold">Open Actions</h2>
           {actionsRes.data && actionsRes.data.length > 0 ? (
             <ul className="space-y-2">
-              {actionsRes.data.map((a) => (
+              {actionsRes.data.map((a: any) => (
                 <li key={a.id} className="flex items-center justify-between text-sm">
                   <span>{a.title}</span>
                   <StatusBadge status={a.status} />
@@ -138,7 +138,7 @@ export default async function TenantDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {arrearsHistoryRes.data.map((row, i) => (
+                {arrearsHistoryRes.data.map((row: any, i: number) => (
                   <tr key={i}>
                     <td>{formatDate(row.as_of_month)}</td>
                     <td>{formatCurrency(row.balance)}</td>
@@ -162,7 +162,7 @@ export default async function TenantDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {turnoversRes.data.map((row, i) => (
+                {turnoversRes.data.map((row: any, i: number) => (
                   <tr key={i}>
                     <td>{formatDate(row.period)}</td>
                     <td>{formatCurrency(row.turnover_amount)}</td>
