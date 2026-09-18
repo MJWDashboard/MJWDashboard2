@@ -6,6 +6,8 @@ export type ParsedTenantRow = {
   monthlyRental: string;
   leaseStart: string;
   leaseEnd: string;
+  accountNumber: string;
+  registeredEntity: string;
 };
 
 export type ImportCategory = "new" | "update" | "needs_review";
@@ -25,6 +27,8 @@ const COLUMN_ALIASES: Record<keyof ParsedTenantRow, string[]> = {
   monthlyRental: ["monthly rental", "rental", "rent", "monthly_rental"],
   leaseStart: ["lease start", "lease_start", "start date"],
   leaseEnd: ["lease end", "lease_end", "end date"],
+  accountNumber: ["account number", "account_number", "account no", "acc no"],
+  registeredEntity: ["registered entity", "entity", "registered_entity", "company name"],
 };
 
 function normalizeHeader(header: string): string {
@@ -55,6 +59,8 @@ export function parseSheetRows(sheetRows: Record<string, unknown>[]): ParsedTena
       monthlyRental: find("monthlyRental"),
       leaseStart: find("leaseStart"),
       leaseEnd: find("leaseEnd"),
+      accountNumber: find("accountNumber"),
+      registeredEntity: find("registeredEntity"),
     };
   });
 }

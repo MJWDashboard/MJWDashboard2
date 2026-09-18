@@ -27,7 +27,7 @@ export default async function TenantsPage() {
 
   let query = supabase
     .from("tenants")
-    .select("id, trading_name, shop_number, gla, monthly_rental, lease_end, status, building_id, buildings(name)")
+    .select("*, buildings(name)")
     .is("archived_at", null)
     .order("trading_name");
 

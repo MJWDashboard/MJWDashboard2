@@ -70,6 +70,8 @@ export function TenantImportButton({
         monthlyRental: r.monthlyRental,
         leaseStart: r.leaseStart,
         leaseEnd: r.leaseEnd,
+        accountNumber: r.accountNumber,
+        registeredEntity: r.registeredEntity,
       }))
     );
 
