@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
 
-export async function getArrearsComments(tenantId: string) {
+export async function getArrearsComments(arrearsCurrentId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("arrears_comments")
     .select("id, comment, follow_up_date, status, promise_to_pay_date, promise_to_pay_amount, escalation, created_at")
-    .eq("tenant_id", tenantId)
+    .eq("arrears_current_id", arrearsCurrentId)
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
@@ -18,7 +18,8 @@ export async function getArrearsComments(tenantId: string) {
 }
 
 export type ArrearsCommentInput = {
-  tenant_id: string;
+  arrears_current_id: string;
+  tenant_id: string | null;
   building_id: string;
   comment: string;
   follow_up_date: string;
@@ -33,6 +34,7 @@ export async function addArrearsComment(input: ArrearsCommentInput) {
 
   const supabase = createClient();
   const { error } = await supabase.from("arrears_comments").insert({
+    arrears_current_id: input.arrears_current_id,
     tenant_id: input.tenant_id,
     building_id: input.building_id,
     comment: input.comment,
@@ -48,7 +50,7 @@ export async function addArrearsComment(input: ArrearsCommentInput) {
   return { error: null };
 }
 
-export async function updateArrearsStatus(tenantId: string, status: string) {
+export async function updateArrearsStatus(arrearsCurrentId: string, status: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Not authorized." };
 
@@ -56,9 +58,200 @@ export async function updateArrearsStatus(tenantId: string, status: string) {
   const { error } = await supabase
     .from("arrears_current")
     .update({ status: status as any, updated_by: user.id, updated_at: new Date().toISOString() })
-    .eq("tenant_id", tenantId);
+    .eq("id", arrearsCurrentId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/arrears");
   return { error: null };
+}
+
+export async function linkArrearsToTenant(arrearsCurrentId: string, tenantId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("arrears_current")
+    .update({ tenant_id: tenantId, match_status: "matched", updated_by: user.id, updated_at: new Date().toISOString() })
+    .eq("id", arrearsCurrentId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/arrears");
+  return { error: null };
+}
+
+export async function unlinkArrearsFromTenant(arrearsCurrentId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("arrears_current")
+    .update({ tenant_id: null, match_status: "unmatched", updated_by: user.id, updated_at: new Date().toISOString() })
+    .eq("id", arrearsCurrentId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/arrears");
+  return { error: null };
+}
+
+export type ArrearsRecordInput = {
+  building_id: string;
+  tenant_id: string;
+  debtor_name: string;
+  account_number: string;
+  current_balance: string;
+  days_30: string;
+  days_60: string;
+  days_90_plus: string;
+  status: string;
+  risk: boolean;
+};
+
+function num(v: string): number {
+  const n = Number(v.trim());
+  return Number.isNaN(n) ? 0 : n;
+}
+
+export async function createArrearsRecord(input: ArrearsRecordInput) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+
+  const supabase = createClient();
+  const { error } = await supabase.from("arrears_current").insert({
+    building_id: input.building_id,
+    tenant_id: input.tenant_id || null,
+    debtor_name: input.debtor_name || null,
+    account_number: input.account_number || null,
+    match_status: input.tenant_id ? "matched" : "unmatched",
+    current_balance: num(input.current_balance),
+    days_30: num(input.days_30),
+    days_60: num(input.days_60),
+    days_90_plus: num(input.days_90_plus),
+    status: input.status as any,
+    risk: input.risk,
+    updated_by: user.id,
+  });
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/arrears");
+  return { error: null };
+}
+
+export async function updateArrearsRecord(id: string, input: ArrearsRecordInput) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("arrears_current")
+    .update({
+      building_id: input.building_id,
+      tenant_id: input.tenant_id || null,
+      debtor_name: input.debtor_name || null,
+      account_number: input.account_number || null,
+      match_status: input.tenant_id ? "matched" : "unmatched",
+      current_balance: num(input.current_balance),
+      days_30: num(input.days_30),
+      days_60: num(input.days_60),
+      days_90_plus: num(input.days_90_plus),
+      status: input.status as any,
+      risk: input.risk,
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/arrears");
+  return { error: null };
+}
+
+export async function getArrearsMatchingData() {
+  const supabase = createClient();
+  const [{ data: current }, { data: tenants }] = await Promise.all([
+    supabase.from("arrears_current").select("id, building_id, tenant_id, debtor_name, account_number"),
+    supabase.from("tenants").select("id, building_id, trading_name, account_number").is("archived_at", null),
+  ]);
+  return { current: current ?? [], tenants: tenants ?? [] };
+}
+
+export type ArrearsImportRow = {
+  existingId: string | null;
+  buildingId: string;
+  debtorName: string;
+  accountNumber: string;
+  currentBalance: string;
+  days30: string;
+  days60: string;
+  days90Plus: string;
+  asOfMonth: string;
+  tenantId: string | null;
+  matchStatus: "matched" | "possible" | "unmatched";
+};
+
+export async function commitArrearsImport(rows: ArrearsImportRow[]) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized.", imported: 0 };
+
+  const supabase = createClient();
+  let imported = 0;
+  const asOfMonth = rows[0]?.asOfMonth || new Date().toISOString().slice(0, 10);
+
+  for (const row of rows) {
+    const financials = {
+      building_id: row.buildingId,
+      debtor_name: row.debtorName || null,
+      account_number: row.accountNumber || null,
+      current_balance: num(row.currentBalance),
+      days_30: num(row.days30),
+      days_60: num(row.days60),
+      days_90_plus: num(row.days90Plus),
+      as_of_month: asOfMonth,
+      last_imported_at: new Date().toISOString(),
+      last_imported_source: "excel_import",
+      updated_by: user.id,
+    };
+
+    let currentId = row.existingId;
+
+    if (currentId) {
+      // Financial fields are overwritten on import - notes (arrears_comments)
+      // are a separate table keyed off this row's id and are never touched here.
+      const { error } = await supabase.from("arrears_current").update(financials).eq("id", currentId);
+      if (!error) imported += 1;
+    } else {
+      const { data, error } = await supabase
+        .from("arrears_current")
+        .insert({
+          ...financials,
+          tenant_id: row.tenantId,
+          match_status: row.matchStatus,
+        })
+        .select("id")
+        .single();
+      if (!error) {
+        imported += 1;
+        currentId = data.id;
+      }
+    }
+
+    if (currentId) {
+      await supabase.from("arrears_history").insert({
+        tenant_id: row.tenantId,
+        building_id: row.buildingId,
+        debtor_name: row.debtorName || null,
+        account_number: row.accountNumber || null,
+        as_of_month: asOfMonth,
+        balance: num(row.currentBalance),
+        days_30: num(row.days30),
+        days_60: num(row.days60),
+        days_90_plus: num(row.days90Plus),
+        import_source: "excel_import",
+      });
+    }
+  }
+
+  revalidatePath("/dashboard/arrears");
+  return { error: null, imported };
 }

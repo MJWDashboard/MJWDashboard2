@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { Modal } from "@/components/Modal";
 import { Badge } from "@/components/StatusBadge";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/format";
-import { getArrearsComments, addArrearsComment, updateArrearsStatus } from "./actions";
+import {
+  getArrearsComments,
+  addArrearsComment,
+  updateArrearsStatus,
+  linkArrearsToTenant,
+  unlinkArrearsFromTenant,
+} from "./actions";
 
 type Comment = {
   id: string;
@@ -19,17 +25,23 @@ type Comment = {
 };
 
 export function ArrearsTimelineButton({
+  arrearsCurrentId,
   tenantId,
   buildingId,
-  tenantName,
+  displayName,
   currentBalance,
   status,
+  matchStatus,
+  buildingTenants,
 }: {
-  tenantId: string;
+  arrearsCurrentId: string;
+  tenantId: string | null;
   buildingId: string;
-  tenantName: string;
+  displayName: string;
   currentBalance: number;
   status: string;
+  matchStatus: string;
+  buildingTenants: { id: string; trading_name: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [comments, setComments] = useState<Comment[] | null>(null);
@@ -38,14 +50,15 @@ export function ArrearsTimelineButton({
   const [ptpDate, setPtpDate] = useState("");
   const [ptpAmount, setPtpAmount] = useState("");
   const [escalation, setEscalation] = useState(false);
+  const [linkTenantId, setLinkTenantId] = useState(tenantId ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     if (!open) return;
-    getArrearsComments(tenantId).then((res) => setComments(res.data as Comment[]));
-  }, [open, tenantId]);
+    getArrearsComments(arrearsCurrentId).then((res) => setComments(res.data as Comment[]));
+  }, [open, arrearsCurrentId]);
 
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +67,7 @@ export function ArrearsTimelineButton({
     setError(null);
 
     const result = await addArrearsComment({
+      arrears_current_id: arrearsCurrentId,
       tenant_id: tenantId,
       building_id: buildingId,
       comment: text,
@@ -73,24 +87,34 @@ export function ArrearsTimelineButton({
     setPtpDate("");
     setPtpAmount("");
     setEscalation(false);
-    const res = await getArrearsComments(tenantId);
+    const res = await getArrearsComments(arrearsCurrentId);
     setComments(res.data as Comment[]);
     router.refresh();
   }
 
   async function handleStatusChange(newStatus: string) {
-    await updateArrearsStatus(tenantId, newStatus);
+    await updateArrearsStatus(arrearsCurrentId, newStatus);
+    router.refresh();
+  }
+
+  async function handleLinkChange(newTenantId: string) {
+    setLinkTenantId(newTenantId);
+    if (newTenantId) {
+      await linkArrearsToTenant(arrearsCurrentId, newTenantId);
+    } else {
+      await unlinkArrearsFromTenant(arrearsCurrentId);
+    }
     router.refresh();
   }
 
   return (
     <>
       <button onClick={() => setOpen(true)} className="text-cyan-400 hover:underline">
-        {tenantName}
+        {displayName}
       </button>
 
       {open && (
-        <Modal title={`Arrears — ${tenantName}`} onClose={() => setOpen(false)}>
+        <Modal title={`Arrears — ${displayName}`} onClose={() => setOpen(false)}>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-lg font-semibold text-status-risk">{formatCurrency(currentBalance)}</p>
             <select
@@ -105,10 +129,30 @@ export function ArrearsTimelineButton({
             </select>
           </div>
 
+          {matchStatus !== "matched" && (
+            <div className="mb-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3">
+              <p className="mb-2 text-xs text-yellow-400">
+                This debtor is {matchStatus} to a Tenant Master record.
+              </p>
+              <select
+                className="input text-sm"
+                value={linkTenantId}
+                onChange={(e) => handleLinkChange(e.target.value)}
+              >
+                <option value="">— Not linked —</option>
+                {buildingTenants.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.trading_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <form onSubmit={handleAddComment} className="mb-5 space-y-3 border-b border-charcoal-700 pb-5">
             <textarea
               rows={2}
-              placeholder="Add a comment…"
+              placeholder="Add a comment - payment arrangement, dispute, promise to pay…"
               className="input"
               value={text}
               onChange={(e) => setText(e.target.value)}

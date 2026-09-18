@@ -102,6 +102,7 @@ export type Database = {
       arrears_comments: {
         Row: {
           archived_at: string | null
+          arrears_current_id: string | null
           attachment_document_id: string | null
           building_id: string
           comment: string
@@ -114,10 +115,11 @@ export type Database = {
           promise_to_pay_amount: number | null
           promise_to_pay_date: string | null
           status: Database["public"]["Enums"]["record_status"]
-          tenant_id: string
+          tenant_id: string | null
         }
         Insert: {
           archived_at?: string | null
+          arrears_current_id?: string | null
           attachment_document_id?: string | null
           building_id: string
           comment: string
@@ -130,10 +132,11 @@ export type Database = {
           promise_to_pay_amount?: number | null
           promise_to_pay_date?: string | null
           status?: Database["public"]["Enums"]["record_status"]
-          tenant_id: string
+          tenant_id?: string | null
         }
         Update: {
           archived_at?: string | null
+          arrears_current_id?: string | null
           attachment_document_id?: string | null
           building_id?: string
           comment?: string
@@ -146,9 +149,16 @@ export type Database = {
           promise_to_pay_amount?: number | null
           promise_to_pay_date?: string | null
           status?: Database["public"]["Enums"]["record_status"]
-          tenant_id?: string
+          tenant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "arrears_comments_arrears_current_id_fkey"
+            columns: ["arrears_current_id"]
+            isOneToOne: false
+            referencedRelation: "arrears_current"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "arrears_comments_building_id_fkey"
             columns: ["building_id"]
