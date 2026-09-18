@@ -3,8 +3,10 @@ import { getCurrentUser } from "@/lib/supabase/org";
 import { getUnreadTeamMessageCount } from "@/lib/supabase/teamAccess";
 import { isPlatformAdmin } from "@/lib/supabase/platformAdmin";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { Sidebar } from "@/components/Sidebar";
 import { PortfolioSelector } from "@/components/PortfolioSelector";
+import { BuildingSelector } from "@/components/BuildingSelector";
 import { SignOutButton } from "@/components/SignOutButton";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { OnboardingTour } from "./OnboardingTour";
@@ -37,14 +39,17 @@ export default async function DashboardLayout({
   }
 
   const supabase = createClient();
-  const [{ data: portfolios }, { data: portfolioRoles }, messagesUnreadCount, isDeveloperAdmin] = await Promise.all([
+  const [{ data: portfolios }, { data: buildings }, { data: portfolioRoles }, messagesUnreadCount, isDeveloperAdmin] = await Promise.all([
     supabase.from("portfolios").select("id, name").order("name"),
+    supabase.from("buildings").select("id, name, portfolio_id").is("archived_at", null).order("name"),
     supabase.from("portfolio_users").select("role").eq("user_id", user.id),
     getUnreadTeamMessageCount(supabase, user.id),
     isPlatformAdmin(supabase, user.id),
   ]);
 
   const selectedPortfolio = getSelectedPortfolio();
+  const selectedBuilding = getSelectedBuilding();
+  const visibleBuildings = selectedPortfolio === "all" ? (buildings ?? []) : (buildings ?? []).filter((b) => b.portfolio_id === selectedPortfolio);
   const canAccessTeam =
     user.role === "admin" ||
     (portfolioRoles ?? []).some((r) => r.role === "portfolio_manager" || r.role === "administrator");
@@ -59,7 +64,10 @@ export default async function DashboardLayout({
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 flex-none items-center justify-between gap-4 border-b border-charcoal-700 bg-charcoal-900/60 px-6">
-          <PortfolioSelector portfolios={portfolios ?? []} selected={selectedPortfolio} />
+          <div className="flex min-w-0 items-center gap-2">
+            <PortfolioSelector portfolios={portfolios ?? []} selected={selectedPortfolio} />
+            <BuildingSelector buildings={visibleBuildings.map((b) => ({ ...b, building_code: null }))} selected={selectedBuilding} />
+          </div>
           <GlobalSearch />
           <div className="flex flex-none items-center gap-4">
             <div className="text-right text-sm">

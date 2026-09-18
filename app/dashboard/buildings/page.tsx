@@ -28,7 +28,7 @@ export default async function BuildingsPage() {
 
   let query = supabase
     .from("buildings")
-    .select("id, name, address, gla, budget, portfolio_id, notes, portfolios(name)")
+    .select("*, portfolios(name)")
     .is("archived_at", null)
     .order("name");
 
@@ -47,10 +47,18 @@ export default async function BuildingsPage() {
               filename="buildings"
               sheetName="Buildings"
               rows={(buildings ?? []).map((b: any) => ({
+                "Building Code": b.building_code,
                 Name: b.name,
-                Address: b.address,
+                "Address Line 1": b.address_line_1,
+                "Address Line 2": b.address_line_2,
+                Suburb: b.suburb,
+                City: b.city,
+                Province: b.province,
+                "Postal Code": b.postal_code,
                 "GLA (m²)": b.gla,
-                Budget: b.budget,
+                "Budget Year": b.budget_year,
+                "Annual Budget (R)": b.annual_budget,
+                Active: b.active,
                 Portfolio: b.portfolios?.name,
               }))}
             />
@@ -64,10 +72,11 @@ export default async function BuildingsPage() {
           <table className="table-base">
             <thead>
               <tr>
+                <th>Code</th>
                 <th>Name</th>
                 <th>Address</th>
                 <th>GLA (m²)</th>
-                <th>Budget</th>
+                <th>Annual Budget</th>
                 <th>Portfolio</th>
                 <th />
               </tr>
@@ -75,14 +84,15 @@ export default async function BuildingsPage() {
             <tbody>
               {buildings.map((b: any) => (
                 <tr key={b.id}>
+                  <td className="font-medium text-charcoal-300">{b.building_code ?? "—"}</td>
                   <td>
                     <Link href={`/dashboard/buildings/${b.id}`} className="font-medium text-cyan-400 hover:underline">
                       {b.name}
                     </Link>
                   </td>
-                  <td>{b.address ?? "—"}</td>
+                  <td>{[b.address_line_1, b.suburb, b.city].filter(Boolean).join(", ") || "—"}</td>
                   <td>{formatNumber(b.gla)}</td>
-                  <td>{formatCurrency(b.budget)}</td>
+                  <td>{formatCurrency(b.annual_budget)}</td>
                   <td>{b.portfolios?.name ?? "—"}</td>
                   <td className="text-right">
                     <BuildingFormButton building={b} label="Edit" portfolios={portfolios ?? []} />

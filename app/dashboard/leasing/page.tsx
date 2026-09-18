@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
+import { getSelectedBuilding } from "@/lib/building";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterChip } from "@/components/FilterChip";
 import { LeasingTabs } from "./LeasingTabs";
@@ -11,7 +12,8 @@ export default async function LeasingPage({
 }) {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
-  const buildingId = searchParams.building_id;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
 
   const { data: buildings } = await supabase
     .from("buildings")

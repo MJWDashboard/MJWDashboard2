@@ -5,6 +5,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { FilterChip } from "@/components/FilterChip";
 import { ContractorFormButton } from "./ContractorForm";
 import { ContractorImportButton } from "./ContractorImport";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function ContractorsPage({
   searchParams,
@@ -12,7 +13,8 @@ export default async function ContractorsPage({
   searchParams: { building_id?: string };
 }) {
   const supabase = createClient();
-  const buildingId = searchParams.building_id;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
 
   const [{ data: contractors }, { data: buildings }, { data: links }] = await Promise.all([
     supabase

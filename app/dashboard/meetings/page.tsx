@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { FilterChip } from "@/components/FilterChip";
 import { MeetingFormButton } from "./MeetingForm";
 import { MeetingsTable } from "./MeetingsTable";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function MeetingsPage({
   searchParams,
@@ -11,7 +12,8 @@ export default async function MeetingsPage({
   searchParams: { building_id?: string };
 }) {
   const supabase = createClient();
-  const buildingId = searchParams.building_id;
+  const selectedBuilding = getSelectedBuilding();
+  const buildingId = searchParams.building_id ?? (selectedBuilding !== "all" ? selectedBuilding : undefined);
 
   let query = supabase
     .from("meetings")

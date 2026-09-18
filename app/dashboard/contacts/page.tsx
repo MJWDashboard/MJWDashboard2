@@ -5,18 +5,24 @@ import { ExportButton } from "@/components/ExportButton";
 import { ContactFormButton } from "./ContactForm";
 import { ContactImportButton } from "./ContactImport";
 import { ContactsTable } from "./ContactsTable";
+import { getSelectedBuilding } from "@/lib/building";
 
 export default async function ContactsPage() {
   const supabase = createClient();
+  const selectedBuilding = getSelectedBuilding();
 
   const [{ data: contacts }, { data: buildings }] = await Promise.all([
-    supabase
+    (() => {
+      let query = supabase
       .from("contacts")
       .select(
         "id, name, type, company, email, phone, office_number, emergency_number, after_hours_number, building_id, active, notes, buildings(name)"
       )
       .is("archived_at", null)
-      .order("name"),
+      .order("name");
+      if (selectedBuilding !== "all") query = query.eq("building_id", selectedBuilding);
+      return query;
+    })(),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
   ]);
 
