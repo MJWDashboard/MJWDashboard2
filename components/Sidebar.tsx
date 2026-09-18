@@ -19,11 +19,13 @@ import {
   BarChart3,
   BookOpen,
   ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/messages", label: "Tasks & Messages", icon: MessageSquare },
   { href: "/dashboard/buildings", label: "Buildings", icon: Building2 },
   { href: "/dashboard/tenants", label: "Tenants", icon: Users },
   { href: "/dashboard/leasing", label: "Leasing", icon: Handshake },
@@ -40,7 +42,13 @@ const NAV_ITEMS = [
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
 ];
 
-export function Sidebar({ canAccessTeam }: { canAccessTeam: boolean }) {
+export function Sidebar({
+  canAccessTeam,
+  messagesUnreadCount = 0,
+}: {
+  canAccessTeam: boolean;
+  messagesUnreadCount?: number;
+}) {
   const pathname = usePathname();
 
   const items = canAccessTeam
@@ -70,7 +78,12 @@ export function Sidebar({ canAccessTeam }: { canAccessTeam: boolean }) {
               }`}
             >
               <Icon size={17} />
-              {label}
+              <span className="flex-1">{label}</span>
+              {href === "/dashboard/messages" && messagesUnreadCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 text-[11px] font-semibold text-charcoal-950">
+                  {messagesUnreadCount > 99 ? "99+" : messagesUnreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

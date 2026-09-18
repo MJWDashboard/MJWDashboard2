@@ -2104,6 +2104,134 @@ export type Database = {
           },
         ]
       }
+      team_message_reads: {
+        Row: {
+          last_read_at: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_message_reads_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "team_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_message_replies: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          message_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          message_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_message_replies_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "team_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_messages: {
+        Row: {
+          assigned_to: string
+          body: string | null
+          building_id: string | null
+          created_at: string
+          created_by: string
+          due_date: string | null
+          id: string
+          organization_id: string
+          portfolio_id: string | null
+          status: Database["public"]["Enums"]["record_status"]
+          subject: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to: string
+          body?: string | null
+          building_id?: string | null
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          id?: string
+          organization_id: string
+          portfolio_id?: string | null
+          status?: Database["public"]["Enums"]["record_status"]
+          subject: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string
+          body?: string | null
+          building_id?: string | null
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          id?: string
+          organization_id?: string
+          portfolio_id?: string | null
+          status?: Database["public"]["Enums"]["record_status"]
+          subject?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_messages_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_messages_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_contacts: {
         Row: {
           contact_id: string
@@ -2584,6 +2712,18 @@ export type Database = {
       bootstrap_first_admin: { Args: never; Returns: undefined }
       can_manage_building_assignment: {
         Args: { target_building_id: string }
+        Returns: boolean
+      }
+      can_manage_portfolio_team: {
+        Args: { target_portfolio_id: string }
+        Returns: boolean
+      }
+      can_view_portfolio_team: {
+        Args: { target_portfolio_id: string }
+        Returns: boolean
+      }
+      can_view_team_message: {
+        Args: { target_message_id: string }
         Returns: boolean
       }
       contractor_buildings_accessible: {
