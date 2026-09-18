@@ -8,6 +8,7 @@ import { Badge } from "@/components/StatusBadge";
 import { FilterChip } from "@/components/FilterChip";
 import { formatDateTime } from "@/lib/format";
 import { AuditRow } from "./AuditRow";
+import { ImportBatchRow } from "./ImportBatchRow";
 
 const ACTION_CLASSES: Record<string, string> = {
   insert: "bg-green-500/20 text-green-400",
@@ -37,9 +38,10 @@ export default async function AuditLogPage({
 
   if (searchParams.table) query = query.eq("table_name", searchParams.table);
 
-  const [{ data: entries }, { data: emailRows }] = await Promise.all([
+  const [{ data: entries }, { data: emailRows }, { data: importBatches }] = await Promise.all([
     query,
     supabase.rpc("org_member_emails"),
+    (supabase as any).from("import_batches").select("id, module, filename, status, rows_submitted, rows_created, rows_updated, rows_rejected, created_at").order("created_at", { ascending: false }).limit(100),
   ]);
 
   const emailByUserId = new Map((emailRows ?? []).map((r: any) => [r.user_id, r.email]));
@@ -57,6 +59,13 @@ export default async function AuditLogPage({
       />
 
       {searchParams.table && <FilterChip label={searchParams.table} clearHref="/dashboard/audit-log" />}
+
+      {!searchParams.table && importBatches && importBatches.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold text-charcoal-100">Import Batches</h2>
+          <div className="table-shell"><table className="table-base"><thead><tr><th>Uploaded</th><th>Module</th><th>File</th><th>Batch ID</th><th>Created / Updated / Rejected</th><th>Status</th><th /></tr></thead><tbody>{importBatches.map((batch: any) => <ImportBatchRow key={batch.id} batch={batch}/>)}</tbody></table></div>
+        </div>
+      )}
 
       {!searchParams.table && tables.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
