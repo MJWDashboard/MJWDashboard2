@@ -41,7 +41,7 @@ export default async function MeetingsPage() {
               {meetings.map((m: any) => (
                 <tr key={m.id}>
                   <td>
-                    <Link href={`/meetings/${m.id}`} className="font-medium text-cyan-400 hover:underline">
+                    <Link href={`/dashboard/meetings/${m.id}`} className="font-medium text-cyan-400 hover:underline">
                       {m.title}
                     </Link>
                   </td>

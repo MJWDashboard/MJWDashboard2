@@ -89,7 +89,7 @@ export default async function BuildingDetailPage({
             <ul className="space-y-2">
               {tenantsRes.data.map((t: any) => (
                 <li key={t.id} className="flex items-center justify-between text-sm">
-                  <Link href={`/tenants/${t.id}`} className="text-cyan-400 hover:underline">
+                  <Link href={`/dashboard/tenants/${t.id}`} className="text-cyan-400 hover:underline">
                     {t.trading_name} {t.shop_number ? `· ${t.shop_number}` : ""}
                   </Link>
                   <div className="flex items-center gap-2">

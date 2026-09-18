@@ -31,25 +31,25 @@ export default async function ReportsPage() {
     {
       title: "Arrears Report",
       description: "Outstanding balances by tenant and building, exportable to PDF or Excel.",
-      href: "/arrears",
+      href: "/dashboard/arrears",
       stat: formatCurrency(totalArrears),
     },
     {
       title: "Tenant Schedule",
       description: `${tenantsCount.count ?? 0} tenants across ${buildingsCount.count ?? 0} buildings.`,
-      href: "/tenants",
+      href: "/dashboard/tenants",
       stat: `${tenantsCount.count ?? 0} tenants`,
     },
     {
       title: "Lease Expiries (90 days)",
       description: "Tenants with leases expiring in the next 90 days.",
-      href: "/tenants",
+      href: "/dashboard/tenants",
       stat: `${expiringLeasesRes.count ?? 0} expiring`,
     },
     {
       title: "Open Actions",
       description: "Outstanding action items across the portfolio.",
-      href: "/actions",
+      href: "/dashboard/actions",
       stat: `${openActionsCount.count ?? 0} open`,
     },
   ];

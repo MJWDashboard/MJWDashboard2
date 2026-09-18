@@ -1,8 +1,11 @@
-# Vorexa Vault
+# Vorexa Property Management Dashboard
 
-Desktop Property Manager platform for Vorexa. Next.js 14 (App Router) +
-Supabase, built against the live multi-tenant schema in Supabase project
+Vorexa's Property Management Dashboard. Next.js 14 (App Router) + Supabase,
+built against the live multi-tenant schema in Supabase project
 `eaxyxsrsljdonkravpoj`.
+
+Public marketing/sign-in landing page lives at `/`; the authenticated app
+lives under `/dashboard/*`.
 
 ## What's built
 
@@ -81,11 +84,6 @@ npm run dev
 Get the anon key from Supabase dashboard → Project Settings → API →
 `anon` `public` key, for project `eaxyxsrsljdonkravpoj`.
 
-> **Note:** this app was built in a sandboxed session without npm registry
-> access, so dependencies have not been installed or build-verified
-> locally. Run `npm install && npm run build` (or let Vercel do it on
-> deploy) to catch any TypeScript/build issues before relying on it in
-> production.
 
 ## Deploying
 

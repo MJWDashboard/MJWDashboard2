@@ -57,7 +57,7 @@ export default async function TenantDetailPage({
         title={tenant.trading_name}
         description={
           <>
-            <Link href={`/buildings/${tenant.buildings?.id}`} className="text-cyan-400 hover:underline">
+            <Link href={`/dashboard/buildings/${tenant.buildings?.id}`} className="text-cyan-400 hover:underline">
               {tenant.buildings?.name}
             </Link>
             {tenant.shop_number ? ` · Shop ${tenant.shop_number}` : ""}

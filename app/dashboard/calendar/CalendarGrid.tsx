@@ -72,14 +72,14 @@ export function CalendarGrid({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link
-            href={`/calendar?month=${prevMonth.getFullYear()}-${pad(prevMonth.getMonth() + 1)}`}
+            href={`/dashboard/calendar?month=${prevMonth.getFullYear()}-${pad(prevMonth.getMonth() + 1)}`}
             className="rounded p-2 text-charcoal-300 hover:bg-charcoal-800"
           >
             <ChevronLeft size={18} />
           </Link>
           <h2 className="w-40 text-center text-sm font-semibold text-charcoal-100">{monthLabel}</h2>
           <Link
-            href={`/calendar?month=${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}`}
+            href={`/dashboard/calendar?month=${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}`}
             className="rounded p-2 text-charcoal-300 hover:bg-charcoal-800"
           >
             <ChevronRight size={18} />

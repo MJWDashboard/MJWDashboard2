@@ -94,7 +94,7 @@ export default async function TenantsPage() {
               {tenants.map((t: any) => (
                 <tr key={t.id}>
                   <td>
-                    <Link href={`/tenants/${t.id}`} className="font-medium text-cyan-400 hover:underline">
+                    <Link href={`/dashboard/tenants/${t.id}`} className="font-medium text-cyan-400 hover:underline">
                       {t.trading_name}
                     </Link>
                   </td>

@@ -61,7 +61,7 @@ export default async function BuildingsPage() {
               {buildings.map((b) => (
                 <tr key={b.id}>
                   <td>
-                    <Link href={`/buildings/${b.id}`} className="font-medium text-cyan-400 hover:underline">
+                    <Link href={`/dashboard/buildings/${b.id}`} className="font-medium text-cyan-400 hover:underline">
                       {b.name}
                     </Link>
                   </td>

@@ -46,7 +46,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-charcoal-950">
-      <Sidebar />
+      <Sidebar isMasterAdmin={user.role === "admin"} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 flex-none items-center justify-between border-b border-charcoal-700 bg-charcoal-900/60 px-6">
           <PortfolioSelector portfolios={portfolios} selected={selectedPortfolio} />

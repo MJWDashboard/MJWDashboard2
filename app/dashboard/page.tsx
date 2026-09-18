@@ -65,13 +65,13 @@ export default async function DashboardPage() {
   );
 
   const stats = [
-    { label: "Buildings", value: buildingsRes.count ?? 0, href: "/buildings" },
-    { label: "Tenants", value: tenantsRes.count ?? 0, href: "/tenants" },
-    { label: "Open Actions", value: openActionsRes.count ?? 0, href: "/actions" },
+    { label: "Buildings", value: buildingsRes.count ?? 0, href: "/dashboard/buildings" },
+    { label: "Tenants", value: tenantsRes.count ?? 0, href: "/dashboard/tenants" },
+    { label: "Open Actions", value: openActionsRes.count ?? 0, href: "/dashboard/actions" },
     {
       label: "Total Arrears",
       value: formatCurrency(totalArrears),
-      href: "/arrears",
+      href: "/dashboard/arrears",
     },
   ];
 

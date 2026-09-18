@@ -3,13 +3,14 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/Logo";
 
 type Mode = "sign-in" | "sign-up";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/dashboard";
 
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
@@ -54,13 +55,9 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-semibold text-charcoal-100">
-          Vorexa <span className="text-cyan-400">Vault</span>
-        </h1>
-        <p className="mt-1 text-sm text-charcoal-300">
-          Desktop Property Manager platform
-        </p>
+      <div className="mb-8 flex flex-col items-center text-center">
+        <Logo size="md" className="mb-3" />
+        <p className="text-sm text-charcoal-300">Property Management Dashboard</p>
       </div>
 
       <div className="card">
@@ -135,8 +132,8 @@ function LoginForm() {
 
       {mode === "sign-up" && (
         <p className="mt-4 text-center text-xs text-charcoal-400">
-          New accounts join the existing portfolio automatically if no one
-          has signed up yet, or by invitation otherwise.
+          Access is by invitation only. Sign up with the email address your
+          administrator invited.
         </p>
       )}
     </div>

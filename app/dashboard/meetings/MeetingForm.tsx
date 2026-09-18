@@ -86,7 +86,7 @@ export function MeetingFormButton({
     if (result.id && onCreated) {
       onCreated(result.id);
     } else if (result.id) {
-      router.push(`/meetings/${result.id}`);
+      router.push(`/dashboard/meetings/${result.id}`);
     }
     router.refresh();
   }
