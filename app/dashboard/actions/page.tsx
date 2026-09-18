@@ -1,26 +1,43 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { FilterChip } from "@/components/FilterChip";
 import { StatusBadge, Badge } from "@/components/StatusBadge";
 import { PRIORITY_CLASSES, enumLabel } from "@/lib/status";
 import { formatDate } from "@/lib/format";
 import { ActionItemFormButton } from "./ActionItemForm";
 
-export default async function ActionsPage() {
+export default async function ActionsPage({
+  searchParams,
+}: {
+  searchParams: { building_id?: string; tenant_id?: string };
+}) {
   const supabase = createClient();
+  const { building_id: buildingId, tenant_id: tenantId } = searchParams;
+
+  let query = supabase
+    .from("action_items")
+    .select(
+      "id, title, description, building_id, tenant_id, meeting_id, priority, status, due_date, risk, buildings(name), tenants(trading_name), meetings(title)"
+    )
+    .is("archived_at", null)
+    .order("due_date", { ascending: true, nullsFirst: false });
+
+  if (buildingId) query = query.eq("building_id", buildingId);
+  if (tenantId) query = query.eq("tenant_id", tenantId);
 
   const [{ data: items }, { data: buildings }, { data: tenants }] = await Promise.all([
-    supabase
-      .from("action_items")
-      .select("id, title, description, building_id, tenant_id, priority, status, due_date, risk, buildings(name), tenants(trading_name)")
-      .is("archived_at", null)
-      .order("due_date", { ascending: true, nullsFirst: false }),
+    query,
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
     supabase.from("tenants").select("id, trading_name").is("archived_at", null).order("trading_name"),
   ]);
 
   const buildingOptions = buildings ?? [];
   const tenantOptions = tenants ?? [];
+  const filterLabel =
+    (tenantId && tenantOptions.find((t) => t.id === tenantId)?.trading_name) ||
+    (buildingId && buildingOptions.find((b) => b.id === buildingId)?.name);
 
   return (
     <div>
@@ -29,6 +46,8 @@ export default async function ActionsPage() {
         description={`${items?.length ?? 0} action items`}
         action={<ActionItemFormButton label="+ Add Action" buildings={buildingOptions} tenants={tenantOptions} />}
       />
+
+      {filterLabel && <FilterChip label={filterLabel} clearHref="/dashboard/actions" />}
 
       {items && items.length > 0 ? (
         <div className="table-shell">
@@ -51,8 +70,28 @@ export default async function ActionsPage() {
                     {a.risk && (
                       <Badge label="Risk" className="ml-2 bg-red-500/20 text-red-400" />
                     )}
+                    {a.meeting_id && (
+                      <Link
+                        href={`/dashboard/meetings/${a.meeting_id}`}
+                        className="ml-2 text-xs text-charcoal-400 hover:underline"
+                      >
+                        via {a.meetings?.title ?? "meeting"}
+                      </Link>
+                    )}
                   </td>
-                  <td>{a.tenants?.trading_name ?? a.buildings?.name ?? "—"}</td>
+                  <td>
+                    {a.tenant_id ? (
+                      <Link href={`/dashboard/tenants/${a.tenant_id}`} className="text-cyan-400 hover:underline">
+                        {a.tenants?.trading_name ?? "—"}
+                      </Link>
+                    ) : a.building_id ? (
+                      <Link href={`/dashboard/buildings/${a.building_id}`} className="text-cyan-400 hover:underline">
+                        {a.buildings?.name ?? "—"}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td>
                     <Badge
                       label={enumLabel(a.priority)}

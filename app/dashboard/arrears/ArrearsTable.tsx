@@ -16,13 +16,15 @@ export function ArrearsTable({
   rows,
   buildings,
   tenants,
+  initialBuildingId,
 }: {
   rows: any[];
   buildings: { id: string; name: string }[];
   tenants: { id: string; building_id: string; trading_name: string }[];
+  initialBuildingId?: string;
 }) {
   const [search, setSearch] = useState("");
-  const [buildingFilter, setBuildingFilter] = useState("all");
+  const [buildingFilter, setBuildingFilter] = useState(initialBuildingId ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [riskOnly, setRiskOnly] = useState(false);
 

@@ -4,14 +4,20 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { ExportButton } from "@/components/ExportButton";
 import { PdfExportButton } from "@/components/PdfExportButton";
+import { FilterChip } from "@/components/FilterChip";
 import { formatCurrency } from "@/lib/format";
 import { ArrearsImportButton } from "./ArrearsImport";
 import { ArrearsRecordFormButton } from "./ArrearsRecordForm";
 import { ArrearsTable } from "./ArrearsTable";
 
-export default async function ArrearsPage() {
+export default async function ArrearsPage({
+  searchParams,
+}: {
+  searchParams: { building_id?: string };
+}) {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
+  const buildingId = searchParams.building_id;
 
   const { data: allBuildings } = await supabase
     .from("buildings")
@@ -83,8 +89,15 @@ export default async function ArrearsPage() {
         }
       />
 
+      {buildingId && (
+        <FilterChip
+          label={buildingOptions.find((b) => b.id === buildingId)?.name ?? "building"}
+          clearHref="/dashboard/arrears"
+        />
+      )}
+
       {arrears && arrears.length > 0 ? (
-        <ArrearsTable rows={arrears} buildings={buildingOptions} tenants={tenants ?? []} />
+        <ArrearsTable rows={arrears} buildings={buildingOptions} tenants={tenants ?? []} initialBuildingId={buildingId} />
       ) : (
         <EmptyState title="No arrears records yet" description="Upload an arrears export or add a record manually." />
       )}

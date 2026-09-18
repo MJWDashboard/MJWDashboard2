@@ -2,13 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { getSelectedPortfolio } from "@/lib/portfolio";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { FilterChip } from "@/components/FilterChip";
 import { TurnoverFormButton } from "./TurnoverForm";
 import { TurnoversTable } from "./TurnoversTable";
 import { SyncCertificatesButton, AnnualCertificatesTable } from "./AnnualCertificates";
 
-export default async function TurnoversPage() {
+export default async function TurnoversPage({
+  searchParams,
+}: {
+  searchParams: { building_id?: string };
+}) {
   const supabase = createClient();
   const portfolioId = getSelectedPortfolio();
+  const buildingId = searchParams.building_id;
 
   const { data: allBuildings } = await supabase
     .from("buildings")
@@ -78,8 +84,20 @@ export default async function TurnoversPage() {
         </div>
       )}
 
+      {buildingId && (
+        <FilterChip
+          label={buildingOptions.find((b) => b.id === buildingId)?.name ?? "building"}
+          clearHref="/dashboard/turnovers"
+        />
+      )}
+
       {turnovers && turnovers.length > 0 ? (
-        <TurnoversTable turnovers={turnovers} tenants={tenants ?? []} buildings={buildingOptions} />
+        <TurnoversTable
+          turnovers={turnovers}
+          tenants={tenants ?? []}
+          buildings={buildingOptions}
+          initialBuildingId={buildingId}
+        />
       ) : (
         <EmptyState title="No turnover records yet" />
       )}

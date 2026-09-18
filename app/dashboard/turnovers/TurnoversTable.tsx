@@ -10,12 +10,14 @@ export function TurnoversTable({
   turnovers,
   tenants,
   buildings,
+  initialBuildingId,
 }: {
   turnovers: any[];
   tenants: { id: string; trading_name: string; building_id: string; shop_number: string | null }[];
   buildings: { id: string; name: string }[];
+  initialBuildingId?: string;
 }) {
-  const [buildingFilter, setBuildingFilter] = useState("all");
+  const [buildingFilter, setBuildingFilter] = useState(initialBuildingId ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const rows = useMemo(
