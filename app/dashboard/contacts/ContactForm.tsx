@@ -12,11 +12,37 @@ type Contact = {
   company: string | null;
   email: string | null;
   phone: string | null;
+  office_number: string | null;
+  emergency_number: string | null;
+  after_hours_number: string | null;
   building_id: string | null;
+  active: boolean;
   notes: string | null;
 };
 
-const TYPE_OPTIONS = ["tenant", "landlord", "contractor", "consultant", "attorney", "internal", "other"];
+export const TYPE_OPTIONS = [
+  "tenant",
+  "tenant_owner",
+  "tenant_manager",
+  "landlord",
+  "asset_manager",
+  "property_manager",
+  "leasing",
+  "contractor",
+  "electrician",
+  "plumber",
+  "fire",
+  "security",
+  "cleaning",
+  "facilities",
+  "emergency",
+  "consultant",
+  "attorney",
+  "legal",
+  "municipal",
+  "internal",
+  "other",
+];
 
 const EMPTY: ContactInput = {
   name: "",
@@ -24,7 +50,11 @@ const EMPTY: ContactInput = {
   company: "",
   email: "",
   phone: "",
+  office_number: "",
+  emergency_number: "",
+  after_hours_number: "",
   building_id: "",
+  active: true,
   notes: "",
 };
 
@@ -36,7 +66,11 @@ function toInput(contact?: Contact | null): ContactInput {
     company: contact.company ?? "",
     email: contact.email ?? "",
     phone: contact.phone ?? "",
+    office_number: contact.office_number ?? "",
+    emergency_number: contact.emergency_number ?? "",
+    after_hours_number: contact.after_hours_number ?? "",
     building_id: contact.building_id ?? "",
+    active: contact.active ?? true,
     notes: contact.notes ?? "",
   };
 }
@@ -97,13 +131,13 @@ export function ContactFormButton({
               <div>
                 <label className="label">Type</label>
                 <select
-                  className="input"
+                  className="input capitalize"
                   value={values.type}
                   onChange={(e) => setValues({ ...values, type: e.target.value })}
                 >
                   {TYPE_OPTIONS.map((t) => (
                     <option key={t} value={t} className="capitalize">
-                      {t}
+                      {t.replace(/_/g, " ")}
                     </option>
                   ))}
                 </select>
@@ -128,11 +162,37 @@ export function ContactFormButton({
                 />
               </div>
               <div>
-                <label className="label">Phone</label>
+                <label className="label">Cellphone</label>
                 <input
                   className="input"
                   value={values.phone}
                   onChange={(e) => setValues({ ...values, phone: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="label">Office Number</label>
+                <input
+                  className="input"
+                  value={values.office_number}
+                  onChange={(e) => setValues({ ...values, office_number: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="label">Emergency Number</label>
+                <input
+                  className="input"
+                  value={values.emergency_number}
+                  onChange={(e) => setValues({ ...values, emergency_number: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="label">After-Hours Number</label>
+                <input
+                  className="input"
+                  value={values.after_hours_number}
+                  onChange={(e) => setValues({ ...values, after_hours_number: e.target.value })}
                 />
               </div>
             </div>
@@ -151,6 +211,14 @@ export function ContactFormButton({
                 ))}
               </select>
             </div>
+            <label className="flex items-center gap-2 text-sm text-charcoal-300">
+              <input
+                type="checkbox"
+                checked={values.active}
+                onChange={(e) => setValues({ ...values, active: e.target.checked })}
+              />
+              Active
+            </label>
             <div>
               <label className="label">Notes</label>
               <textarea

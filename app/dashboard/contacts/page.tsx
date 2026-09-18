@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { Badge } from "@/components/StatusBadge";
+import { ExportButton } from "@/components/ExportButton";
 import { ContactFormButton } from "./ContactForm";
+import { ContactImportButton } from "./ContactImport";
+import { ContactsTable } from "./ContactsTable";
 
 export default async function ContactsPage() {
   const supabase = createClient();
@@ -10,7 +12,9 @@ export default async function ContactsPage() {
   const [{ data: contacts }, { data: buildings }] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, name, type, company, email, phone, building_id, notes, buildings(name)")
+      .select(
+        "id, name, type, company, email, phone, office_number, emergency_number, after_hours_number, building_id, active, notes, buildings(name)"
+      )
       .is("archived_at", null)
       .order("name"),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
@@ -22,45 +26,35 @@ export default async function ContactsPage() {
     <div>
       <PageHeader
         title="Contacts"
-        description={`${contacts?.length ?? 0} contacts`}
-        action={<ContactFormButton label="+ Add Contact" buildings={buildingOptions} />}
+        description={`${contacts?.length ?? 0} contacts - the address book for every building`}
+        action={
+          <div className="flex gap-3">
+            <ExportButton
+              filename="contacts"
+              sheetName="Contacts"
+              rows={(contacts ?? []).map((c: any) => ({
+                Name: c.name,
+                Type: c.type,
+                Company: c.company,
+                Email: c.email,
+                Cell: c.phone,
+                Office: c.office_number,
+                Emergency: c.emergency_number,
+                "After Hours": c.after_hours_number,
+                Building: c.buildings?.name,
+                Active: c.active,
+              }))}
+            />
+            <ContactImportButton buildings={buildingOptions} />
+            <ContactFormButton label="+ Add Contact" buildings={buildingOptions} />
+          </div>
+        }
       />
 
       {contacts && contacts.length > 0 ? (
-        <div className="table-shell">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Company</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Building</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {contacts.map((c: any) => (
-                <tr key={c.id}>
-                  <td className="font-medium">{c.name}</td>
-                  <td>
-                    <Badge label={c.type} className="bg-charcoal-600/60 text-charcoal-200 capitalize" />
-                  </td>
-                  <td>{c.company ?? "—"}</td>
-                  <td>{c.email ?? "—"}</td>
-                  <td>{c.phone ?? "—"}</td>
-                  <td>{c.buildings?.name ?? "—"}</td>
-                  <td className="text-right">
-                    <ContactFormButton contact={c} label="Edit" buildings={buildingOptions} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ContactsTable contacts={contacts as any} buildings={buildingOptions} />
       ) : (
-        <EmptyState title="No contacts yet" />
+        <EmptyState title="No contacts yet" description="Add a contact or import from Excel." />
       )}
     </div>
   );
