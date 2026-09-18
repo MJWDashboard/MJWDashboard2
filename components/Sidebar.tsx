@@ -17,6 +17,7 @@ import {
   HardHat,
   Contact2,
   BarChart3,
+  BookOpen,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { href: "/contractors", label: "Contractors", icon: HardHat },
   { href: "/contacts", label: "Contacts", icon: Contact2 },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
 ];
 
 export function Sidebar() {

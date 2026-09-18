@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ExportButton } from "@/components/ExportButton";
+import { PdfExportButton } from "@/components/PdfExportButton";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { TenantFormButton } from "./TenantForm";
 import { TenantImportButton } from "./TenantImport";
@@ -54,6 +55,19 @@ export default async function TenantsPage() {
                 "Lease End": t.lease_end,
                 Status: t.status,
               }))}
+            />
+            <PdfExportButton
+              filename="tenant-schedule"
+              title="Tenant Schedule"
+              columns={["Tenant", "Building", "Shop", "GLA", "Rental", "Lease End"]}
+              rows={(tenants ?? []).map((t: any) => [
+                t.trading_name,
+                t.buildings?.name ?? "—",
+                t.shop_number ?? "—",
+                formatNumber(t.gla),
+                formatCurrency(t.monthly_rental),
+                formatDate(t.lease_end),
+              ])}
             />
             <TenantImportButton buildings={buildingOptions} />
             <TenantFormButton label="+ Add Tenant" buildings={buildingOptions} />

@@ -871,6 +871,66 @@ export type Database = {
           },
         ]
       }
+      knowledge_base_articles: {
+        Row: {
+          archived_at: string | null
+          building_id: string | null
+          category: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_handover_summary: boolean
+          organization_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          building_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_handover_summary?: boolean
+          organization_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          building_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_handover_summary?: boolean
+          organization_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_articles_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_base_articles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leases: {
         Row: {
           archived_at: string | null
