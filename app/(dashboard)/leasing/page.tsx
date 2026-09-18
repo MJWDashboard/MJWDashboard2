@@ -22,7 +22,7 @@ export default async function LeasingPage() {
 
   let query = supabase
     .from("leasing_deals")
-    .select("id, prospect_name, shop_number, stage, deal_value, building_id, tenant_id, buildings(name), tenants(trading_name)")
+    .select("id, prospect_name, shop_number, stage, deal_value, notes, building_id, tenant_id, buildings(name), tenants(trading_name)")
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 

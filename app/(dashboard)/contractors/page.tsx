@@ -9,7 +9,7 @@ export default async function ContractorsPage() {
   const [{ data: contractors }, { data: contacts }, { data: buildings }] = await Promise.all([
     supabase
       .from("contractors")
-      .select("id, trade, rating, contact_id, building_id, contacts(name, email, phone), buildings(name)")
+      .select("id, trade, rating, contact_id, building_id, notes, contacts(name, email, phone), buildings(name)")
       .is("archived_at", null),
     supabase.from("contacts").select("id, name").is("archived_at", null).order("name"),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),

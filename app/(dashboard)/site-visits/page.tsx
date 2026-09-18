@@ -11,7 +11,7 @@ export default async function SiteVisitsPage() {
   const [{ data: visits }, { data: buildings }] = await Promise.all([
     supabase
       .from("site_visits")
-      .select("id, visit_date, observations, risks, status, buildings(name)")
+      .select("id, building_id, visit_date, observations, risks, status, buildings(name)")
       .is("archived_at", null)
       .order("visit_date", { ascending: false }),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),

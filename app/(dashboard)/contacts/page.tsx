@@ -10,7 +10,7 @@ export default async function ContactsPage() {
   const [{ data: contacts }, { data: buildings }] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, name, type, company, email, phone, building_id, buildings(name)")
+      .select("id, name, type, company, email, phone, building_id, notes, buildings(name)")
       .is("archived_at", null)
       .order("name"),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),

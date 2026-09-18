@@ -20,7 +20,7 @@ export default async function TurnoversPage() {
 
   let query = supabase
     .from("turnovers")
-    .select("id, period, turnover_amount, turnover_rental, submitted, tenants(trading_name), buildings(name)")
+    .select("id, tenant_id, building_id, period, turnover_amount, turnover_rental, submitted, notes, tenants(trading_name), buildings(name)")
     .is("archived_at", null)
     .order("period", { ascending: false });
 

@@ -13,7 +13,7 @@ export default async function BuildingsPage() {
 
   let query = supabase
     .from("buildings")
-    .select("id, name, address, gla, budget, portfolio")
+    .select("id, name, address, gla, budget, portfolio, notes")
     .is("archived_at", null)
     .order("name");
 

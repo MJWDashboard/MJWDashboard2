@@ -13,7 +13,7 @@ export default async function KnowledgeBasePage() {
   const [{ data: articles }, { data: buildings }] = await Promise.all([
     supabase
       .from("knowledge_base_articles")
-      .select("id, title, category, content, is_handover_summary, updated_at, buildings(name)")
+      .select("id, title, building_id, category, content, is_handover_summary, updated_at, buildings(name)")
       .is("archived_at", null)
       .order("updated_at", { ascending: false }),
     supabase.from("buildings").select("id, name").is("archived_at", null).order("name"),
