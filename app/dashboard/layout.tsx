@@ -4,6 +4,7 @@ import { getSelectedPortfolio } from "@/lib/portfolio";
 import { Sidebar } from "@/components/Sidebar";
 import { PortfolioSelector } from "@/components/PortfolioSelector";
 import { SignOutButton } from "@/components/SignOutButton";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export default async function DashboardLayout({
   children,
@@ -44,9 +45,10 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen bg-charcoal-950">
       <Sidebar isMasterAdmin={user.role === "admin"} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 flex-none items-center justify-between border-b border-charcoal-700 bg-charcoal-900/60 px-6">
+        <header className="flex h-16 flex-none items-center justify-between gap-4 border-b border-charcoal-700 bg-charcoal-900/60 px-6">
           <PortfolioSelector portfolios={portfolios ?? []} selected={selectedPortfolio} />
-          <div className="flex items-center gap-4">
+          <GlobalSearch />
+          <div className="flex flex-none items-center gap-4">
             <div className="text-right text-sm">
               <div className="text-charcoal-100">{user.organizationName}</div>
               <div className="text-xs text-charcoal-400">{user.email}</div>
