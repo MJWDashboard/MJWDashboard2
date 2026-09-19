@@ -10,8 +10,9 @@ import { VacantUnitFormButton } from "./VacantUnitForm";
 import { LeasingTargetFormButton } from "./LeasingTargetForm";
 import { ApprovedRateFormButton } from "./ApprovedRateForm";
 import { DocumentTemplateFormButton } from "./DocumentTemplateForm";
+import { RenewalRiskList } from "./RenewalRiskList";
 
-const TABS = ["Pipeline", "Vacant Units", "Target Lists", "Approved Rates", "Document Templates"] as const;
+const TABS = ["Pipeline", "Vacant Units", "Renewals & Risk", "Target Lists", "Approved Rates", "Document Templates"] as const;
 type Tab = (typeof TABS)[number];
 
 export function LeasingTabs({
@@ -20,6 +21,7 @@ export function LeasingTabs({
   targets,
   approvedRates,
   templates,
+  renewals,
   buildings,
   tenants,
 }: {
@@ -28,6 +30,7 @@ export function LeasingTabs({
   targets: any[];
   approvedRates: any[];
   templates: any[];
+  renewals: any[];
   buildings: { id: string; name: string }[];
   tenants: { id: string; trading_name: string }[];
 }) {
@@ -47,6 +50,11 @@ export function LeasingTabs({
             }`}
           >
             {t}
+            {t === "Renewals & Risk" && renewals.length > 0 && (
+              <span className="ml-2 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs text-orange-400">
+                {renewals.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -153,6 +161,16 @@ export function LeasingTabs({
           ) : (
             <p className="text-sm text-charcoal-400">No vacant units logged yet.</p>
           )}
+        </div>
+      )}
+
+      {tab === "Renewals & Risk" && (
+        <div>
+          <p className="mb-4 text-sm text-charcoal-300">
+            Active leases ending within the next 9 months. Log where each stands - renewal in progress, terms sent,
+            tenant not renewing - and keep the discussion history against the lease.
+          </p>
+          <RenewalRiskList renewals={renewals} />
         </div>
       )}
 

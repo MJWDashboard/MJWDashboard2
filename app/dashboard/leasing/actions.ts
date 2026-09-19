@@ -308,6 +308,38 @@ export async function updateLeasingTarget(id: string, input: LeasingTargetInput)
   return { error: null };
 }
 
+// ---------- Renewals & Risk ----------
+
+export async function updateLeaseRenewalStatus(leaseId: string, status: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("leases")
+    .update({ renewal_status: status as any, updated_by: user.id, updated_at: new Date().toISOString() })
+    .eq("id", leaseId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/leasing");
+  return { error: null };
+}
+
+export async function addLeaseRenewalNote(leaseId: string, comment: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+  if (!comment.trim()) return { error: "Note cannot be empty." };
+
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("lease_renewal_notes")
+    .insert({ lease_id: leaseId, comment: comment.trim(), created_by: user.id });
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/leasing");
+  return { error: null };
+}
+
 // ---------- Approved Rates ----------
 
 export type ApprovedRateInput = {

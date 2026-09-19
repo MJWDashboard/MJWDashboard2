@@ -100,3 +100,21 @@ export const LEASING_TARGET_STATUS_CLASSES: Record<string, string> = {
   not_interested: "bg-red-500/20 text-red-400",
   converted: "bg-green-500/20 text-green-400",
 };
+
+export const RENEWAL_STATUS_LABELS: Record<string, string> = {
+  undecided: "Undecided",
+  renewal_in_progress: "Renewal in Progress",
+  terms_sent: "Terms Sent",
+  tenant_not_renewing: "Tenant Not Renewing",
+  renewed: "Renewed",
+  vacating: "Vacating",
+};
+
+export const RENEWAL_STATUS_CLASSES: Record<string, string> = {
+  undecided: "bg-charcoal-600/60 text-charcoal-200",
+  renewal_in_progress: "bg-cyan-600/20 text-cyan-400",
+  terms_sent: "bg-yellow-500/20 text-yellow-400",
+  tenant_not_renewing: "bg-red-500/20 text-red-400",
+  renewed: "bg-green-500/20 text-green-400",
+  vacating: "bg-orange-500/20 text-orange-400",
+};

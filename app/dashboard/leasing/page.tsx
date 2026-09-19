@@ -32,8 +32,20 @@ export default async function LeasingPage({
     return query;
   };
 
-  const [{ data: deals }, { data: vacantUnits }, { data: targets }, { data: approvedRates }, { data: templates }, { data: tenants }] =
-    await Promise.all([
+  const today = new Date();
+  const renewalCutoff = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 9, today.getUTCDate()))
+    .toISOString()
+    .slice(0, 10);
+
+  const [
+    { data: deals },
+    { data: vacantUnits },
+    { data: targets },
+    { data: approvedRates },
+    { data: templates },
+    { data: tenants },
+    { data: expiringLeases },
+  ] = await Promise.all([
       applyScope(
         supabase
           .from("leasing_deals")
@@ -66,9 +78,28 @@ export default async function LeasingPage({
       ),
       supabase.from("leasing_document_templates").select("id, name, items").is("archived_at", null).order("name"),
       supabase.from("tenants").select("id, trading_name").is("archived_at", null).order("trading_name"),
+      applyScope(
+        supabase
+          .from("leases")
+          .select(
+            "id, building_id, tenant_id, shop_number, lease_end, status, renewal_status, buildings(name), tenants(trading_name), lease_renewal_notes(id, comment, created_at)"
+          )
+          .eq("status", "active")
+          .is("archived_at", null)
+          .not("lease_end", "is", null)
+          .lte("lease_end", renewalCutoff)
+          .order("lease_end")
+          .order("created_at", { foreignTable: "lease_renewal_notes", ascending: false })
+      ),
     ]);
 
   const buildingOptions = (buildings ?? []).map((b) => ({ id: b.id, name: b.name }));
+
+  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const renewals = (expiringLeases ?? []).map((l: any) => ({
+    ...l,
+    daysRemaining: Math.round((new Date(l.lease_end + "T00:00:00Z").getTime() - todayMs) / 86400000),
+  }));
 
   return (
     <div>
@@ -90,6 +121,7 @@ export default async function LeasingPage({
         targets={targets ?? []}
         approvedRates={approvedRates ?? []}
         templates={templates ?? []}
+        renewals={renewals}
         buildings={buildingOptions}
         tenants={tenants ?? []}
       />

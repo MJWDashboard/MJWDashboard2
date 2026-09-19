@@ -1363,6 +1363,38 @@ export type Database = {
           },
         ]
       }
+      lease_renewal_notes: {
+        Row: {
+          comment: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lease_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lease_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lease_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_renewal_notes_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leases: {
         Row: {
           annual_turnover_required: boolean
@@ -1397,6 +1429,7 @@ export type Database = {
           option_period: string | null
           other_charges: number | null
           rates: number | null
+          renewal_status: Database["public"]["Enums"]["lease_renewal_status"]
           security_notes: string | null
           shop_number: string | null
           status: Database["public"]["Enums"]["lease_status"]
@@ -1444,6 +1477,7 @@ export type Database = {
           option_period?: string | null
           other_charges?: number | null
           rates?: number | null
+          renewal_status?: Database["public"]["Enums"]["lease_renewal_status"]
           security_notes?: string | null
           shop_number?: string | null
           status?: Database["public"]["Enums"]["lease_status"]
@@ -1491,6 +1525,7 @@ export type Database = {
           option_period?: string | null
           other_charges?: number | null
           rates?: number | null
+          renewal_status?: Database["public"]["Enums"]["lease_renewal_status"]
           security_notes?: string | null
           shop_number?: string | null
           status?: Database["public"]["Enums"]["lease_status"]
@@ -3281,6 +3316,13 @@ export type Database = {
         | "resolved"
         | "closed"
         | "cancelled"
+      lease_renewal_status:
+        | "undecided"
+        | "renewal_in_progress"
+        | "terms_sent"
+        | "tenant_not_renewing"
+        | "renewed"
+        | "vacating"
       lease_status:
         | "active"
         | "expired"
@@ -3485,6 +3527,14 @@ export const Constants = {
         "resolved",
         "closed",
         "cancelled",
+      ],
+      lease_renewal_status: [
+        "undecided",
+        "renewal_in_progress",
+        "terms_sent",
+        "tenant_not_renewing",
+        "renewed",
+        "vacating",
       ],
       lease_status: [
         "active",
