@@ -3,6 +3,13 @@ export const RECORD_STATUS_LABELS: Record<string, string> = {
   in_progress: "In Progress",
   waiting_on_feedback: "Waiting on Feedback",
   complete: "Complete",
+  // public.tenant_lifecycle_status - merged in here so <StatusBadge> renders
+  // tenant rows correctly without every call site needing its own map.
+  pending: "Pending",
+  active: "Active",
+  vacating: "Vacating",
+  expired: "Expired",
+  inactive: "Inactive",
 };
 
 export const RECORD_STATUS_CLASSES: Record<string, string> = {
@@ -10,6 +17,11 @@ export const RECORD_STATUS_CLASSES: Record<string, string> = {
   in_progress: "bg-cyan-600/20 text-cyan-400",
   waiting_on_feedback: "bg-yellow-500/20 text-yellow-400",
   complete: "bg-green-500/20 text-green-400",
+  pending: "bg-charcoal-600/60 text-charcoal-200",
+  active: "bg-green-500/20 text-green-400",
+  vacating: "bg-yellow-500/20 text-yellow-400",
+  expired: "bg-red-500/20 text-red-400",
+  inactive: "bg-charcoal-600/60 text-charcoal-400",
 };
 
 export function statusLabel(status: string | null | undefined): string {

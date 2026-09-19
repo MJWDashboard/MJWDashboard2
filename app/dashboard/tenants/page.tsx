@@ -72,7 +72,7 @@ export default async function TenantsPage() {
                 formatDate(t.lease_end),
               ])}
             />
-            <TenantImportButton buildings={buildingOptions} />
+            <TenantImportButton />
             <TenantFormButton label="+ Add Tenant" buildings={buildingOptions} />
           </div>
         }

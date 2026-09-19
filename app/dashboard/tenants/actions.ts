@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/org";
 import { createImportBatch, finalizeImportBatch } from "@/lib/import-batches";
 import type { ImportPreviewRow } from "@/lib/imports";
+import type { TenantImportData } from "./importUtils";
 
 export type TenantInput = {
   // Identification
@@ -317,163 +318,146 @@ export async function removeTenantContact(id: string, tenantId: string) {
   return { error: null };
 }
 
-export async function getExistingTenantsForImport() {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("tenants")
-    .select("id, building_id, trading_name")
-    .is("archived_at", null);
-
-  if (error) return { data: [], error: error.message };
-  return { data: data ?? [], error: null };
+export async function getTenantImportMatchingData() {
+  const supabase = createClient() as any;
+  const [{ data: buildings }, { data: tenants }] = await Promise.all([
+    supabase.from("buildings").select("id, building_code").is("archived_at", null),
+    supabase.from("tenants").select("id, building_id, account_number, shop_number, trading_name").is("archived_at", null),
+  ]);
+  return {
+    buildings: (buildings ?? []) as { id: string; building_code: string | null }[],
+    tenants: (tenants ?? []) as { id: string; building_id: string; account_number: string | null; shop_number: string | null; trading_name: string }[],
+  };
 }
 
-export type ImportRow = {
-  category: "new" | "update";
-  buildingId: string;
-  tenantId: string | null;
-  tradingName: string;
-  shopNumber: string;
-  gla: string;
-  monthlyRental: string;
-  leaseStart: string;
-  leaseEnd: string;
-  accountNumber: string;
-  registeredEntity: string;
-};
-
-export async function commitTenantImport(rows: ImportRow[], filename: string) {
+export async function commitTenantImport(rows: ImportPreviewRow<TenantImportData>[], filename: string) {
   const user = await getCurrentUser();
-  if (!user) return { error: "Not authorized.", imported: 0 };
+  if (!user) return { error: "Not authorized.", created: 0, updated: 0, rejected: rows.length };
 
-  const supabase = createClient();
-  let imported = 0;
-  let created = 0;
-  let updated = 0;
-
-  const previewRows: ImportPreviewRow<ImportRow>[] = rows.map((row, i) => ({
-    rowNumber: i + 1,
-    action: row.category === "update" ? "update" : "create",
-    matchKey: row.accountNumber || `${row.tradingName} @ ${row.buildingId}`,
-    data: row,
-    recordId: row.tenantId,
-    errors: [],
-    warnings: [],
-  }));
+  const validRows = rows.filter((row) => row.errors.length === 0);
   const batchResult = await createImportBatch({
     module: "tenants",
     filename,
-    templateVersion: "VOREXA-TENANTS-v1",
+    templateVersion: "VOREXA-TENANTS-v2",
     portfolioId: null,
-    rows: previewRows,
+    rows,
   });
+  if (batchResult.error || !batchResult.batchId) {
+    return { error: batchResult.error, created: 0, updated: 0, rejected: rows.length };
+  }
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const rowNumber = i + 1;
-    const leasePayload = {
-      building_id: row.buildingId,
-      shop_number: row.shopNumber || null,
-      gla: toNumeric(row.gla),
-      base_rental: toNumeric(row.monthlyRental),
-      lease_start: toDate(row.leaseStart),
-      lease_end: toDate(row.leaseEnd),
-      import_source: "excel_import",
-      updated_by: user.id,
-      updated_at: new Date().toISOString(),
+  const supabase = createClient() as any;
+  let created = 0;
+  let updated = 0;
+
+  for (const row of validRows) {
+    const input: TenantInput = {
+      building_id: row.data.buildingId,
+      trading_name: row.data.tradingName,
+      registered_entity: row.data.registeredEntity,
+      account_number: row.data.accountNumber,
+      shop_number: row.data.shopNumber,
+      gla: row.data.gla,
+      status: row.data.status,
+      monthly_rental: row.data.monthlyRental,
+      lease_start: row.data.leaseStart,
+      lease_end: row.data.leaseEnd,
+      option_period: row.data.optionPeriod,
+      escalation_pct: row.data.escalationPct,
+      escalation_date: row.data.escalationDate,
+      operating_costs: row.data.operatingCosts,
+      rates: row.data.rates,
+      marketing_charge: row.data.marketingCharge,
+      other_charges: row.data.otherCharges,
+      deposit_amount: row.data.depositAmount,
+      deposit_type: row.data.depositType,
+      bank_guarantee_reference: row.data.bankGuaranteeReference,
+      surety_name: row.data.suretyName,
+      surety_expiry: row.data.suretyExpiry,
+      security_notes: "",
+      fica_status: row.data.ficaStatus,
+      insurance_status: row.data.insuranceStatus,
+      lease_signed: row.data.leaseSigned,
+      guarantee_received: row.data.guaranteeReceived,
+      deposit_received: row.data.depositReceived,
+      surety_received: row.data.suretyReceived,
+      turnover_reporting_required: row.data.turnoverReportingRequired,
+      monthly_turnover_required: row.data.monthlyTurnoverRequired,
+      annual_turnover_required: row.data.annualTurnoverRequired,
+      turnover_pct: row.data.turnoverPct,
+      financial_year_end_month: row.data.financialYearEndMonth,
+      financial_year_end_day: row.data.financialYearEndDay,
+      turnover_penalty_clause: row.data.turnoverPenaltyClause,
+      turnover_penalty_amount: row.data.turnoverPenaltyAmount,
+      notes: row.data.notes,
     };
 
-    let recordId: string | null | undefined = row.tenantId;
+    const identityPayload = { ...buildTenantIdentityPayload(input), import_source: filename, updated_by: user.id, updated_at: new Date().toISOString() };
+    const leasePayload = { ...buildLeasePayload(input), import_source: filename, updated_by: user.id, updated_at: new Date().toISOString() };
+
+    let recordId: string | null | undefined = row.recordId;
     let previous: any = null;
     let rowError: string | null = null;
 
-    if (row.category === "update" && row.tenantId) {
-      const before = await supabase.from("tenants").select("*").eq("id", row.tenantId).single();
+    if (row.action === "update" && row.recordId) {
+      const before = await supabase.from("tenants").select("*, leases(*)").eq("id", row.recordId).single();
       previous = before.data;
 
-      const { error: tenantError } = await supabase
-        .from("tenants")
-        .update({
-          trading_name: row.tradingName,
-          account_number: row.accountNumber || null,
-          registered_entity: row.registeredEntity || null,
-          import_source: "excel_import",
-          updated_by: user.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", row.tenantId);
+      const { error: tenantError } = await supabase.from("tenants").update(identityPayload).eq("id", row.recordId);
       rowError = tenantError?.message ?? null;
 
       if (!rowError) {
         const { data: currentLease } = await supabase
           .from("leases")
           .select("id")
-          .eq("tenant_id", row.tenantId)
+          .eq("tenant_id", row.recordId)
           .eq("status", "active")
           .maybeSingle();
 
         const { error: leaseError } = currentLease
           ? await supabase.from("leases").update(leasePayload).eq("id", currentLease.id)
-          : await supabase.from("leases").insert({ ...leasePayload, tenant_id: row.tenantId, created_by: user.id });
+          : await supabase.from("leases").insert({ ...leasePayload, tenant_id: row.recordId, created_by: user.id });
         rowError = leaseError?.message ?? null;
       }
-      if (!rowError) {
-        imported += 1;
-        updated += 1;
-      }
+      if (!rowError) updated += 1;
     } else {
       const { data, error } = await supabase.rpc("create_tenant_with_lease", {
-        tenant_data: {
-          building_id: row.buildingId,
-          trading_name: row.tradingName,
-          account_number: row.accountNumber || null,
-          registered_entity: row.registeredEntity || null,
-          status: "active",
-          created_by: user.id,
-          updated_by: user.id,
-        },
-        lease_data: { ...leasePayload, created_by: user.id, updated_by: user.id },
+        tenant_data: { ...identityPayload, created_by: user.id },
+        lease_data: { ...leasePayload, created_by: user.id },
       });
       rowError = error?.message ?? null;
       recordId = data;
-      if (!rowError) {
-        imported += 1;
-        created += 1;
-      }
+      if (!rowError) created += 1;
     }
 
-    if (batchResult.batchId) {
-      await supabase
-        .from("import_batch_rows")
-        .update({
-          status: rowError ? "rejected" : "applied",
-          record_table: "tenants",
-          record_id: recordId || null,
-          previous_data: previous,
-          applied_data: rowError ? null : { ...leasePayload, trading_name: row.tradingName },
-          errors: rowError ? [{ field: "row", value: row.tradingName, reason: rowError }] : [],
-        })
-        .eq("batch_id", batchResult.batchId)
-        .eq("row_number", rowNumber);
-      if (!rowError && recordId) {
-        await supabase.from("audit_log").insert({
-          table_name: "tenants",
-          record_id: recordId,
-          action: row.category === "update" ? "import_update" : "import_create",
-          field_changes: { previous, applied: { ...leasePayload, trading_name: row.tradingName } },
-          import_source: filename,
-          import_batch_id: batchResult.batchId,
-          performed_by: user.id,
-        });
-      }
+    await supabase
+      .from("import_batch_rows")
+      .update({
+        status: rowError ? "rejected" : "applied",
+        record_table: "tenants",
+        record_id: recordId || null,
+        previous_data: previous,
+        applied_data: rowError ? null : { ...identityPayload, ...leasePayload },
+        errors: rowError ? [{ field: "row", value: row.matchKey, reason: rowError }] : row.errors,
+      })
+      .eq("batch_id", batchResult.batchId)
+      .eq("row_number", row.rowNumber);
+
+    if (!rowError && recordId) {
+      await supabase.from("audit_log").insert({
+        table_name: "tenants",
+        record_id: recordId,
+        action: row.action === "update" ? "import_update" : "import_create",
+        field_changes: { previous, applied: { ...identityPayload, ...leasePayload } },
+        import_source: filename,
+        import_batch_id: batchResult.batchId,
+        performed_by: user.id,
+      });
     }
   }
 
-  if (batchResult.batchId) {
-    await finalizeImportBatch(batchResult.batchId, created, updated);
-  }
-
+  await finalizeImportBatch(batchResult.batchId, created, updated);
   revalidatePath("/dashboard/tenants");
   revalidatePath("/dashboard");
-  return { error: null, imported, batchId: batchResult.batchId };
+  return { error: null, batchId: batchResult.batchId, created, updated, rejected: rows.length - validRows.length };
 }

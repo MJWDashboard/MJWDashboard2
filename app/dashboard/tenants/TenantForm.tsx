@@ -11,11 +11,13 @@ type Tenant = Partial<TenantInput> & {
   trading_name: string;
 };
 
+// Matches public.tenant_lifecycle_status exactly - these are not free text.
 const STATUS_OPTIONS = [
-  ["not_started", "Not Started"],
-  ["in_progress", "In Progress"],
-  ["waiting_on_feedback", "Waiting on Feedback"],
-  ["complete", "Complete"],
+  ["pending", "Pending"],
+  ["active", "Active"],
+  ["vacating", "Vacating"],
+  ["expired", "Expired"],
+  ["inactive", "Inactive"],
 ];
 
 const FICA_OPTIONS = [
@@ -31,7 +33,7 @@ const EMPTY: TenantInput = {
   account_number: "",
   shop_number: "",
   gla: "",
-  status: "not_started",
+  status: "active",
   monthly_rental: "",
   lease_start: "",
   lease_end: "",
@@ -78,7 +80,7 @@ function toInput(tenant?: Tenant | null, defaultBuildingId?: string): TenantInpu
     account_number: str(tenant.account_number),
     shop_number: str(tenant.shop_number),
     gla: str(tenant.gla),
-    status: str(tenant.status) || "not_started",
+    status: str(tenant.status) || "active",
     monthly_rental: str(tenant.monthly_rental),
     lease_start: str(tenant.lease_start),
     lease_end: str(tenant.lease_end),

@@ -2,163 +2,123 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
+import { Upload, FileWarning } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { Badge } from "@/components/StatusBadge";
-import { parseSheetRows, categorizeRows, type CategorizedRow } from "./importUtils";
-import { getExistingTenantsForImport, commitTenantImport } from "./actions";
+import { downloadErrorWorkbook, type ImportPreviewRow } from "@/lib/imports";
+import { parseTenantImportRows, type TenantImportData } from "./importUtils";
+import { getTenantImportMatchingData, commitTenantImport } from "./actions";
 
-export function TenantImportButton({
-  buildings,
-}: {
-  buildings: { id: string; name: string }[];
-}) {
+export function TenantImportButton() {
   const [open, setOpen] = useState(false);
-  const [rows, setRows] = useState<CategorizedRow[] | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [rows, setRows] = useState<ImportPreviewRow<TenantImportData>[] | null>(null);
+  const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<number | null>(null);
+  const [result, setResult] = useState<{ created: number; updated: number; rejected: number; batchId?: string } | null>(null);
   const router = useRouter();
 
-  function reset() {
-    setRows(null);
-    setFileName(null);
-    setError(null);
-    setDone(null);
-  }
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function selectFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
     setLoading(true);
     setError(null);
-
+    setFileName(file.name);
     try {
       const XLSX = await import("xlsx");
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const sheetRows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet);
-      const parsed = parseSheetRows(sheetRows);
-
-      const { data: existingTenants } = await getExistingTenantsForImport();
-      const categorized = categorizeRows(parsed, buildings, existingTenants);
-      setRows(categorized);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not read file.");
+      const workbook = XLSX.read(await file.arrayBuffer(), { cellDates: true });
+      const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+      const { buildings, tenants } = await getTenantImportMatchingData();
+      setRows(parseTenantImportRows(raw, buildings, tenants));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not read file.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCommit() {
+  async function commit() {
     if (!rows) return;
     setLoading(true);
     setError(null);
-
-    const importable = rows.filter((r) => r.category !== "needs_review" && r.buildingId);
-    const result = await commitTenantImport(
-      importable.map((r) => ({
-        category: r.category as "new" | "update",
-        buildingId: r.buildingId!,
-        tenantId: r.tenantId,
-        tradingName: r.tradingName,
-        shopNumber: r.shopNumber,
-        gla: r.gla,
-        monthlyRental: r.monthlyRental,
-        leaseStart: r.leaseStart,
-        leaseEnd: r.leaseEnd,
-        accountNumber: r.accountNumber,
-        registeredEntity: r.registeredEntity,
-      })),
-      fileName ?? "tenants-import.xlsx"
-    );
-
+    const response = await commitTenantImport(rows, fileName);
     setLoading(false);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-    setDone(result.imported);
+    if (response.error) return setError(response.error);
+    setResult(response);
     router.refresh();
   }
 
-  const counts = rows
-    ? {
-        new: rows.filter((r) => r.category === "new").length,
-        update: rows.filter((r) => r.category === "update").length,
-        needs_review: rows.filter((r) => r.category === "needs_review").length,
-      }
-    : null;
+  const counts = rows && {
+    valid: rows.filter((r) => !r.errors.length).length,
+    create: rows.filter((r) => r.action === "create").length,
+    update: rows.filter((r) => r.action === "update").length,
+    rejected: rows.filter((r) => r.errors.length).length,
+    warnings: rows.filter((r) => r.warnings.length).length,
+  };
 
   return (
     <>
       <button
-        onClick={() => {
-          reset();
-          setOpen(true);
-        }}
         className="btn-secondary"
+        onClick={() => {
+          setOpen(true);
+          setRows(null);
+          setResult(null);
+          setError(null);
+        }}
       >
         <Upload size={16} />
         Import
       </button>
 
       {open && (
-        <Modal title="Import Tenants" onClose={() => setOpen(false)}>
-          {!rows && (
+        <Modal title="Import Tenants · VOREXA-TENANTS-v2" onClose={() => setOpen(false)}>
+          {!rows && !result && (
             <div>
               <p className="mb-4 text-sm text-charcoal-300">
-                Upload a .xlsx or .csv file with columns for Building, Trading
-                Name, Shop Number, GLA, Monthly Rental, Lease Start and Lease
-                End. Rows are matched by building + tenant name.
+                Upload the canonical Tenants .xlsx or .csv template. Records match on Building Code +
+                Account Number (or Building Code + Shop Number + Trading Name where an account number
+                isn&apos;t available). Rows sharing an account number are combined into one tenant.
               </p>
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFile}
-                className="input"
-              />
-              {loading && <p className="mt-3 text-sm text-charcoal-400">Reading {fileName}…</p>}
+              <input className="input" type="file" accept=".xlsx,.xls,.csv" onChange={selectFile} />
+              {loading && <p className="mt-3 text-sm">Validating…</p>}
               {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
             </div>
           )}
 
-          {rows && counts && done === null && (
+          {rows && counts && !result && (
             <div>
-              <div className="mb-4 flex gap-3 text-sm">
-                <Badge label={`${counts.new} new`} className="bg-green-500/20 text-green-400" />
-                <Badge label={`${counts.update} update`} className="bg-cyan-600/20 text-cyan-400" />
-                <Badge
-                  label={`${counts.needs_review} needs review`}
-                  className="bg-yellow-500/20 text-yellow-400"
-                />
+              <div className="mb-4 flex flex-wrap gap-2">
+                <Badge label={`${rows.length} total`} className="bg-charcoal-600/60 text-charcoal-200" />
+                <Badge label={`${counts.valid} valid`} className="bg-green-500/20 text-green-400" />
+                <Badge label={`${counts.create} create`} className="bg-cyan-600/20 text-cyan-400" />
+                <Badge label={`${counts.update} update`} className="bg-yellow-500/20 text-yellow-400" />
+                <Badge label={`${counts.rejected} rejected`} className="bg-red-500/20 text-red-400" />
+                {counts.warnings > 0 && (
+                  <Badge label={`${counts.warnings} warnings`} className="bg-yellow-500/20 text-yellow-400" />
+                )}
               </div>
 
-              <div className="max-h-72 overflow-y-auto rounded-md border border-charcoal-700">
+              <div className="max-h-80 overflow-auto rounded-md border border-charcoal-700">
                 <table className="table-base">
                   <thead>
                     <tr>
-                      <th>Tenant</th>
+                      <th>Row</th>
                       <th>Building</th>
-                      <th>Status</th>
+                      <th>Tenant</th>
+                      <th>Account</th>
+                      <th>Result</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((r, i) => (
-                      <tr key={i}>
-                        <td>{r.tradingName || "—"}</td>
-                        <td>{r.buildingName || "—"}</td>
-                        <td>
-                          {r.category === "needs_review" ? (
-                            <span className="text-xs text-yellow-400">{r.reason}</span>
-                          ) : (
-                            <span className="text-xs capitalize text-charcoal-300">
-                              {r.category}
-                            </span>
-                          )}
+                    {rows.map((row) => (
+                      <tr key={row.rowNumber}>
+                        <td>{row.rowNumber}</td>
+                        <td>{row.data.buildingCode || "—"}</td>
+                        <td>{row.data.tradingName || "—"}</td>
+                        <td>{row.data.accountNumber || row.data.shopNumber || "—"}</td>
+                        <td className={row.errors.length ? "text-red-400" : row.warnings.length ? "text-yellow-400" : "text-charcoal-300"}>
+                          {row.errors[0]?.reason ?? row.warnings[0]?.reason ?? row.action}
                         </td>
                       </tr>
                     ))}
@@ -166,28 +126,31 @@ export function TenantImportButton({
                 </table>
               </div>
 
+              {counts.rejected > 0 && (
+                <button className="btn-secondary mt-4" onClick={() => downloadErrorWorkbook("tenants", rows)}>
+                  <FileWarning size={16} />
+                  Download Error Report
+                </button>
+              )}
               {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-
               <div className="mt-4 flex justify-end gap-3">
-                <button className="btn-secondary" onClick={reset}>
+                <button className="btn-secondary" onClick={() => setRows(null)}>
                   Choose Different File
                 </button>
-                <button
-                  className="btn-primary"
-                  disabled={loading || counts.new + counts.update === 0}
-                  onClick={handleCommit}
-                >
-                  {loading ? "Importing…" : `Import ${counts.new + counts.update} rows`}
+                <button className="btn-primary" disabled={loading || !counts.valid} onClick={commit}>
+                  {loading ? "Importing…" : `Confirm ${counts.valid} rows`}
                 </button>
               </div>
             </div>
           )}
 
-          {done !== null && (
+          {result && (
             <div className="text-center">
-              <p className="text-sm text-charcoal-100">
-                Imported {done} tenant{done === 1 ? "" : "s"} successfully.
+              <p className="text-charcoal-100">
+                {result.created + result.updated + result.rejected} rows processed · {result.created} created ·{" "}
+                {result.updated} updated · {result.rejected} rejected
               </p>
+              {result.batchId && <p className="mt-2 text-xs text-charcoal-400">Batch {result.batchId}</p>}
               <button className="btn-primary mt-4" onClick={() => setOpen(false)}>
                 Done
               </button>
