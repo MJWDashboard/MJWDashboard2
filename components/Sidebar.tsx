@@ -27,25 +27,29 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/messages", label: "Tasks & Messages", icon: MessageSquare },
+const PROPERTY_ITEMS = [
   { href: "/dashboard/buildings", label: "Buildings", icon: Building2 },
   { href: "/dashboard/tenants", label: "Tenants", icon: Users },
   { href: "/dashboard/leasing", label: "Leasing", icon: Handshake },
   { href: "/dashboard/arrears", label: "Arrears", icon: BanknoteIcon },
   { href: "/dashboard/turnovers", label: "Turnovers", icon: TrendingUp },
-  { href: "/dashboard/actions", label: "Actions", icon: CheckSquare },
-  { href: "/dashboard/meetings", label: "Meetings", icon: CalendarClock },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/dashboard/site-visits", label: "Site Visits", icon: ClipboardList },
-  { href: "/dashboard/documents", label: "Documents", icon: FileText },
   { href: "/dashboard/contractors", label: "Contractors", icon: HardHat },
   { href: "/dashboard/contacts", label: "Contacts", icon: Contact2 },
+  { href: "/dashboard/site-visits", label: "Site Visits", icon: ClipboardList },
+  { href: "/dashboard/documents", label: "Documents", icon: FileText },
+];
+
+const ADMIN_ITEMS = [{ href: "/dashboard/security", label: "Security", icon: KeyRound }];
+
+const SITE_LINK_ITEMS = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/messages", label: "Tasks & Messages", icon: MessageSquare },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/dashboard/actions", label: "Actions", icon: CheckSquare },
+  { href: "/dashboard/meetings", label: "Meetings", icon: CalendarClock },
   { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { href: "/dashboard/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/dashboard/support", label: "Support Tickets", icon: LifeBuoy },
-  { href: "/dashboard/security", label: "Security", icon: KeyRound },
 ];
 
 export function Sidebar({
@@ -59,16 +63,23 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
 
-  let items = canAccessTeam
-    ? [...NAV_ITEMS, { href: "/dashboard/team", label: "Team & Access", icon: ShieldCheck }]
-    : NAV_ITEMS;
+  let adminItems = ADMIN_ITEMS;
+  if (canAccessTeam) {
+    adminItems = [...adminItems, { href: "/dashboard/team", label: "Team & Access", icon: ShieldCheck }];
+  }
   if (canViewAuditLog) {
-    items = [
-      ...items,
+    adminItems = [
+      ...adminItems,
       { href: "/dashboard/audit-log", label: "Audit Log", icon: ScrollText },
       { href: "/dashboard/system-health", label: "System Health", icon: Activity },
     ];
   }
+
+  const groups = [
+    { label: "Property", items: PROPERTY_ITEMS },
+    { label: "Admin", items: adminItems },
+    { label: "Site Links", items: SITE_LINK_ITEMS },
+  ];
 
   return (
     <aside className="flex h-screen w-60 flex-none flex-col border-r border-charcoal-700 bg-charcoal-900">
@@ -78,30 +89,39 @@ export function Sidebar({
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
-        {items.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                active
-                  ? "bg-cyan-600/15 text-cyan-400"
-                  : "text-charcoal-300 hover:bg-charcoal-800 hover:text-charcoal-100"
-              }`}
-            >
-              <Icon size={17} />
-              <span className="flex-1">{label}</span>
-              {href === "/dashboard/messages" && messagesUnreadCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 text-[11px] font-semibold text-charcoal-950">
-                  {messagesUnreadCount > 99 ? "99+" : messagesUnreadCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+        {groups.map(({ label, items }) => (
+          <div key={label}>
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-charcoal-500">
+              {label}
+            </p>
+            <div className="space-y-0.5">
+              {items.map(({ href, label, icon: Icon }) => {
+                const active =
+                  href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                      active
+                        ? "bg-cyan-600/15 text-cyan-400"
+                        : "text-charcoal-300 hover:bg-charcoal-800 hover:text-charcoal-100"
+                    }`}
+                  >
+                    <Icon size={17} />
+                    <span className="flex-1">{label}</span>
+                    {href === "/dashboard/messages" && messagesUnreadCount > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 text-[11px] font-semibold text-charcoal-950">
+                        {messagesUnreadCount > 99 ? "99+" : messagesUnreadCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
     </aside>
   );
