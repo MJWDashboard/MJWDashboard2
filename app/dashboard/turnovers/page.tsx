@@ -8,6 +8,8 @@ import { TurnoverFormButton } from "./TurnoverForm";
 import { TurnoversTable } from "./TurnoversTable";
 import { SyncCertificatesButton, AnnualCertificatesTable } from "./AnnualCertificates";
 import { TurnoverImportButton } from "./TurnoverImport";
+import { PendingTurnoverImports } from "./PendingImports";
+import { getPendingTurnoverBatches } from "./actions";
 import { TemplateDownloadButton } from "@/components/TemplateDownloadButton";
 import { ExportButton } from "@/components/ExportButton";
 
@@ -50,7 +52,7 @@ export default async function TurnoversPage({
     certQuery = certQuery.in("building_id", scopedIds);
   }
 
-  const [{ data: turnovers }, { data: tenants }, { data: certificates }] = await Promise.all([
+  const [{ data: turnovers }, { data: tenants }, { data: certificates }, { batches: pendingBatches }] = await Promise.all([
     query,
     supabase
       .from("tenants")
@@ -58,6 +60,7 @@ export default async function TurnoversPage({
       .is("archived_at", null)
       .order("trading_name"),
     certQuery,
+    getPendingTurnoverBatches(),
   ]);
 
   const buildingOptions = (allBuildings ?? []).filter((b) => !scopedIds || scopedIds.includes(b.id)).map((b) => ({ id: b.id, name: b.name }));
@@ -77,6 +80,8 @@ export default async function TurnoversPage({
         description={`${turnovers?.length ?? 0} records - monthly compliance register`}
         action={<div className="flex flex-wrap gap-3"><TurnoverImportButton /><TemplateDownloadButton filename="VOREXA-TURNOVERS-v1.xlsx" sheetName="Turnovers" headers={["Building Code", "Tenant Account Number", "Trading Name", "Shop Number", "Period", "Turnover Amount (R)", "Turnover Rental (R)", "Submitted by Tenant", "Submission Date", "Penalty Applicable", "Penalty Amount (R)", "Annual Certificate Required", "Financial Year End", "Annual Certificate Due Date", "Annual Certificate Received Date", "Notes"]}/><ExportButton filename="turnovers" sheetName="Turnovers" rows={(turnovers ?? []).map((item: any) => ({ Building: item.buildings?.name, Tenant: item.tenants?.trading_name, Period: item.period, "Turnover Amount (R)": item.turnover_amount, "Turnover Rental (R)": item.turnover_rental, Status: item.status }))}/><TurnoverFormButton label="+ Add Turnover" tenants={tenants ?? []} /></div>}
       />
+
+      <PendingTurnoverImports batches={pendingBatches} />
 
       {missingThisMonth.length > 0 && (
         <div className="card mb-6 border-yellow-500/30 bg-yellow-500/5">

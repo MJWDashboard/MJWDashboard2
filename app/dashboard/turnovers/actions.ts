@@ -102,14 +102,19 @@ export async function getTurnoverImportMatchingData() {
   };
 }
 
-export async function commitTurnoverImport(rows: ImportPreviewRow<TurnoverImportData>[], filename: string) {
-  const user = await getCurrentUser();
-  if (!user) return { error: "Not authorized.", created: 0, updated: 0, rejected: rows.length };
+// Shared by the manual importer commit and by confirming a batch that a
+// background sheet-sync staged earlier - both just need to apply already
+// validated rows against a batch that already exists.
+export async function applyTurnoverBatchRows(
+  batchId: string,
+  rows: ImportPreviewRow<TurnoverImportData>[],
+  userId: string,
+  filename: string,
+  supabase: any
+) {
   const valid = rows.filter((row) => !row.errors.length && row.action !== "skip");
-  const batch = await createImportBatch({ module: "turnovers", filename, templateVersion: "VOREXA-TURNOVERS-v1", rows });
-  if (batch.error || !batch.batchId) return { error: batch.error, created: 0, updated: 0, rejected: rows.length };
-  const supabase = createClient() as any;
-  let created = 0; let updated = 0;
+  let created = 0;
+  let updated = 0;
   for (const row of valid) {
     const payload = {
       tenant_id: row.data.tenantId, building_id: row.data.buildingId, unit: row.data.shopNumber || null,
@@ -117,22 +122,107 @@ export async function commitTurnoverImport(rows: ImportPreviewRow<TurnoverImport
       turnover_amount: row.data.turnoverAmount, turnover_rental: row.data.turnoverRental,
       submitted: row.data.submitted, submitted_at: row.data.submissionDate,
       status: row.data.submitted ? "submitted" : "outstanding", penalty_applicable: row.data.penaltyApplicable,
-      penalty_amount: row.data.penaltyAmount, notes: row.data.notes || null, import_source: `batch:${batch.batchId}`,
-      updated_by: user.id, updated_at: new Date().toISOString(),
+      penalty_amount: row.data.penaltyAmount, notes: row.data.notes || null, import_source: `batch:${batchId}`,
+      updated_by: userId, updated_at: new Date().toISOString(),
     };
     let recordId = row.recordId; let previous: any = null; let error: any = null;
     if (row.action === "update" && recordId) {
       const before = await supabase.from("turnovers").select("*").eq("id", recordId).single(); previous = before.data;
       ({ error } = await supabase.from("turnovers").update(payload).eq("id", recordId)); if (!error) updated += 1;
     } else {
-      const inserted = await supabase.from("turnovers").insert({ ...payload, created_by: user.id }).select("id").single();
+      const inserted = await supabase.from("turnovers").insert({ ...payload, created_by: userId }).select("id").single();
       error = inserted.error; recordId = inserted.data?.id; if (!error) created += 1;
     }
-    await supabase.from("import_batch_rows").update({ status: error ? "rejected" : "applied", record_table: "turnovers", record_id: recordId || null, previous_data: previous, applied_data: error ? null : payload, errors: error ? [{ field: "row", value: row.matchKey, reason: error.message }] : [] }).eq("batch_id", batch.batchId).eq("row_number", row.rowNumber);
-    if (!error && recordId) await supabase.from("audit_log").insert({ table_name: "turnovers", record_id: recordId, action: row.action === "update" ? "import_update" : "import_create", field_changes: { previous, applied: payload }, import_source: filename, import_batch_id: batch.batchId, performed_by: user.id });
+    await supabase.from("import_batch_rows").update({ status: error ? "rejected" : "applied", record_table: "turnovers", record_id: recordId || null, previous_data: previous, applied_data: error ? null : payload, errors: error ? [{ field: "row", value: row.matchKey, reason: error.message }] : [] }).eq("batch_id", batchId).eq("row_number", row.rowNumber);
+    if (!error && recordId) await supabase.from("audit_log").insert({ table_name: "turnovers", record_id: recordId, action: row.action === "update" ? "import_update" : "import_create", field_changes: { previous, applied: payload }, import_source: filename, import_batch_id: batchId, performed_by: userId });
   }
+  return { created, updated };
+}
+
+export async function commitTurnoverImport(rows: ImportPreviewRow<TurnoverImportData>[], filename: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized.", created: 0, updated: 0, rejected: rows.length };
+  const valid = rows.filter((row) => !row.errors.length && row.action !== "skip");
+  const batch = await createImportBatch({ module: "turnovers", filename, templateVersion: "VOREXA-TURNOVERS-v1", rows });
+  if (batch.error || !batch.batchId) return { error: batch.error, created: 0, updated: 0, rejected: rows.length };
+  const supabase = createClient() as any;
+  const { created, updated } = await applyTurnoverBatchRows(batch.batchId, rows, user.id, filename, supabase);
   await finalizeImportBatch(batch.batchId, created, updated); revalidatePath("/dashboard/turnovers"); revalidatePath("/dashboard");
   return { error: null, batchId: batch.batchId, created, updated, rejected: rows.length - valid.length };
+}
+
+// ---------- Sheet-sync pending batches ----------
+
+export type PendingTurnoverBatchRow = {
+  id: string;
+  row_number: number;
+  action: string;
+  match_key: string;
+  supplied_data: TurnoverImportData;
+  warnings: { field: string; value: string; reason: string }[];
+};
+
+export type PendingTurnoverBatch = {
+  id: string;
+  filename: string;
+  created_at: string;
+  rows_submitted: number;
+  rows_rejected: number;
+  rows: PendingTurnoverBatchRow[];
+};
+
+export async function getPendingTurnoverBatches(): Promise<{ batches: PendingTurnoverBatch[] }> {
+  const user = await getCurrentUser();
+  if (!user) return { batches: [] };
+  const supabase = createClient() as any;
+  const { data: batches } = await supabase
+    .from("import_batches")
+    .select("id, filename, created_at, rows_submitted, rows_rejected")
+    .eq("module", "turnovers")
+    .eq("status", "preview")
+    .order("created_at", { ascending: false });
+  if (!batches?.length) return { batches: [] };
+  const batchIds = batches.map((b: any) => b.id);
+  const { data: rows } = await supabase
+    .from("import_batch_rows")
+    .select("id, batch_id, row_number, action, status, match_key, supplied_data, warnings")
+    .in("batch_id", batchIds)
+    .eq("status", "pending")
+    .order("row_number");
+  return {
+    batches: batches.map((b: any) => ({
+      ...b,
+      rows: (rows ?? []).filter((r: any) => r.batch_id === b.id),
+    })),
+  };
+}
+
+export async function confirmTurnoverBatch(batchId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Not authorized." };
+  const supabase = createClient() as any;
+  const { data: batch } = await supabase.from("import_batches").select("id, status, filename").eq("id", batchId).single();
+  if (!batch || batch.status !== "preview") return { error: "Batch not found or already processed." };
+  const { data: batchRows } = await supabase
+    .from("import_batch_rows")
+    .select("row_number, action, match_key, record_id, supplied_data")
+    .eq("batch_id", batchId)
+    .eq("status", "pending")
+    .order("row_number");
+  const rows: ImportPreviewRow<TurnoverImportData>[] = (batchRows ?? []).map((r: any) => ({
+    rowNumber: r.row_number,
+    action: r.action,
+    matchKey: r.match_key,
+    data: r.supplied_data as TurnoverImportData,
+    recordId: r.record_id ?? undefined,
+    errors: [],
+    warnings: [],
+  }));
+  const { created, updated } = await applyTurnoverBatchRows(batchId, rows, user.id, batch.filename, supabase);
+  await finalizeImportBatch(batchId, created, updated);
+  revalidatePath("/dashboard/turnovers");
+  revalidatePath("/dashboard");
+  return { error: null, created, updated };
 }
 
 export async function markCertificateReceived(id: string, received: boolean) {
