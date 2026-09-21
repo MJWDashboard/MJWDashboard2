@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name")
+    .select("first_name, last_name, role")
     .eq("id", user!.id)
     .single();
 
@@ -20,6 +20,7 @@ export default async function SettingsPage() {
       email={user?.email ?? ""}
       firstName={profile?.first_name ?? ""}
       lastName={profile?.last_name ?? ""}
+      isAdmin={profile?.role === "admin"}
     />
   );
 }

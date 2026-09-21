@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { User, Lock, Mail } from "lucide-react";
-import { updateName, updatePassword } from "./actions";
+import Link from "next/link";
+import { User, Lock, Mail, LifeBuoy, ShieldCheck, ChevronRight } from "lucide-react";
+import { updateName, updatePassword, submitTicket } from "./actions";
 
 export function SettingsClient({
   email,
   firstName,
   lastName,
+  isAdmin,
 }: {
   email: string;
   firstName: string;
   lastName: string;
+  isAdmin: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -30,6 +33,17 @@ export function SettingsClient({
 
       <NameForm initialFirstName={firstName} initialLastName={lastName} />
       <PasswordForm />
+      <SupportForm />
+
+      {isAdmin && (
+        <Link href="/developer" className="card flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium text-text">
+            <ShieldCheck size={16} className="text-accent" />
+            Developer
+          </div>
+          <ChevronRight size={16} className="text-muted" />
+        </Link>
+      )}
     </div>
   );
 }
@@ -130,6 +144,63 @@ function PasswordForm() {
       {error && <p className="text-sm text-overdue">{error}</p>}
       <button onClick={save} disabled={pending || !password} className="btn-primary w-full">
         {saved ? "Password updated" : pending ? "Updating..." : "Update password"}
+      </button>
+    </div>
+  );
+}
+
+function SupportForm() {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [ticketNumber, setTicketNumber] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function save() {
+    setError(null);
+    if (!subject.trim() || !message.trim()) {
+      setError("Add a subject and a message");
+      return;
+    }
+    startTransition(async () => {
+      const result = await submitTicket(subject.trim(), message.trim());
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setTicketNumber(result.ticketNumber);
+      setSubject("");
+      setMessage("");
+    });
+  }
+
+  return (
+    <div className="card space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-text">
+        <LifeBuoy size={16} className="text-accent" />
+        Report a problem
+      </div>
+      {ticketNumber && (
+        <p className="rounded-xl bg-ok/10 px-3 py-2 text-sm text-ok">
+          Logged as {ticketNumber} — it&apos;s gone to the developer.
+        </p>
+      )}
+      <input
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        placeholder="What's wrong?"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+      />
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Tell us what happened"
+        rows={3}
+        className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+      />
+      {error && <p className="text-sm text-overdue">{error}</p>}
+      <button onClick={save} disabled={pending} className="btn-primary w-full">
+        {pending ? "Sending..." : "Submit ticket"}
       </button>
     </div>
   );

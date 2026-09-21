@@ -11,7 +11,7 @@ export function BottomNav({ onOpenCapture }: { onOpenCapture: () => void }) {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-1 border-t border-border bg-surface/95 py-2 pl-1 pr-2 backdrop-blur lg:hidden">
-      <div className="flex flex-1 items-center gap-0.5 overflow-x-auto">
+      <div className="flex flex-1 items-center justify-between overflow-x-auto">
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.href} item={item} active={pathname === item.href || pathname.startsWith(`${item.href}/`)} />
         ))}

@@ -26,3 +26,20 @@ export async function updatePassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   return { error: error?.message ?? null };
 }
+
+export async function submitTicket(subject: string, message: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in", ticketNumber: null };
+
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .insert({ owner_id: user.id, reporter_email: user.email ?? "", subject, message })
+    .select("ticket_number")
+    .single();
+
+  if (error) return { error: error.message, ticketNumber: null };
+  return { error: null, ticketNumber: data.ticket_number };
+}

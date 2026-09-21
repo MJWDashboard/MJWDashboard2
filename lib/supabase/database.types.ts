@@ -1111,6 +1111,7 @@ export type Database = {
           id: string
           last_name: string | null
           privacy_blur: boolean
+          role: string
           theme: string
           updated_at: string
         }
@@ -1122,6 +1123,7 @@ export type Database = {
           id: string
           last_name?: string | null
           privacy_blur?: boolean
+          role?: string
           theme?: string
           updated_at?: string
         }
@@ -1133,6 +1135,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           privacy_blur?: boolean
+          role?: string
           theme?: string
           updated_at?: string
         }
@@ -1271,6 +1274,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          owner_id: string
+          reporter_email: string
+          status: string
+          subject: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          owner_id?: string
+          reporter_email: string
+          status?: string
+          subject: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          owner_id?: string
+          reporter_email?: string
+          status?: string
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       tags: {
         Row: {
