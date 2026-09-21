@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/database.types";
+import { autoFileCapture } from "@/lib/quickCaptureServer";
 
 const QUEUE_KEY = "vorexa.quickCaptureQueue";
 
@@ -38,17 +39,20 @@ export async function queueQuickCapture(type: string, payload: Record<string, un
   }
 
   const supabase = createClient();
-  const { error } = await supabase.from("quick_captures").insert({
-    type: entry.type,
-    payload: entry.payload as Json,
-    captured_at: entry.captured_at,
-  });
+  const { data, error } = await supabase
+    .from("quick_captures")
+    .insert({ type: entry.type, payload: entry.payload as Json, captured_at: entry.captured_at })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !data) {
     // Insert failed for a reason other than "offline" (e.g. a dropped
     // connection mid-request) — queue it rather than losing the capture.
     writeQueue([...readQueue(), entry]);
+    return;
   }
+
+  await autoFileCapture(data.id, entry.type, entry.payload);
 }
 
 /** Call on reconnect (and once on app load) to push anything captured offline. */
@@ -60,12 +64,16 @@ export async function flushQuickCaptureQueue() {
   const remaining: QueuedCapture[] = [];
 
   for (const entry of queue) {
-    const { error } = await supabase.from("quick_captures").insert({
-      type: entry.type,
-      payload: entry.payload as Json,
-      captured_at: entry.captured_at,
-    });
-    if (error) remaining.push(entry);
+    const { data, error } = await supabase
+      .from("quick_captures")
+      .insert({ type: entry.type, payload: entry.payload as Json, captured_at: entry.captured_at })
+      .select("id")
+      .single();
+    if (error || !data) {
+      remaining.push(entry);
+      continue;
+    }
+    await autoFileCapture(data.id, entry.type, entry.payload);
   }
 
   writeQueue(remaining);

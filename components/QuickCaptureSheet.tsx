@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { X, Fuel, Receipt, Scale, StickyNote, ShoppingCart } from "lucide-react";
 import { clsx } from "clsx";
 import { queueQuickCapture } from "@/lib/quickCapture";
@@ -16,6 +17,7 @@ const TABS: { type: CaptureType; label: string; icon: typeof Fuel }[] = [
 ];
 
 export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const [type, setType] = useState<CaptureType>("note");
   const [text, setText] = useState("");
   const [amount, setAmount] = useState("");
@@ -34,6 +36,7 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
     await queueQuickCapture(type, payload);
     setSaving(false);
     setSaved(true);
+    router.refresh();
     setTimeout(() => {
       setText("");
       setAmount("");
@@ -104,7 +107,9 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
             {saved ? "Saved" : saving ? "Saving..." : "Save"}
           </button>
           <p className="text-center text-xs text-muted">
-            Saved offline if you&apos;re not connected — it syncs automatically.
+            {type === "fuel" || type === "expense"
+              ? "Lands in your Today inbox to pick a vehicle/account, then it's a real record."
+              : "Filed automatically — saved offline if you're not connected."}
           </p>
         </div>
       </div>
