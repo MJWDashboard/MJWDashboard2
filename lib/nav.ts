@@ -30,8 +30,3 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/pets", label: "Home & Pets", icon: PawPrint, color: "#2DD4BF" },
   { href: "/vault", label: "Vault", icon: ShieldCheck, sensitive: true, color: "#818CF8" },
 ];
-
-// Mobile bottom bar surfaces the daily-use four; everything else lives
-// behind "Life" so the bar stays five items wide including quick-capture.
-export const MOBILE_PRIMARY = ["/today", "/health", "/money", "/vault"];
-export const MOBILE_LIFE_HREFS = ["/calendar", "/notes", "/vehicle", "/pets"];

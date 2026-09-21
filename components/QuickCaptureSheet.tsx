@@ -46,8 +46,8 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
   const needsText = type !== "weight";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center">
-      <div className="w-full max-w-md rounded-t-2xl border border-border bg-surface p-4 lg:rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm font-semibold text-text">Quick capture</p>
           <button onClick={onClose} aria-label="Close" className="text-muted hover:text-text">

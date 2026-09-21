@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
-import { getWatchlist, getTodayEvents, getGreetingName, getDosesDueSummary } from "@/lib/today";
+import { getWatchlist, getTodayEvents, getGreetingName, getDosesDueSummary, timeOfDayGreeting } from "@/lib/today";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
 import { LiveClock } from "@/components/LiveClock";
@@ -19,11 +19,13 @@ export default async function TodayPage() {
     getDosesDueSummary(),
   ]);
 
+  const greeting = timeOfDayGreeting();
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text">
-          Welcome{name ? `, ${name}` : ""}
+          {greeting}{name ? `, ${name}` : ""}
         </h1>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
           {new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}

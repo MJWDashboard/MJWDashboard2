@@ -7,7 +7,6 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { QuickCaptureSheet } from "./QuickCaptureSheet";
-import { LifeSheet } from "./LifeSheet";
 import { IdleLock } from "./IdleLock";
 import { createClient } from "@/lib/supabase/client";
 import { flushQuickCaptureQueue } from "@/lib/quickCapture";
@@ -28,7 +27,6 @@ export function AppShell({
   const [theme, setTheme] = useState(initialTheme);
   const [privacyBlur, setPrivacyBlur] = useState(initialPrivacyBlur);
   const [captureOpen, setCaptureOpen] = useState(false);
-  const [lifeOpen, setLifeOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -80,9 +78,8 @@ export function AppShell({
         {isSensitive ? <IdleLock>{content}</IdleLock> : content}
       </div>
 
-      <BottomNav onOpenCapture={() => setCaptureOpen(true)} onOpenLife={() => setLifeOpen(true)} />
+      <BottomNav onOpenCapture={() => setCaptureOpen(true)} />
       {captureOpen && <QuickCaptureSheet onClose={() => setCaptureOpen(false)} />}
-      {lifeOpen && <LifeSheet onClose={() => setLifeOpen(false)} />}
     </div>
   );
 }

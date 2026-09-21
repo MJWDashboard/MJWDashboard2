@@ -233,8 +233,8 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center">
-      <div className="w-full max-w-lg rounded-t-2xl border border-border p-4 lg:rounded-2xl" style={{ backgroundColor: cat.bg }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-border p-4" style={{ backgroundColor: cat.bg }}>
         <div className="mb-3 flex items-center justify-between">
           <input
             value={title}

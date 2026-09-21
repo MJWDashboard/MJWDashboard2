@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
+import { clsx } from "clsx";
 import { createClient } from "@/lib/supabase/server";
 import { Wordmark } from "@/components/Wordmark";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -33,13 +34,13 @@ export default async function RootPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
       <div
         className="pointer-events-none absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
         style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
       />
 
-      <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 pb-16 pt-14 text-center">
+      <div className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-6 pb-8 pt-14 text-center">
         <Image src="/brand/mark.png" alt="" width={56} height={56} priority />
         <Wordmark width={160} className="mt-4" />
         <h1 className="mt-6 text-3xl font-semibold tracking-tight text-text sm:text-4xl">
@@ -60,8 +61,14 @@ export default async function RootPage() {
         </div>
 
         <div className="mt-16 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-          {MODULES.map((m) => (
-            <div key={m.label} className="card flex flex-col items-center gap-2 py-5 text-center">
+          {MODULES.map((m, i) => (
+            <div
+              key={m.label}
+              className={clsx(
+                "card flex flex-col items-center gap-2 py-5 text-center",
+                i === MODULES.length - 1 && "col-span-2 sm:col-span-3"
+              )}
+            >
               <div
                 className="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ backgroundColor: `${m.color}22`, color: m.color }}
@@ -73,8 +80,11 @@ export default async function RootPage() {
             </div>
           ))}
         </div>
+      </div>
 
-        <p className="mt-16 text-xs text-muted">Intelligence. Systems. Decisions.</p>
+      <div className="relative flex items-center justify-between px-6 py-6 text-xs text-muted sm:px-10">
+        <span>Intelligence. Systems. Decisions.</span>
+        <span>Built for Mornay · Cape Town</span>
       </div>
     </div>
   );

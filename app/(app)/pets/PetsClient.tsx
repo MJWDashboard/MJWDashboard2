@@ -388,8 +388,8 @@ function AssetForm({ onClose }: { onClose: () => void }) {
 
 function FormSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center">
-      <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-t-2xl border border-border bg-surface p-4 lg:rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{title}</p>
           <button onClick={onClose} className="text-muted hover:text-text">
