@@ -23,7 +23,7 @@ import {
   isToday,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { CalendarDays, Car, Plus, Trash2, X, RefreshCw, Unlink, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Car, Plus, Trash2, Pencil, X, RefreshCw, Unlink, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -32,9 +32,11 @@ import { SAST } from "@/lib/timezone";
 import { occurrencesInRange, daysUntil } from "@/lib/recurrence";
 import {
   createEvent,
+  updateEvent,
   deleteEvent,
   toggleTransportConfirmed,
   createImportantDate,
+  updateImportantDate,
   deleteImportantDate,
   syncGoogleNow,
   disconnectGoogleAccount,
@@ -377,6 +379,7 @@ function GoogleSyncCard({ googleAccount }: { googleAccount: GoogleAccount | null
 
 function AgendaRow({ entry }: { entry: AgendaEntry }) {
   const [, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
   const dateLabel = entry.date.toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
 
   if (entry.kind === "event") {
@@ -402,10 +405,14 @@ function AgendaRow({ entry }: { entry: AgendaEntry }) {
               {e.transport_confirmed ? "Confirmed" : "Needed"}
             </button>
           )}
-          <button onClick={() => startTransition(() => deleteEvent(e.id))} className="text-muted hover:text-overdue">
+          <button onClick={() => setEditing(true)} className="text-muted hover:text-text" aria-label="Edit event">
+            <Pencil size={14} />
+          </button>
+          <button onClick={() => startTransition(() => deleteEvent(e.id))} className="text-muted hover:text-overdue" aria-label="Delete event">
             <Trash2 size={14} />
           </button>
         </div>
+        {editing && <EventForm event={e} onClose={() => setEditing(false)} />}
       </div>
     );
   }
@@ -421,19 +428,25 @@ function AgendaRow({ entry }: { entry: AgendaEntry }) {
         <p className="truncate text-sm font-medium text-text">{d.title}</p>
         <p className="text-xs text-muted">{d.recurrence === "yearly" ? "Yearly" : "Monthly"}</p>
       </div>
-      <button onClick={() => startTransition(() => deleteImportantDate(d.id))} className="text-muted hover:text-overdue">
-        <Trash2 size={14} />
-      </button>
+      <div className="flex items-center gap-2">
+        <button onClick={() => setEditing(true)} className="text-muted hover:text-text" aria-label="Edit date">
+          <Pencil size={14} />
+        </button>
+        <button onClick={() => startTransition(() => deleteImportantDate(d.id))} className="text-muted hover:text-overdue" aria-label="Delete date">
+          <Trash2 size={14} />
+        </button>
+      </div>
+      {editing && <ImportantDateForm date={d} onClose={() => setEditing(false)} />}
     </div>
   );
 }
 
-function EventForm({ onClose }: { onClose: () => void }) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("18:00");
-  const [location, setLocation] = useState("");
-  const [transport, setTransport] = useState(false);
+function EventForm({ event, onClose }: { event?: EventRow; onClose: () => void }) {
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [date, setDate] = useState(event?.starts_at?.slice(0, 10) ?? "");
+  const [time, setTime] = useState(event?.starts_at ? new Date(event.starts_at).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit", hour12: false }) : "18:00");
+  const [location, setLocation] = useState(event?.location ?? "");
+  const [transport, setTransport] = useState(event?.transport_needed ?? false);
   const [pending, startTransition] = useTransition();
 
   function handleTimeChange(v: string) {
@@ -445,18 +458,23 @@ function EventForm({ onClose }: { onClose: () => void }) {
   function save() {
     if (!title.trim() || !date) return;
     startTransition(async () => {
-      await createEvent({
+      const fields = {
         title: title.trim(),
         starts_at: new Date(`${date}T${time}:00+02:00`).toISOString(),
-        location: location.trim(),
+        location: location.trim() || null,
         transport_needed: transport,
-      });
+      };
+      if (event) {
+        await updateEvent(event.id, fields);
+      } else {
+        await createEvent(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New event" onClose={onClose}>
+    <FormSheet title={event ? "Edit event" : "New event"} onClose={onClose}>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -488,29 +506,34 @@ function EventForm({ onClose }: { onClose: () => void }) {
         Transport needed (you can't drive safely at night)
       </label>
       <button onClick={save} disabled={pending} className="btn-primary w-full">
-        Save event
+        {event ? "Save changes" : "Save event"}
       </button>
     </FormSheet>
   );
 }
 
-function ImportantDateForm({ onClose }: { onClose: () => void }) {
-  const [title, setTitle] = useState("");
-  const [recurrence, setRecurrence] = useState<"yearly" | "monthly">("yearly");
-  const [month, setMonth] = useState(1);
-  const [day, setDay] = useState(1);
+function ImportantDateForm({ date: existing, onClose }: { date?: ImportantDate; onClose: () => void }) {
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [recurrence, setRecurrence] = useState<"yearly" | "monthly">((existing?.recurrence as "yearly" | "monthly") ?? "yearly");
+  const [month, setMonth] = useState(existing?.month ?? 1);
+  const [day, setDay] = useState(existing?.day ?? 1);
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!title.trim()) return;
     startTransition(async () => {
-      await createImportantDate({ title: title.trim(), recurrence, month: recurrence === "yearly" ? month : null, day });
+      const fields = { title: title.trim(), recurrence, month: recurrence === "yearly" ? month : null, day };
+      if (existing) {
+        await updateImportantDate(existing.id, fields);
+      } else {
+        await createImportantDate(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New recurring date" onClose={onClose}>
+    <FormSheet title={existing ? "Edit recurring date" : "New recurring date"} onClose={onClose}>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -552,7 +575,7 @@ function ImportantDateForm({ onClose }: { onClose: () => void }) {
         </select>
       </div>
       <button onClick={save} disabled={pending} className="btn-primary w-full">
-        Save date
+        {existing ? "Save changes" : "Save date"}
       </button>
     </FormSheet>
   );

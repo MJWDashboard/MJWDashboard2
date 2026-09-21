@@ -53,6 +53,13 @@ export async function createList(name: string, kind: string) {
   return { error: error?.message ?? null };
 }
 
+export async function updateList(id: string, name: string) {
+  const supabase = await client();
+  const { error } = await supabase.from("lists").update({ name }).eq("id", id);
+  revalidatePath("/notes");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteList(id: string) {
   const supabase = await client();
   await supabase.from("lists").delete().eq("id", id);
@@ -78,6 +85,13 @@ export async function toggleListItem(id: string, checked: boolean) {
   const supabase = await client();
   await supabase.from("list_items").update({ checked }).eq("id", id);
   revalidatePath("/notes");
+}
+
+export async function updateListItem(id: string, name: string, quantity: string | null) {
+  const supabase = await client();
+  const { error } = await supabase.from("list_items").update({ name, quantity }).eq("id", id);
+  revalidatePath("/notes");
+  return { error: error?.message ?? null };
 }
 
 export async function deleteListItem(id: string) {

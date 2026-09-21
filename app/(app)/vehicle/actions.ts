@@ -52,6 +52,13 @@ export async function addFuelLog(input: {
   return { error: error?.message ?? null };
 }
 
+export async function updateFuelLog(id: string, fields: TablesUpdate<"fuel_logs">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("fuel_logs").update(fields).eq("id", id);
+  revalidatePath("/vehicle");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteFuelLog(id: string) {
   const supabase = await createClient();
   await supabase.from("fuel_logs").delete().eq("id", id);
@@ -74,6 +81,13 @@ export async function addService(input: {
   return { error: error?.message ?? null };
 }
 
+export async function updateService(id: string, fields: TablesUpdate<"services">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("services").update(fields).eq("id", id);
+  revalidatePath("/vehicle");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteService(id: string) {
   const supabase = await createClient();
   await supabase.from("services").delete().eq("id", id);
@@ -92,6 +106,13 @@ export async function addTrip(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("trips").insert(input);
+  revalidatePath("/vehicle");
+  return { error: error?.message ?? null };
+}
+
+export async function updateTrip(id: string, fields: TablesUpdate<"trips">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("trips").update(fields).eq("id", id);
   revalidatePath("/vehicle");
   return { error: error?.message ?? null };
 }

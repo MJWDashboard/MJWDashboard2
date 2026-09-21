@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 
 export async function createAccount(input: {
   name: string;
@@ -11,6 +12,13 @@ export async function createAccount(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("accounts").insert(input);
+  revalidatePath("/money");
+  return { error: error?.message ?? null };
+}
+
+export async function updateAccount(id: string, fields: TablesUpdate<"accounts">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("accounts").update(fields).eq("id", id);
   revalidatePath("/money");
   return { error: error?.message ?? null };
 }
@@ -37,6 +45,14 @@ export async function createTransaction(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("transactions").insert(input);
+  revalidatePath("/money");
+  revalidatePath("/today");
+  return { error: error?.message ?? null };
+}
+
+export async function updateTransaction(id: string, fields: TablesUpdate<"transactions">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("transactions").update(fields).eq("id", id);
   revalidatePath("/money");
   revalidatePath("/today");
   return { error: error?.message ?? null };
@@ -80,6 +96,13 @@ export async function createDebt(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("debts").insert(input);
+  revalidatePath("/money");
+  return { error: error?.message ?? null };
+}
+
+export async function updateDebt(id: string, fields: TablesUpdate<"debts">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("debts").update(fields).eq("id", id);
   revalidatePath("/money");
   return { error: error?.message ?? null };
 }

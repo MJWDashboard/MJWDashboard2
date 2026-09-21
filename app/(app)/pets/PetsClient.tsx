@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { PawPrint, Plus, Trash2, X, Stethoscope, Package, CheckCircle2 } from "lucide-react";
+import { PawPrint, Plus, Trash2, Pencil, X, Stethoscope, Package, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -11,14 +11,18 @@ import { settleUpBalance } from "@/lib/pets";
 import { formatZAR } from "@/lib/money";
 import {
   createPet,
+  updatePet,
   deletePet,
   addCareItem,
+  updateCareItem,
   markCareDone,
   deleteCareItem,
   addVisit,
+  updateVisit,
   toggleVisitSettled,
   deleteVisit,
   createAsset,
+  updateAsset,
   deleteAsset,
 } from "./actions";
 
@@ -86,7 +90,9 @@ export function PetsClient({
 
 function PetsTab({ pets, careItems }: { pets: Pet[]; careItems: CareItem[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [careFormPetId, setCareFormPetId] = useState<string | null>(null);
+  const [editingCareItem, setEditingCareItem] = useState<CareItem | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -109,9 +115,14 @@ function PetsTab({ pets, careItems }: { pets: Pet[]; careItems: CareItem[] }) {
                     {pet.species} {pet.breed && `· ${pet.breed}`} {pet.estimated_age != null && `· ~${pet.estimated_age}y`}
                   </p>
                 </div>
-                <button onClick={() => startTransition(() => deletePet(pet.id))} className="text-muted hover:text-overdue">
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setEditingPet(pet)} className="text-muted hover:text-text" aria-label="Edit pet">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => startTransition(() => deletePet(pet.id))} className="text-muted hover:text-overdue" aria-label="Delete pet">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1 border-t border-border pt-2">
@@ -124,6 +135,9 @@ function PetsTab({ pets, careItems }: { pets: Pet[]; careItems: CareItem[] }) {
                       </span>
                       <div className="flex items-center gap-2">
                         {overdue && <span className="status-pill-overdue">Overdue</span>}
+                        <button onClick={() => setEditingCareItem(item)} className="text-muted hover:text-text" aria-label="Edit care schedule">
+                          <Pencil size={12} />
+                        </button>
                         <button onClick={() => startTransition(() => markCareDone(item.id, item.interval_days))} className="text-accent">
                           <CheckCircle2 size={14} />
                         </button>
@@ -144,35 +158,44 @@ function PetsTab({ pets, careItems }: { pets: Pet[]; careItems: CareItem[] }) {
       )}
 
       {showForm && <PetForm onClose={() => setShowForm(false)} />}
+      {editingPet && <PetForm pet={editingPet} onClose={() => setEditingPet(null)} />}
       {careFormPetId && <CareItemForm petId={careFormPetId} onClose={() => setCareFormPetId(null)} />}
+      {editingCareItem && (
+        <CareItemForm petId={editingCareItem.pet_id} careItem={editingCareItem} onClose={() => setEditingCareItem(null)} />
+      )}
     </div>
   );
 }
 
-function PetForm({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState("dog");
-  const [breed, setBreed] = useState("");
-  const [age, setAge] = useState("");
-  const [vet, setVet] = useState("");
+function PetForm({ pet, onClose }: { pet?: Pet; onClose: () => void }) {
+  const [name, setName] = useState(pet?.name ?? "");
+  const [species, setSpecies] = useState(pet?.species ?? "dog");
+  const [breed, setBreed] = useState(pet?.breed ?? "");
+  const [age, setAge] = useState(pet?.estimated_age?.toString() ?? "");
+  const [vet, setVet] = useState(pet?.vet ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!name.trim()) return;
     startTransition(async () => {
-      await createPet({
+      const fields = {
         name: name.trim(),
         species,
         breed: breed.trim() || null,
         estimated_age: age ? Number(age) : null,
         vet: vet.trim() || null,
-      });
+      };
+      if (pet) {
+        await updatePet(pet.id, fields);
+      } else {
+        await createPet(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New pet" onClose={onClose}>
+    <FormSheet title={pet ? "Edit pet" : "New pet"} onClose={onClose}>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <div className="flex gap-2">
         <select value={species} onChange={(e) => setSpecies(e.target.value)} className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
@@ -184,29 +207,33 @@ function PetForm({ onClose }: { onClose: () => void }) {
       </div>
       <input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Breed" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={vet} onChange={(e) => setVet(e.target.value)} placeholder="Vet (e.g. Tygerberg Animal Hospital)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save pet</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{pet ? "Save changes" : "Save pet"}</button>
     </FormSheet>
   );
 }
 
-function CareItemForm({ petId, onClose }: { petId: string; onClose: () => void }) {
-  const [kind, setKind] = useState<(typeof CARE_KINDS)[number]>("vaccine");
-  const [label, setLabel] = useState("");
-  const [interval, setInterval] = useState("365");
+function CareItemForm({ petId, careItem, onClose }: { petId: string; careItem?: CareItem; onClose: () => void }) {
+  const [kind, setKind] = useState<(typeof CARE_KINDS)[number]>((careItem?.kind as (typeof CARE_KINDS)[number]) ?? "vaccine");
+  const [label, setLabel] = useState(careItem?.label ?? "");
+  const [interval, setInterval] = useState(careItem?.interval_days?.toString() ?? "365");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!label.trim()) return;
     startTransition(async () => {
       const days = interval ? Number(interval) : null;
-      const nextDue = days ? new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) : null;
-      await addCareItem({ pet_id: petId, kind, label: label.trim(), interval_days: days, last_done: null, next_due: nextDue });
+      if (careItem) {
+        await updateCareItem(careItem.id, { kind, label: label.trim(), interval_days: days });
+      } else {
+        const nextDue = days ? new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) : null;
+        await addCareItem({ pet_id: petId, kind, label: label.trim(), interval_days: days, last_done: null, next_due: nextDue });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New care schedule" onClose={onClose}>
+    <FormSheet title={careItem ? "Edit care schedule" : "New care schedule"} onClose={onClose}>
       <select value={kind} onChange={(e) => setKind(e.target.value as (typeof CARE_KINDS)[number])} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         {CARE_KINDS.map((k) => (
           <option key={k} value={k}>{k.replace("_", " ")}</option>
@@ -214,13 +241,14 @@ function CareItemForm({ petId, onClose }: { petId: string; onClose: () => void }
       </select>
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Annual vaccination" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={interval} onChange={(e) => setInterval(e.target.value)} type="number" placeholder="Repeat every (days)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{careItem ? "Save changes" : "Save"}</button>
     </FormSheet>
   );
 }
 
 function VisitsTab({ pets, visits }: { pets: Pet[]; visits: Visit[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Visit | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -249,7 +277,10 @@ function VisitsTab({ pets, visits }: { pets: Pet[]; visits: Visit[] }) {
                 >
                   {v.settled ? "Settled" : "Unsettled"}
                 </button>
-                <button onClick={() => startTransition(() => deleteVisit(v.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => setEditing(v)} className="text-muted hover:text-text" aria-label="Edit visit">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => startTransition(() => deleteVisit(v.id))} className="text-muted hover:text-overdue" aria-label="Delete visit">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -259,36 +290,47 @@ function VisitsTab({ pets, visits }: { pets: Pet[]; visits: Visit[] }) {
       )}
 
       {showForm && <VisitForm pets={pets} onClose={() => setShowForm(false)} />}
+      {editing && <VisitForm pets={pets} visit={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function VisitForm({ pets, onClose }: { pets: Pet[]; onClose: () => void }) {
-  const [petId, setPetId] = useState(pets[0]?.id ?? "");
-  const [reason, setReason] = useState("");
-  const [cost, setCost] = useState("");
-  const [paidBy, setPaidBy] = useState<"owner" | "garth">("owner");
-  const [weight, setWeight] = useState("");
+function VisitForm({ pets, visit, onClose }: { pets: Pet[]; visit?: Visit; onClose: () => void }) {
+  const [petId, setPetId] = useState(visit?.pet_id ?? pets[0]?.id ?? "");
+  const [reason, setReason] = useState(visit?.reason ?? "");
+  const [cost, setCost] = useState(visit?.cost?.toString() ?? "");
+  const [paidBy, setPaidBy] = useState<"owner" | "garth">((visit?.paid_by as "owner" | "garth") ?? "owner");
+  const [weight, setWeight] = useState(visit?.weight_kg?.toString() ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!petId || !cost) return;
     startTransition(async () => {
-      await addVisit({
-        pet_id: petId,
-        occurred_at: new Date().toISOString().slice(0, 10),
-        reason: reason.trim() || null,
-        cost: Number(cost),
-        paid_by: paidBy,
-        split_pct: 50,
-        weight_kg: weight ? Number(weight) : null,
-      });
+      if (visit) {
+        await updateVisit(visit.id, {
+          pet_id: petId,
+          reason: reason.trim() || null,
+          cost: Number(cost),
+          paid_by: paidBy,
+          weight_kg: weight ? Number(weight) : null,
+        });
+      } else {
+        await addVisit({
+          pet_id: petId,
+          occurred_at: new Date().toISOString().slice(0, 10),
+          reason: reason.trim() || null,
+          cost: Number(cost),
+          paid_by: paidBy,
+          split_pct: 50,
+          weight_kg: weight ? Number(weight) : null,
+        });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="Log vet visit" onClose={onClose}>
+    <FormSheet title={visit ? "Edit vet visit" : "Log vet visit"} onClose={onClose}>
       <select value={petId} onChange={(e) => setPetId(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         {pets.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
@@ -303,14 +345,15 @@ function VisitForm({ pets, onClose }: { pets: Pet[]; onClose: () => void }) {
         <option value="owner">You paid</option>
         <option value="garth">Garth paid</option>
       </select>
-      <p className="text-xs text-muted">Split 50/50 by default.</p>
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save visit</button>
+      {!visit && <p className="text-xs text-muted">Split 50/50 by default.</p>}
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{visit ? "Save changes" : "Save visit"}</button>
     </FormSheet>
   );
 }
 
 function AssetsTab({ assets }: { assets: Asset[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Asset | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -334,7 +377,10 @@ function AssetsTab({ assets }: { assets: Asset[] }) {
               </div>
               <div className="flex items-center gap-2">
                 {underInsured && <span className="status-pill-soon">Uninsured</span>}
-                <button onClick={() => startTransition(() => deleteAsset(a.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => setEditing(a)} className="text-muted hover:text-text" aria-label="Edit asset">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => startTransition(() => deleteAsset(a.id))} className="text-muted hover:text-overdue" aria-label="Delete asset">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -344,35 +390,40 @@ function AssetsTab({ assets }: { assets: Asset[] }) {
       )}
 
       {showForm && <AssetForm onClose={() => setShowForm(false)} />}
+      {editing && <AssetForm asset={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function AssetForm({ onClose }: { onClose: () => void }) {
-  const [item, setItem] = useState("");
-  const [category, setCategory] = useState("");
-  const [value, setValue] = useState("");
-  const [warranty, setWarranty] = useState("");
-  const [insured, setInsured] = useState(false);
+function AssetForm({ asset, onClose }: { asset?: Asset; onClose: () => void }) {
+  const [item, setItem] = useState(asset?.item ?? "");
+  const [category, setCategory] = useState(asset?.category ?? "");
+  const [value, setValue] = useState(asset?.replacement_value?.toString() ?? "");
+  const [warranty, setWarranty] = useState(asset?.warranty_expiry ?? "");
+  const [insured, setInsured] = useState(asset?.insured ?? false);
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!item.trim()) return;
     startTransition(async () => {
-      await createAsset({
+      const fields = {
         item: item.trim(),
         category: category.trim() || null,
-        purchase_price: null,
         replacement_value: value ? Number(value) : null,
         warranty_expiry: warranty || null,
         insured,
-      });
+      };
+      if (asset) {
+        await updateAsset(asset.id, fields);
+      } else {
+        await createAsset({ ...fields, purchase_price: null });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New asset" onClose={onClose}>
+    <FormSheet title={asset ? "Edit asset" : "New asset"} onClose={onClose}>
       <input value={item} onChange={(e) => setItem(e.target.value)} placeholder="Item" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={value} onChange={(e) => setValue(e.target.value)} type="number" placeholder="Replacement value" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -381,7 +432,7 @@ function AssetForm({ onClose }: { onClose: () => void }) {
         <input type="checkbox" checked={insured} onChange={(e) => setInsured(e.target.checked)} />
         Insured
       </label>
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save asset</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{asset ? "Save changes" : "Save asset"}</button>
     </FormSheet>
   );
 }

@@ -15,10 +15,13 @@ import {
   updateVehicle,
   deleteVehicle,
   addFuelLog,
+  updateFuelLog,
   deleteFuelLog,
   addService,
+  updateService,
   deleteService,
   addTrip,
+  updateTrip,
   deleteTrip,
 } from "./actions";
 
@@ -230,6 +233,7 @@ function VehicleForm({ vehicle, onClose }: { vehicle?: Vehicle; onClose: () => v
 
 function FuelTab({ vehicleId, logs, receipts }: { vehicleId: string; logs: FuelLog[]; receipts: Attachment[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<FuelLog | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -250,9 +254,14 @@ function FuelTab({ vehicleId, logs, receipts }: { vehicleId: string; logs: FuelL
                   {!log.full_tank && " · partial"}
                 </p>
               </div>
-              <button onClick={() => startTransition(() => deleteFuelLog(log.id))} className="text-muted hover:text-overdue">
-                <Trash2 size={14} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setEditing(log)} className="text-muted hover:text-text" aria-label="Edit fill-up">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => startTransition(() => deleteFuelLog(log.id))} className="text-muted hover:text-overdue" aria-label="Delete fill-up">
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
             <AttachmentGallery
               recordTable="fuel_logs"
@@ -263,37 +272,41 @@ function FuelTab({ vehicleId, logs, receipts }: { vehicleId: string; logs: FuelL
         ))
       )}
       {showForm && <FuelForm vehicleId={vehicleId} onClose={() => setShowForm(false)} />}
+      {editing && <FuelForm vehicleId={vehicleId} log={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function FuelForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => void }) {
-  const [litres, setLitres] = useState("");
-  const [total, setTotal] = useState("");
-  const [odometer, setOdometer] = useState("");
-  const [fullTank, setFullTank] = useState(true);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+function FuelForm({ vehicleId, log, onClose }: { vehicleId: string; log?: FuelLog; onClose: () => void }) {
+  const [litres, setLitres] = useState(log?.litres?.toString() ?? "");
+  const [total, setTotal] = useState(log?.total?.toString() ?? "");
+  const [odometer, setOdometer] = useState(log?.odometer?.toString() ?? "");
+  const [fullTank, setFullTank] = useState(log?.full_tank ?? true);
+  const [date, setDate] = useState(log?.occurred_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!litres || !total || !odometer) return;
     startTransition(async () => {
-      await addFuelLog({
-        vehicle_id: vehicleId,
+      const fields = {
         occurred_at: date,
         litres: Number(litres),
         price_per_litre: Number(total) / Number(litres),
         total: Number(total),
         odometer: Number(odometer),
         full_tank: fullTank,
-        station: null,
-      });
+      };
+      if (log) {
+        await updateFuelLog(log.id, fields);
+      } else {
+        await addFuelLog({ vehicle_id: vehicleId, station: null, ...fields });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="Log fuel fill-up" onClose={onClose}>
+    <FormSheet title={log ? "Edit fill-up" : "Log fuel fill-up"} onClose={onClose}>
       <div className="flex gap-2">
         <input value={litres} onChange={(e) => setLitres(e.target.value)} type="number" placeholder="Litres" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
         <input value={total} onChange={(e) => setTotal(e.target.value)} type="number" placeholder="Total (R)" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -304,13 +317,14 @@ function FuelForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
         <input type="checkbox" checked={fullTank} onChange={(e) => setFullTank(e.target.checked)} />
         Filled to full (needed for accurate cost per km)
       </label>
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save fill-up</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{log ? "Save changes" : "Save fill-up"}</button>
     </FormSheet>
   );
 }
 
 function TripsTab({ vehicleId, trips }: { vehicleId: string; trips: Trip[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Trip | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -331,31 +345,36 @@ function TripsTab({ vehicleId, trips }: { vehicleId: string; trips: Trip[] }) {
                 {trip.purpose === "business" && (trip.reimbursed ? " · reimbursed" : " · not yet reimbursed")}
               </p>
             </div>
-            <button onClick={() => startTransition(() => deleteTrip(trip.id))} className="text-muted hover:text-overdue">
-              <Trash2 size={14} />
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setEditing(trip)} className="text-muted hover:text-text" aria-label="Edit trip">
+                <Pencil size={14} />
+              </button>
+              <button onClick={() => startTransition(() => deleteTrip(trip.id))} className="text-muted hover:text-overdue" aria-label="Delete trip">
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))
       )}
       {showForm && <TripForm vehicleId={vehicleId} onClose={() => setShowForm(false)} />}
+      {editing && <TripForm vehicleId={vehicleId} trip={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => void }) {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [odoStart, setOdoStart] = useState("");
-  const [odoEnd, setOdoEnd] = useState("");
-  const [purpose, setPurpose] = useState<"business" | "private">("private");
-  const [reimbursed, setReimbursed] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+function TripForm({ vehicleId, trip, onClose }: { vehicleId: string; trip?: Trip; onClose: () => void }) {
+  const [from, setFrom] = useState(trip?.from_location ?? "");
+  const [to, setTo] = useState(trip?.to_location ?? "");
+  const [odoStart, setOdoStart] = useState(trip?.odometer_start?.toString() ?? "");
+  const [odoEnd, setOdoEnd] = useState(trip?.odometer_end?.toString() ?? "");
+  const [purpose, setPurpose] = useState<"business" | "private">((trip?.purpose as "business" | "private") ?? "private");
+  const [reimbursed, setReimbursed] = useState(trip?.reimbursed ?? false);
+  const [date, setDate] = useState(trip?.occurred_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [pending, startTransition] = useTransition();
 
   function save() {
     startTransition(async () => {
-      await addTrip({
-        vehicle_id: vehicleId,
+      const fields = {
         occurred_at: date,
         from_location: from.trim() || null,
         to_location: to.trim() || null,
@@ -363,13 +382,18 @@ function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
         odometer_end: odoEnd ? Number(odoEnd) : null,
         purpose,
         reimbursed: purpose === "business" ? reimbursed : false,
-      });
+      };
+      if (trip) {
+        await updateTrip(trip.id, fields);
+      } else {
+        await addTrip({ vehicle_id: vehicleId, ...fields });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="Log trip" onClose={onClose}>
+    <FormSheet title={trip ? "Edit trip" : "Log trip"} onClose={onClose}>
       <div className="flex gap-2">
         <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="From" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
         <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="To" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -391,13 +415,14 @@ function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
           Already reimbursed
         </label>
       )}
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save trip</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{trip ? "Save changes" : "Save trip"}</button>
     </FormSheet>
   );
 }
 
 function ServicesTab({ vehicleId, services }: { vehicleId: string; services: Service[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Service | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -418,43 +443,51 @@ function ServicesTab({ vehicleId, services }: { vehicleId: string; services: Ser
                 {s.next_due_date && ` · next due ${new Date(s.next_due_date).toLocaleDateString("en-ZA")}`}
               </p>
             </div>
-            <button onClick={() => startTransition(() => deleteService(s.id))} className="text-muted hover:text-overdue">
-              <Trash2 size={14} />
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setEditing(s)} className="text-muted hover:text-text" aria-label="Edit service">
+                <Pencil size={14} />
+              </button>
+              <button onClick={() => startTransition(() => deleteService(s.id))} className="text-muted hover:text-overdue" aria-label="Delete service">
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))
       )}
       {showForm && <ServiceForm vehicleId={vehicleId} onClose={() => setShowForm(false)} />}
+      {editing && <ServiceForm vehicleId={vehicleId} service={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function ServiceForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => void }) {
-  const [provider, setProvider] = useState("");
-  const [workDone, setWorkDone] = useState("");
-  const [cost, setCost] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [nextDueDate, setNextDueDate] = useState("");
+function ServiceForm({ vehicleId, service, onClose }: { vehicleId: string; service?: Service; onClose: () => void }) {
+  const [provider, setProvider] = useState(service?.provider ?? "");
+  const [workDone, setWorkDone] = useState(service?.work_done ?? "");
+  const [cost, setCost] = useState(service?.cost?.toString() ?? "");
+  const [date, setDate] = useState(service?.occurred_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [nextDueDate, setNextDueDate] = useState(service?.next_due_date ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     startTransition(async () => {
-      await addService({
-        vehicle_id: vehicleId,
+      const fields = {
         occurred_at: date,
-        odometer: null,
         provider: provider.trim() || null,
         work_done: workDone.trim() || null,
         cost: cost ? Number(cost) : null,
-        next_due_odometer: null,
         next_due_date: nextDueDate || null,
-      });
+      };
+      if (service) {
+        await updateService(service.id, fields);
+      } else {
+        await addService({ vehicle_id: vehicleId, odometer: null, next_due_odometer: null, ...fields });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="Log service" onClose={onClose}>
+    <FormSheet title={service ? "Edit service" : "Log service"} onClose={onClose}>
       <input value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="Provider" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={workDone} onChange={(e) => setWorkDone(e.target.value)} placeholder="Work done" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <div className="flex gap-2">
@@ -462,7 +495,7 @@ function ServiceForm({ vehicleId, onClose }: { vehicleId: string; onClose: () =>
         <input value={date} onChange={(e) => setDate(e.target.value)} type="date" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
       <input value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} type="date" placeholder="Next due date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save service</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{service ? "Save changes" : "Save service"}</button>
     </FormSheet>
   );
 }

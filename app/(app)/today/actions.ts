@@ -31,6 +31,33 @@ export async function addTask(title: string, tier: TaskTier) {
   return { error: error?.message ?? null };
 }
 
+export async function updateTask(id: string, title: string, tier: TaskTier) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const { data: existing } = await supabase.from("tasks").select("tier, task_date").eq("id", id).single();
+  if (!existing) return { error: "Task not found" };
+
+  if (existing.tier !== tier) {
+    const { count } = await supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", user.id)
+      .eq("task_date", existing.task_date)
+      .eq("tier", tier);
+    if ((count ?? 0) >= TASK_CAPACITY[tier]) {
+      return { error: `${tier} is full for today (${TASK_CAPACITY[tier]} max)` };
+    }
+  }
+
+  const { error } = await supabase.from("tasks").update({ title, tier }).eq("id", id);
+  revalidatePath("/today");
+  return { error: error?.message ?? null };
+}
+
 export async function toggleTask(id: string, done: boolean) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").update({ done }).eq("id", id);

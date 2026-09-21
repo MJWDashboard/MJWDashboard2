@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { Plus, Trash2, X, Wallet, Landmark, CreditCard, Upload } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Wallet, Landmark, CreditCard, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,13 +10,16 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { accountBalance, availableCash, totalDebtCapacity, currentMonth, monthToDateSpend, formatZAR } from "@/lib/money";
 import {
   createAccount,
+  updateAccount,
   deleteAccount,
   createCategory,
   createTransaction,
+  updateTransaction,
   deleteTransaction,
   bulkImportTransactions,
   upsertBudget,
   createDebt,
+  updateDebt,
   deleteDebt,
   addDebtPayment,
 } from "./actions";
@@ -192,6 +195,7 @@ function AccountsTab({
   entities: Entity[];
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Account | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -219,7 +223,10 @@ function AccountsTab({
                   <span data-sensitive className="tabular text-sm text-text">
                     {formatZAR(accountBalance(acc, transactions))}
                   </span>
-                  <button onClick={() => startTransition(() => deleteAccount(acc.id))} className="text-muted hover:text-overdue">
+                  <button onClick={() => setEditing(acc)} className="text-muted hover:text-text" aria-label="Edit account">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => startTransition(() => deleteAccount(acc.id))} className="text-muted hover:text-overdue" aria-label="Delete account">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -230,27 +237,32 @@ function AccountsTab({
       )}
 
       {showForm && <AccountForm onClose={() => setShowForm(false)} />}
+      {editing && <AccountForm account={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function AccountForm({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<(typeof ACCOUNT_KINDS)[number]>("cheque");
-  const [isCash, setIsCash] = useState(true);
-  const [opening, setOpening] = useState("0");
+function AccountForm({ account, onClose }: { account?: Account; onClose: () => void }) {
+  const [name, setName] = useState(account?.name ?? "");
+  const [kind, setKind] = useState<(typeof ACCOUNT_KINDS)[number]>((account?.kind as (typeof ACCOUNT_KINDS)[number]) ?? "cheque");
+  const [isCash, setIsCash] = useState(account?.is_cash ?? true);
+  const [opening, setOpening] = useState(account?.opening_balance?.toString() ?? "0");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!name.trim()) return;
     startTransition(async () => {
-      await createAccount({ name: name.trim(), kind, is_cash: isCash, opening_balance: Number(opening) });
+      if (account) {
+        await updateAccount(account.id, { name: name.trim(), kind, is_cash: isCash, opening_balance: Number(opening) });
+      } else {
+        await createAccount({ name: name.trim(), kind, is_cash: isCash, opening_balance: Number(opening) });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New account" onClose={onClose}>
+    <FormSheet title={account ? "Edit account" : "New account"} onClose={onClose}>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -284,7 +296,7 @@ function AccountForm({ onClose }: { onClose: () => void }) {
         className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
       />
       <button onClick={save} disabled={pending} className="btn-primary w-full">
-        Save account
+        {account ? "Save changes" : "Save account"}
       </button>
     </FormSheet>
   );
@@ -301,6 +313,7 @@ function TransactionsTab({
 }) {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [editing, setEditing] = useState<Transaction | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -334,7 +347,10 @@ function TransactionsTab({
                   <span data-sensitive className={clsx("tabular text-sm", Number(t.amount) < 0 ? "text-text" : "text-ok")}>
                     {formatZAR(Number(t.amount))}
                   </span>
-                  <button onClick={() => startTransition(() => deleteTransaction(t.id))} className="text-muted hover:text-overdue">
+                  <button onClick={() => setEditing(t)} className="text-muted hover:text-text" aria-label="Edit transaction">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => startTransition(() => deleteTransaction(t.id))} className="text-muted hover:text-overdue" aria-label="Delete transaction">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -345,6 +361,9 @@ function TransactionsTab({
       )}
 
       {showForm && <TransactionForm accounts={accounts} categories={categories} onClose={() => setShowForm(false)} />}
+      {editing && (
+        <TransactionForm accounts={accounts} categories={categories} transaction={editing} onClose={() => setEditing(null)} />
+      )}
       {showImport && <ImportForm accounts={accounts} onClose={() => setShowImport(false)} />}
     </div>
   );
@@ -353,19 +372,21 @@ function TransactionsTab({
 function TransactionForm({
   accounts,
   categories,
+  transaction,
   onClose,
 }: {
   accounts: Account[];
   categories: Category[];
+  transaction?: Transaction;
   onClose: () => void;
 }) {
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
-  const [categoryId, setCategoryId] = useState<string>("");
+  const [accountId, setAccountId] = useState(transaction?.account_id ?? accounts[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState<string>(transaction?.category_id ?? "");
   const [newCategory, setNewCategory] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [type, setType] = useState<"expense" | "income">("expense");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [description, setDescription] = useState(transaction?.description ?? "");
+  const [amount, setAmount] = useState(transaction ? Math.abs(Number(transaction.amount)).toString() : "");
+  const [type, setType] = useState<"expense" | "income">(transaction && Number(transaction.amount) > 0 ? "income" : "expense");
+  const [date, setDate] = useState(transaction?.occurred_at.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [pending, startTransition] = useTransition();
 
   function save() {
@@ -377,19 +398,29 @@ function TransactionForm({
         catId = data?.id ?? null;
       }
       const signedAmount = type === "expense" ? -Math.abs(Number(amount)) : Math.abs(Number(amount));
-      await createTransaction({
-        account_id: accountId,
-        category_id: catId,
-        description: description.trim(),
-        amount: signedAmount,
-        occurred_at: date,
-      });
+      if (transaction) {
+        await updateTransaction(transaction.id, {
+          account_id: accountId,
+          category_id: catId,
+          description: description.trim(),
+          amount: signedAmount,
+          occurred_at: date,
+        });
+      } else {
+        await createTransaction({
+          account_id: accountId,
+          category_id: catId,
+          description: description.trim(),
+          amount: signedAmount,
+          occurred_at: date,
+        });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New transaction" onClose={onClose}>
+    <FormSheet title={transaction ? "Edit transaction" : "New transaction"} onClose={onClose}>
       <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         {accounts.map((a) => (
           <option key={a.id} value={a.id}>{a.name}</option>
@@ -413,7 +444,7 @@ function TransactionForm({
         <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Category name" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       )}
       <input value={date} onChange={(e) => setDate(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save transaction</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{transaction ? "Save changes" : "Save transaction"}</button>
     </FormSheet>
   );
 }
@@ -469,6 +500,7 @@ function ImportForm({ accounts, onClose }: { accounts: Account[]; onClose: () =>
 
 function DebtTab({ debts, debtPayments }: { debts: Debt[]; debtPayments: DebtPayment[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Debt | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -504,9 +536,14 @@ function DebtTab({ debts, debtPayments }: { debts: Debt[]; debtPayments: DebtPay
               <div key={debt.id} className="card space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-text">{debt.creditor}</p>
-                  <button onClick={() => startTransition(() => deleteDebt(debt.id))} className="text-muted hover:text-overdue">
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setEditing(debt)} className="text-muted hover:text-text" aria-label="Edit debt">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => startTransition(() => deleteDebt(debt.id))} className="text-muted hover:text-overdue" aria-label="Delete debt">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>{debt.kind.replace("_", " ")}</span>
@@ -560,6 +597,7 @@ function DebtTab({ debts, debtPayments }: { debts: Debt[]; debtPayments: DebtPay
       )}
 
       {showForm && <DebtForm onClose={() => setShowForm(false)} />}
+      {editing && <DebtForm debt={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -584,20 +622,20 @@ function PaymentInput({ debtId, onDone }: { debtId: string; onDone: () => void }
   );
 }
 
-function DebtForm({ onClose }: { onClose: () => void }) {
-  const [creditor, setCreditor] = useState("");
-  const [kind, setKind] = useState("credit_card");
-  const [balance, setBalance] = useState("");
-  const [rate, setRate] = useState("");
-  const [minPayment, setMinPayment] = useState("");
-  const [dueDay, setDueDay] = useState("");
-  const [limit, setLimit] = useState("");
+function DebtForm({ debt, onClose }: { debt?: Debt; onClose: () => void }) {
+  const [creditor, setCreditor] = useState(debt?.creditor ?? "");
+  const [kind, setKind] = useState(debt?.kind ?? "credit_card");
+  const [balance, setBalance] = useState(debt?.balance?.toString() ?? "");
+  const [rate, setRate] = useState(debt?.interest_rate?.toString() ?? "");
+  const [minPayment, setMinPayment] = useState(debt?.minimum_payment?.toString() ?? "");
+  const [dueDay, setDueDay] = useState(debt?.due_day?.toString() ?? "");
+  const [limit, setLimit] = useState(debt?.limit_amount?.toString() ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!creditor.trim() || !balance) return;
     startTransition(async () => {
-      await createDebt({
+      const fields = {
         creditor: creditor.trim(),
         kind,
         balance: Number(balance),
@@ -605,13 +643,18 @@ function DebtForm({ onClose }: { onClose: () => void }) {
         minimum_payment: minPayment ? Number(minPayment) : null,
         due_day: dueDay ? Number(dueDay) : null,
         limit_amount: limit ? Number(limit) : null,
-      });
+      };
+      if (debt) {
+        await updateDebt(debt.id, fields);
+      } else {
+        await createDebt(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New debt" onClose={onClose}>
+    <FormSheet title={debt ? "Edit debt" : "New debt"} onClose={onClose}>
       <input value={creditor} onChange={(e) => setCreditor(e.target.value)} placeholder="Creditor" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <select value={kind} onChange={(e) => setKind(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         <option value="credit_card">Credit card</option>
@@ -637,7 +680,7 @@ function DebtForm({ onClose }: { onClose: () => void }) {
         />
         <input value={limit} onChange={(e) => setLimit(e.target.value)} type="number" placeholder="Credit limit" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save debt</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{debt ? "Save changes" : "Save debt"}</button>
     </FormSheet>
   );
 }

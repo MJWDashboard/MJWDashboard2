@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { Pin, Plus, Trash2, X, StickyNote, ShoppingCart, Archive, ArchiveRestore, ChefHat, Music, MessageSquare, Lightbulb, NotebookPen } from "lucide-react";
+import { Pin, Plus, Trash2, Pencil, Check, X, StickyNote, ShoppingCart, Archive, ArchiveRestore, ChefHat, Music, MessageSquare, Lightbulb, NotebookPen } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,8 +14,10 @@ import {
   toggleArchiveNote,
   deleteNote,
   createList,
+  updateList,
   deleteList,
   addListItem,
+  updateListItem,
   toggleListItem,
   deleteListItem,
 } from "./actions";
@@ -223,8 +225,9 @@ function NotesTab({ notes }: { notes: Note[] }) {
 function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
+  const [category, setCategory] = useState<Category>((note.category as Category) ?? "note");
   const [pending, startTransition] = useTransition();
-  const cat = CATEGORIES[note.category as Category] ?? CATEGORIES.note;
+  const cat = CATEGORIES[category] ?? CATEGORIES.note;
 
   function save() {
     startTransition(async () => {
@@ -232,16 +235,32 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
     });
   }
 
+  function changeCategory(next: Category) {
+    setCategory(next);
+    startTransition(async () => {
+      await updateNote(note.id, { category: next });
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-lg rounded-2xl border border-border p-4" style={{ backgroundColor: cat.bg }}>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={save}
             className="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none"
           />
+          <select
+            value={category}
+            onChange={(e) => changeCategory(e.target.value as Category)}
+            className="rounded-lg border border-black/10 bg-white/50 px-2 py-1 text-xs text-gray-900"
+          >
+            {(Object.keys(CATEGORIES) as Category[]).map((c) => (
+              <option key={c} value={c}>{CATEGORIES[c].label}</option>
+            ))}
+          </select>
           <button onClick={onClose} className="text-black/50 hover:text-black">
             <X size={18} />
           </button>
@@ -404,6 +423,8 @@ function NewListForm({
 function ListDetail({ list, items }: { list: List; items: ListItem[] }) {
   const [pending, startTransition] = useTransition();
   const [draftItem, setDraftItem] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(list.name);
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
 
@@ -415,17 +436,47 @@ function ListDetail({ list, items }: { list: List; items: ListItem[] }) {
     });
   }
 
+  function saveRename() {
+    if (!name.trim()) return;
+    startTransition(async () => {
+      await updateList(list.id, name.trim());
+      setRenaming(false);
+    });
+  }
+
   return (
     <div className="card space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-text">{list.name}</p>
-        <button
-          onClick={() => startTransition(() => deleteList(list.id))}
-          className="text-muted hover:text-overdue"
-          aria-label="Delete list"
-        >
-          <Trash2 size={16} />
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        {renaming ? (
+          <div className="flex flex-1 items-center gap-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && saveRename()}
+              autoFocus
+              className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm text-text outline-none"
+            />
+            <button onClick={saveRename} className="text-accent" aria-label="Save name">
+              <Check size={16} />
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-text">{list.name}</p>
+        )}
+        <div className="flex items-center gap-3">
+          {!renaming && (
+            <button onClick={() => setRenaming(true)} className="text-muted hover:text-text" aria-label="Rename list">
+              <Pencil size={14} />
+            </button>
+          )}
+          <button
+            onClick={() => startTransition(() => deleteList(list.id))}
+            className="text-muted hover:text-overdue"
+            aria-label="Delete list"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 border-b border-border pb-3">
@@ -460,6 +511,43 @@ function ListDetail({ list, items }: { list: List; items: ListItem[] }) {
 }
 
 function ItemRow({ item }: { item: ListItem }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [quantity, setQuantity] = useState(item.quantity ?? "");
+  const [, startTransition] = useTransition();
+
+  function save() {
+    if (!name.trim()) return;
+    startTransition(async () => {
+      await updateListItem(item.id, name.trim(), quantity.trim() || null);
+      setEditing(false);
+    });
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 py-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          autoFocus
+          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm text-text outline-none"
+        />
+        <input
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          placeholder="Qty"
+          className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-sm text-text outline-none"
+        />
+        <button onClick={save} className="text-accent" aria-label="Save item">
+          <Check size={16} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 py-2">
       <button
@@ -476,7 +564,10 @@ function ItemRow({ item }: { item: ListItem }) {
         {item.name}
         {item.quantity && <span className="ml-2 text-xs text-muted">{item.quantity}</span>}
       </span>
-      <button onClick={() => deleteListItem(item.id)} className="text-muted hover:text-overdue">
+      <button onClick={() => setEditing(true)} className="text-muted hover:text-text" aria-label="Edit item">
+        <Pencil size={14} />
+      </button>
+      <button onClick={() => deleteListItem(item.id)} className="text-muted hover:text-overdue" aria-label="Delete item">
         <X size={16} />
       </button>
     </div>

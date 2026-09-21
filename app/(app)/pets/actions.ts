@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 
 export async function createPet(input: {
   name: string;
@@ -12,6 +13,13 @@ export async function createPet(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("pets").insert(input);
+  revalidatePath("/pets");
+  return { error: error?.message ?? null };
+}
+
+export async function updatePet(id: string, fields: TablesUpdate<"pets">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("pets").update(fields).eq("id", id);
   revalidatePath("/pets");
   return { error: error?.message ?? null };
 }
@@ -49,6 +57,13 @@ export async function markCareDone(id: string, intervalDays: number | null) {
   revalidatePath("/pets");
 }
 
+export async function updateCareItem(id: string, fields: TablesUpdate<"pet_care_items">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("pet_care_items").update(fields).eq("id", id);
+  revalidatePath("/pets");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteCareItem(id: string) {
   const supabase = await createClient();
   await supabase.from("pet_care_items").delete().eq("id", id);
@@ -76,6 +91,13 @@ export async function toggleVisitSettled(id: string, settled: boolean) {
   revalidatePath("/pets");
 }
 
+export async function updateVisit(id: string, fields: TablesUpdate<"pet_visits">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("pet_visits").update(fields).eq("id", id);
+  revalidatePath("/pets");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteVisit(id: string) {
   const supabase = await createClient();
   await supabase.from("pet_visits").delete().eq("id", id);
@@ -92,6 +114,13 @@ export async function createAsset(input: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("assets").insert(input);
+  revalidatePath("/pets");
+  return { error: error?.message ?? null };
+}
+
+export async function updateAsset(id: string, fields: TablesUpdate<"assets">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("assets").update(fields).eq("id", id);
   revalidatePath("/pets");
   return { error: error?.message ?? null };
 }

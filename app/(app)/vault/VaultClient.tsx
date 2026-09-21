@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { FileText, ShieldCheck, KeyRound, Scale, Plus, Trash2, X, CheckCircle2 } from "lucide-react";
+import { FileText, ShieldCheck, KeyRound, Scale, Plus, Trash2, Pencil, X, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -11,12 +11,16 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { formatZAR } from "@/lib/money";
 import {
   createDocument,
+  updateDocument,
   deleteDocument,
   createPolicy,
+  updatePolicy,
   deletePolicy,
   createCredential,
+  updateCredential,
   deleteCredential,
   createMatter,
+  updateMatter,
   updateMatterContact,
   closeMatter,
   deleteMatter,
@@ -80,6 +84,7 @@ export function VaultClient({
 
 function DocumentsTab({ documents, files }: { documents: Document[]; files: Attachment[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Document | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -105,7 +110,10 @@ function DocumentsTab({ documents, files }: { documents: Document[]; files: Atta
                 </div>
                 <div className="flex items-center gap-2">
                   {expiring && <span className="status-pill-soon">Expiring</span>}
-                  <button onClick={() => startTransition(() => deleteDocument(d.id))} className="text-muted hover:text-overdue">
+                  <button onClick={() => setEditing(d)} className="text-muted hover:text-text" aria-label="Edit document">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => startTransition(() => deleteDocument(d.id))} className="text-muted hover:text-overdue" aria-label="Delete document">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -121,33 +129,39 @@ function DocumentsTab({ documents, files }: { documents: Document[]; files: Atta
       )}
 
       {showForm && <DocumentForm onClose={() => setShowForm(false)} />}
+      {editing && <DocumentForm document={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function DocumentForm({ onClose }: { onClose: () => void }) {
-  const [docType, setDocType] = useState(DOC_TYPES[0]);
-  const [issuer, setIssuer] = useState("");
-  const [docDate, setDocDate] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [reference, setReference] = useState("");
+function DocumentForm({ document, onClose }: { document?: Document; onClose: () => void }) {
+  const [docType, setDocType] = useState(document?.doc_type ?? DOC_TYPES[0]);
+  const [issuer, setIssuer] = useState(document?.issuer ?? "");
+  const [docDate, setDocDate] = useState(document?.document_date ?? "");
+  const [expiryDate, setExpiryDate] = useState(document?.expiry_date ?? "");
+  const [reference, setReference] = useState(document?.reference_number ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     startTransition(async () => {
-      await createDocument({
+      const fields = {
         doc_type: docType,
         issuer: issuer.trim() || null,
         document_date: docDate || null,
         expiry_date: expiryDate || null,
         reference_number: reference.trim() || null,
-      });
+      };
+      if (document) {
+        await updateDocument(document.id, fields);
+      } else {
+        await createDocument(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New document" onClose={onClose}>
+    <FormSheet title={document ? "Edit document" : "New document"} onClose={onClose}>
       <select value={docType} onChange={(e) => setDocType(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         {DOC_TYPES.map((t) => (
           <option key={t} value={t}>{t.replace("_", " ")}</option>
@@ -160,13 +174,14 @@ function DocumentForm({ onClose }: { onClose: () => void }) {
       </div>
       <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Reference number" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <p className="text-xs text-muted">Reference numbers are stored as plain text, protected by row-level security — not yet field-encrypted.</p>
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save document</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{document ? "Save changes" : "Save document"}</button>
     </FormSheet>
   );
 }
 
 function PoliciesTab({ policies }: { policies: Policy[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Policy | null>(null);
   const [, startTransition] = useTransition();
   const totalPremiums = policies.reduce((sum, p) => sum + Number(p.premium ?? 0), 0);
 
@@ -201,7 +216,10 @@ function PoliciesTab({ policies }: { policies: Policy[] }) {
               <div className="flex items-center gap-2">
                 {renewing && <span className="status-pill-soon">Renewing</span>}
                 {!p.beneficiary && <span className="status-pill-overdue">No beneficiary</span>}
-                <button onClick={() => startTransition(() => deletePolicy(p.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => setEditing(p)} className="text-muted hover:text-text" aria-label="Edit policy">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => startTransition(() => deletePolicy(p.id))} className="text-muted hover:text-overdue" aria-label="Delete policy">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -211,37 +229,42 @@ function PoliciesTab({ policies }: { policies: Policy[] }) {
       )}
 
       {showForm && <PolicyForm onClose={() => setShowForm(false)} />}
+      {editing && <PolicyForm policy={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function PolicyForm({ onClose }: { onClose: () => void }) {
-  const [insurer, setInsurer] = useState("");
-  const [kind, setKind] = useState("life");
-  const [premium, setPremium] = useState("");
-  const [cover, setCover] = useState("");
-  const [renewal, setRenewal] = useState("");
-  const [beneficiary, setBeneficiary] = useState("");
+function PolicyForm({ policy, onClose }: { policy?: Policy; onClose: () => void }) {
+  const [insurer, setInsurer] = useState(policy?.insurer ?? "");
+  const [kind, setKind] = useState(policy?.kind ?? "life");
+  const [premium, setPremium] = useState(policy?.premium?.toString() ?? "");
+  const [cover, setCover] = useState(policy?.cover_amount?.toString() ?? "");
+  const [renewal, setRenewal] = useState(policy?.renewal_date ?? "");
+  const [beneficiary, setBeneficiary] = useState(policy?.beneficiary ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!insurer.trim()) return;
     startTransition(async () => {
-      await createPolicy({
+      const fields = {
         insurer: insurer.trim(),
         kind,
-        policy_number: null,
         premium: premium ? Number(premium) : null,
         cover_amount: cover ? Number(cover) : null,
         renewal_date: renewal || null,
         beneficiary: beneficiary.trim() || null,
-      });
+      };
+      if (policy) {
+        await updatePolicy(policy.id, fields);
+      } else {
+        await createPolicy({ ...fields, policy_number: null });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New policy" onClose={onClose}>
+    <FormSheet title={policy ? "Edit policy" : "New policy"} onClose={onClose}>
       <input value={insurer} onChange={(e) => setInsurer(e.target.value)} placeholder="Insurer" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <select value={kind} onChange={(e) => setKind(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         <option value="life">Life</option>
@@ -257,13 +280,14 @@ function PolicyForm({ onClose }: { onClose: () => void }) {
       </div>
       <input value={renewal} onChange={(e) => setRenewal(e.target.value)} type="date" placeholder="Renewal date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} placeholder="Beneficiary" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save policy</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{policy ? "Save changes" : "Save policy"}</button>
     </FormSheet>
   );
 }
 
 function CredentialsTab({ credentials }: { credentials: Credential[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Credential | null>(null);
   const [, startTransition] = useTransition();
 
   return (
@@ -292,7 +316,10 @@ function CredentialsTab({ credentials }: { credentials: Credential[] }) {
               </div>
               <div className="flex items-center gap-2">
                 {tier1Risk && <span className="status-pill-overdue">Review</span>}
-                <button onClick={() => startTransition(() => deleteCredential(c.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => setEditing(c)} className="text-muted hover:text-text" aria-label="Edit account">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => startTransition(() => deleteCredential(c.id))} className="text-muted hover:text-overdue" aria-label="Delete account">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -302,34 +329,40 @@ function CredentialsTab({ credentials }: { credentials: Credential[] }) {
       )}
 
       {showForm && <CredentialForm onClose={() => setShowForm(false)} />}
+      {editing && <CredentialForm credential={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function CredentialForm({ onClose }: { onClose: () => void }) {
-  const [service, setService] = useState("");
-  const [username, setUsername] = useState("");
-  const [criticality, setCriticality] = useState<"tier1" | "tier2">("tier1");
-  const [twoFa, setTwoFa] = useState("");
-  const [lastChange, setLastChange] = useState("");
+function CredentialForm({ credential, onClose }: { credential?: Credential; onClose: () => void }) {
+  const [service, setService] = useState(credential?.service ?? "");
+  const [username, setUsername] = useState(credential?.username ?? "");
+  const [criticality, setCriticality] = useState<"tier1" | "tier2">((credential?.criticality as "tier1" | "tier2") ?? "tier1");
+  const [twoFa, setTwoFa] = useState(credential?.two_fa_method ?? "");
+  const [lastChange, setLastChange] = useState(credential?.last_password_change ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!service.trim()) return;
     startTransition(async () => {
-      await createCredential({
+      const fields = {
         service: service.trim(),
         username: username.trim() || null,
         criticality,
         two_fa_method: twoFa.trim() || null,
         last_password_change: lastChange || null,
-      });
+      };
+      if (credential) {
+        await updateCredential(credential.id, fields);
+      } else {
+        await createCredential(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New account" onClose={onClose}>
+    <FormSheet title={credential ? "Edit account" : "New account"} onClose={onClose}>
       <input value={service} onChange={(e) => setService(e.target.value)} placeholder="Service (e.g. ABSA, Gmail)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username / email" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <select value={criticality} onChange={(e) => setCriticality(e.target.value as "tier1" | "tier2")} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
@@ -338,13 +371,14 @@ function CredentialForm({ onClose }: { onClose: () => void }) {
       </select>
       <input value={twoFa} onChange={(e) => setTwoFa(e.target.value)} placeholder="2FA method (e.g. authenticator app)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={lastChange} onChange={(e) => setLastChange(e.target.value)} type="date" placeholder="Last password change" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save account</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{credential ? "Save changes" : "Save account"}</button>
     </FormSheet>
   );
 }
 
 function MattersTab({ matters }: { matters: Matter[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Matter | null>(null);
   const [, startTransition] = useTransition();
   const open = matters.filter((m) => m.status === "open");
   const closed = matters.filter((m) => m.status === "closed");
@@ -364,9 +398,14 @@ function MattersTab({ matters }: { matters: Matter[] }) {
             <div key={m.id} className="card space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-text">{m.matter}</p>
-                <button onClick={() => startTransition(() => deleteMatter(m.id))} className="text-muted hover:text-overdue">
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setEditing(m)} className="text-muted hover:text-text" aria-label="Edit matter">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => startTransition(() => deleteMatter(m.id))} className="text-muted hover:text-overdue" aria-label="Delete matter">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted">
                 {m.authority} {m.reference && `· ref ${m.reference}`}
@@ -389,8 +428,13 @@ function MattersTab({ matters }: { matters: Matter[] }) {
           <summary>{closed.length} closed</summary>
           <div className="mt-2 space-y-1">
             {closed.map((m) => (
-              <div key={m.id} className="flex items-center gap-2">
-                <CheckCircle2 size={12} /> {m.matter}
+              <div key={m.id} className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 size={12} /> {m.matter}
+                </span>
+                <button onClick={() => setEditing(m)} className="text-muted hover:text-text" aria-label="Edit matter">
+                  <Pencil size={12} />
+                </button>
               </div>
             ))}
           </div>
@@ -398,40 +442,46 @@ function MattersTab({ matters }: { matters: Matter[] }) {
       )}
 
       {showForm && <MatterForm onClose={() => setShowForm(false)} />}
+      {editing && <MatterForm matter={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function MatterForm({ onClose }: { onClose: () => void }) {
-  const [matter, setMatter] = useState("");
-  const [authority, setAuthority] = useState("");
-  const [reference, setReference] = useState("");
-  const [nextAction, setNextAction] = useState("");
-  const [dueDate, setDueDate] = useState("");
+function MatterForm({ matter: existing, onClose }: { matter?: Matter; onClose: () => void }) {
+  const [matter, setMatter] = useState(existing?.matter ?? "");
+  const [authority, setAuthority] = useState(existing?.authority ?? "");
+  const [reference, setReference] = useState(existing?.reference ?? "");
+  const [nextAction, setNextAction] = useState(existing?.next_action ?? "");
+  const [dueDate, setDueDate] = useState(existing?.due_date ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!matter.trim()) return;
     startTransition(async () => {
-      await createMatter({
+      const fields = {
         reference: reference.trim() || null,
         matter: matter.trim(),
         authority: authority.trim() || null,
         next_action: nextAction.trim() || null,
         due_date: dueDate || null,
-      });
+      };
+      if (existing) {
+        await updateMatter(existing.id, fields);
+      } else {
+        await createMatter(fields);
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New matter" onClose={onClose}>
+    <FormSheet title={existing ? "Edit matter" : "New matter"} onClose={onClose}>
       <input value={matter} onChange={(e) => setMatter(e.target.value)} placeholder="Matter (e.g. Estate file)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={authority} onChange={(e) => setAuthority(e.target.value)} placeholder="Authority (e.g. SARS, Master of the High Court)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Reference number" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={nextAction} onChange={(e) => setNextAction(e.target.value)} placeholder="Next action" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={dueDate} onChange={(e) => setDueDate(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save matter</button>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{existing ? "Save changes" : "Save matter"}</button>
     </FormSheet>
   );
 }

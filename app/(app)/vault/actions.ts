@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 
 async function logAudit(action: string, table: string, recordId?: string) {
   const supabase = await createClient();
@@ -22,6 +23,14 @@ export async function createDocument(input: {
   const supabase = await createClient();
   const { error } = await supabase.from("documents").insert(input);
   await logAudit("create", "documents");
+  revalidatePath("/vault");
+  return { error: error?.message ?? null };
+}
+
+export async function updateDocument(id: string, fields: TablesUpdate<"documents">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("documents").update(fields).eq("id", id);
+  await logAudit("update", "documents", id);
   revalidatePath("/vault");
   return { error: error?.message ?? null };
 }
@@ -49,6 +58,14 @@ export async function createPolicy(input: {
   return { error: error?.message ?? null };
 }
 
+export async function updatePolicy(id: string, fields: TablesUpdate<"policies">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("policies").update(fields).eq("id", id);
+  await logAudit("update", "policies", id);
+  revalidatePath("/vault");
+  return { error: error?.message ?? null };
+}
+
 export async function deletePolicy(id: string) {
   const supabase = await createClient();
   await supabase.from("policies").delete().eq("id", id);
@@ -69,6 +86,13 @@ export async function createCredential(input: {
   return { error: error?.message ?? null };
 }
 
+export async function updateCredential(id: string, fields: TablesUpdate<"credentials">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("credentials").update(fields).eq("id", id);
+  revalidatePath("/vault");
+  return { error: error?.message ?? null };
+}
+
 export async function deleteCredential(id: string) {
   const supabase = await createClient();
   await supabase.from("credentials").delete().eq("id", id);
@@ -85,6 +109,14 @@ export async function createMatter(input: {
   const supabase = await createClient();
   const { error } = await supabase.from("matters").insert(input);
   await logAudit("create", "matters");
+  revalidatePath("/vault");
+  return { error: error?.message ?? null };
+}
+
+export async function updateMatter(id: string, fields: TablesUpdate<"matters">) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("matters").update(fields).eq("id", id);
+  await logAudit("update", "matters", id);
   revalidatePath("/vault");
   return { error: error?.message ?? null };
 }
