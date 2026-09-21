@@ -1,20 +1,24 @@
-import { ShieldCheck } from "lucide-react";
-import { ModulePlaceholder } from "@/components/ModulePlaceholder";
+import { createClient } from "@/lib/supabase/server";
+import { VaultClient } from "./VaultClient";
 
 export const metadata = { title: "Vault" };
 
-export default function VaultPage() {
+export default async function VaultPage() {
+  const supabase = await createClient();
+
+  const [{ data: documents }, { data: policies }, { data: credentials }, { data: matters }] = await Promise.all([
+    supabase.from("documents").select("*").order("created_at", { ascending: false }),
+    supabase.from("policies").select("*").order("created_at", { ascending: false }),
+    supabase.from("credentials").select("*").order("service", { ascending: true }),
+    supabase.from("matters").select("*").order("status", { ascending: true }).order("due_date", { ascending: true }),
+  ]);
+
   return (
-    <ModulePlaceholder
-      icon={ShieldCheck}
-      title="Vault"
-      phase="Phase 4"
-      scope={[
-        "Documents, policies and the will, with encrypted reference numbers",
-        "Open matters tracker — the estate file, SARS, Master, Public Protector",
-        "Credentials register (2FA method, last change — never the secrets)",
-        "Emergency sheet for an executor",
-      ]}
+    <VaultClient
+      documents={documents ?? []}
+      policies={policies ?? []}
+      credentials={credentials ?? []}
+      matters={matters ?? []}
     />
   );
 }

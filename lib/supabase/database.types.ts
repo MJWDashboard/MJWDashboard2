@@ -284,6 +284,42 @@ export type Database = {
         }
         Relationships: []
       }
+      credentials: {
+        Row: {
+          created_at: string
+          criticality: string
+          id: string
+          last_password_change: string | null
+          owner_id: string
+          recovery_email: string | null
+          service: string
+          two_fa_method: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          criticality?: string
+          id?: string
+          last_password_change?: string | null
+          owner_id?: string
+          recovery_email?: string | null
+          service: string
+          two_fa_method?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          criticality?: string
+          id?: string
+          last_password_change?: string | null
+          owner_id?: string
+          recovery_email?: string | null
+          service?: string
+          two_fa_method?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       debt_payments: {
         Row: {
           amount: number
@@ -360,6 +396,56 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          document_date: string | null
+          entity_id: string | null
+          expiry_date: string | null
+          id: string
+          issuer: string | null
+          notes: string | null
+          owner_id: string
+          reference_number: string | null
+          tax_year: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          document_date?: string | null
+          entity_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          issuer?: string | null
+          notes?: string | null
+          owner_id?: string
+          reference_number?: string | null
+          tax_year?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          document_date?: string | null
+          entity_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          issuer?: string | null
+          notes?: string | null
+          owner_id?: string
+          reference_number?: string | null
+          tax_year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entities: {
         Row: {
@@ -620,6 +706,48 @@ export type Database = {
           kind?: string
           name?: string
           owner_id?: string
+        }
+        Relationships: []
+      }
+      matters: {
+        Row: {
+          authority: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          last_contact: string | null
+          matter: string
+          next_action: string | null
+          opened_date: string
+          owner_id: string
+          reference: string | null
+          status: string
+        }
+        Insert: {
+          authority?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          last_contact?: string | null
+          matter: string
+          next_action?: string | null
+          opened_date?: string
+          owner_id?: string
+          reference?: string | null
+          status?: string
+        }
+        Update: {
+          authority?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          last_contact?: string | null
+          matter?: string
+          next_action?: string | null
+          opened_date?: string
+          owner_id?: string
+          reference?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -887,6 +1015,48 @@ export type Database = {
           owner_id?: string
           species?: string
           vet?: string | null
+        }
+        Relationships: []
+      }
+      policies: {
+        Row: {
+          beneficiary: string | null
+          broker_contact: string | null
+          cover_amount: number | null
+          created_at: string
+          id: string
+          insurer: string
+          kind: string
+          owner_id: string
+          policy_number: string | null
+          premium: number | null
+          renewal_date: string | null
+        }
+        Insert: {
+          beneficiary?: string | null
+          broker_contact?: string | null
+          cover_amount?: number | null
+          created_at?: string
+          id?: string
+          insurer: string
+          kind?: string
+          owner_id?: string
+          policy_number?: string | null
+          premium?: number | null
+          renewal_date?: string | null
+        }
+        Update: {
+          beneficiary?: string | null
+          broker_contact?: string | null
+          cover_amount?: number | null
+          created_at?: string
+          id?: string
+          insurer?: string
+          kind?: string
+          owner_id?: string
+          policy_number?: string | null
+          premium?: number | null
+          renewal_date?: string | null
         }
         Relationships: []
       }
