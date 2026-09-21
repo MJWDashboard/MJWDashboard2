@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * Runs at 04:30 SAST (02:30 UTC, no DST in South Africa — see vercel.json).
- * Phase 0 scope: compute the counts and top-3 watchlist a digest needs.
- * Actual email/push delivery is wired in Phase 1 once a provider is chosen;
- * until then this just logs, so the schedule and query shape are proven.
+ * Computes each account's own pending count and top-3 watchlist —
+ * per-owner, never pooled, now that more than one person can sign in.
+ * Delivery is push/email — a separate decision (which channel, which
+ * provider) — so for now this logs per account; ask before wiring one in.
  */
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -16,24 +17,35 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createServiceRoleClient();
-  const { data: watchlist, error } = await supabase
-    .from("reminders")
-    .select("*")
-    .neq("status", "done")
-    .order("severity", { ascending: false })
-    .order("due_at", { ascending: true })
-    .limit(3);
+  const { data: owners, error: ownersError } = await supabase.from("profiles").select("id");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (ownersError) {
+    return NextResponse.json({ error: ownersError.message }, { status: 500 });
   }
 
-  const { count: pendingCount } = await supabase
-    .from("reminders")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
+  const digests = await Promise.all(
+    (owners ?? []).map(async ({ id: ownerId }) => {
+      const [{ data: watchlist }, { count: pendingCount }] = await Promise.all([
+        supabase
+          .from("reminders")
+          .select("*")
+          .eq("owner_id", ownerId)
+          .neq("status", "done")
+          .order("severity", { ascending: false })
+          .order("due_at", { ascending: true })
+          .limit(3),
+        supabase
+          .from("reminders")
+          .select("id", { count: "exact", head: true })
+          .eq("owner_id", ownerId)
+          .eq("status", "pending"),
+      ]);
 
-  console.log("[digest]", { pendingCount, top: watchlist?.map((r) => r.title) });
+      return { ownerId, pendingCount: pendingCount ?? 0, top: (watchlist ?? []).map((r) => r.title) };
+    })
+  );
 
-  return NextResponse.json({ pendingCount, top: watchlist ?? [] });
+  console.log("[digest]", digests);
+
+  return NextResponse.json({ digests });
 }

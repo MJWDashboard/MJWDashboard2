@@ -40,3 +40,8 @@ export async function register(formData: FormData) {
 
   return { error: null, signedIn: Boolean(data.session) };
 }
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+}

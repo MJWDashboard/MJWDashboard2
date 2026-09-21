@@ -10,8 +10,8 @@ export function BottomNav({ onOpenCapture }: { onOpenCapture: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-1 border-t border-border bg-surface/95 py-2 pl-1 pr-2 backdrop-blur lg:hidden">
-      <div className="flex flex-1 items-center justify-between overflow-x-auto">
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-border bg-surface/95 px-2 py-1.5 backdrop-blur lg:hidden">
+      <div className="grid flex-1 grid-cols-8">
         {NAV_ITEMS.map((item) => (
           <NavLink key={item.href} item={item} active={pathname === item.href || pathname.startsWith(`${item.href}/`)} />
         ))}
@@ -35,10 +35,10 @@ function NavLink({ item, active }: { item: (typeof NAV_ITEMS)[number]; active: b
     <Link
       href={item.href}
       style={{ color: active ? item.color : undefined }}
-      className={clsx("flex shrink-0 flex-col items-center gap-0.5 px-2 py-1 text-[10px]", !active && "text-muted")}
+      className={clsx("flex flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium", !active && "text-muted")}
     >
-      <Icon size={19} style={active ? undefined : { color: item.color, opacity: 0.75 }} />
-      {item.label.split(" ")[0]}
+      <Icon size={22} style={active ? undefined : { color: item.color, opacity: 0.8 }} />
+      <span className="leading-none">{item.label.split(" ")[0]}</span>
     </Link>
   );
 }

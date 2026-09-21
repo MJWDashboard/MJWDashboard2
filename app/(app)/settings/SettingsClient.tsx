@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { User, Lock, Mail, LifeBuoy, ShieldCheck, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Lock, Mail, LifeBuoy, ShieldCheck, ChevronRight, LogOut } from "lucide-react";
 import { updateName, updatePassword, submitTicket } from "./actions";
+import { signOut } from "@/app/login/actions";
 
 export function SettingsClient({
   email,
@@ -44,7 +46,33 @@ export function SettingsClient({
           <ChevronRight size={16} className="text-muted" />
         </Link>
       )}
+
+      <SignOutButton />
     </div>
+  );
+}
+
+function SignOutButton() {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function handleSignOut() {
+    startTransition(async () => {
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    });
+  }
+
+  return (
+    <button
+      onClick={handleSignOut}
+      disabled={pending}
+      className="card flex w-full items-center justify-center gap-2 text-sm font-medium text-overdue"
+    >
+      <LogOut size={16} />
+      {pending ? "Signing out..." : "Sign out"}
+    </button>
   );
 }
 

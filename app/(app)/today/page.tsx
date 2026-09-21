@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
 import { getWatchlist, getTodayEvents, getGreetingName, getDosesDueSummary, timeOfDayGreeting } from "@/lib/today";
+import { getTodayTasks } from "@/lib/tasks";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
 import { LiveClock } from "@/components/LiveClock";
 import { NAV_ITEMS } from "@/lib/nav";
+import { TasksCard } from "./TasksCard";
 
 const healthColor = NAV_ITEMS.find((n) => n.href === "/health")!.color;
 const calendarColor = NAV_ITEMS.find((n) => n.href === "/calendar")!.color;
@@ -12,11 +14,12 @@ const calendarColor = NAV_ITEMS.find((n) => n.href === "/calendar")!.color;
 export const metadata = { title: "Today" };
 
 export default async function TodayPage() {
-  const [watchlist, events, name, doses] = await Promise.all([
+  const [watchlist, events, name, doses, tasks] = await Promise.all([
     getWatchlist(),
     getTodayEvents(),
     getGreetingName(),
     getDosesDueSummary(),
+    getTodayTasks(),
   ]);
 
   const greeting = timeOfDayGreeting();
@@ -52,7 +55,7 @@ export default async function TodayPage() {
 
       <Section title="Calendar" icon={CalendarDays} color={calendarColor}>
         {events.length === 0 ? (
-          <EmptyState icon={CalendarDays} title="Nothing on today" detail="Events will appear here once Google Calendar sync is connected in Phase 1." />
+          <EmptyState icon={CalendarDays} title="Nothing on today" detail="Add an event, or connect Google Calendar from the Calendar tab, to see it here." />
         ) : (
           <div className="space-y-2">
             {events.map((event) => (
@@ -75,11 +78,7 @@ export default async function TodayPage() {
       </Section>
 
       <Section title="Tasks" icon={ListTodo} color="#0E84FF">
-        <EmptyState
-          icon={ListTodo}
-          title="Personal task caps arrive in Phase 1"
-          detail="1 critical, 2 important, 3 admin — same ACE rule, tracked here with a capacity meter."
-        />
+        <TasksCard tasks={tasks} />
       </Section>
 
       <Section title="Watchlist" icon={AlertTriangle} color="#F26D78">
@@ -87,7 +86,7 @@ export default async function TodayPage() {
           <EmptyState
             icon={AlertTriangle}
             title="Nothing at risk"
-            detail="Ranked items from every module — amount at risk, due date, distance to threshold — will collect here as later phases are built."
+            detail="Reminders from Health, Money, Vehicle and Vault land here — amount at risk, due date, distance to threshold — the moment any of them need you."
           />
         ) : (
           <div className="space-y-2">

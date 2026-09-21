@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, EyeOff, Sun, Moon, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { Eye, EyeOff, Sun, Moon, Settings, LogOut } from "lucide-react";
+import { signOut } from "@/app/login/actions";
 
 export function TopBar({
   privacyBlur,
@@ -14,6 +17,17 @@ export function TopBar({
   theme: "dark" | "light";
   onToggleTheme: () => void;
 }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function handleSignOut() {
+    startTransition(async () => {
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    });
+  }
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-end gap-2 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
       <button
@@ -39,6 +53,14 @@ export function TopBar({
       >
         <Settings size={16} />
       </Link>
+      <button
+        onClick={handleSignOut}
+        disabled={pending}
+        aria-label="Sign out"
+        className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted hover:border-overdue hover:text-overdue"
+      >
+        <LogOut size={16} />
+      </button>
     </header>
   );
 }

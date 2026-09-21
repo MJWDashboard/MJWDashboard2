@@ -1335,6 +1335,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          owner_id: string
+          task_date: string
+          tier: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          owner_id?: string
+          task_date?: string
+          tier: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          owner_id?: string
+          task_date?: string
+          tier?: string
+          title?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string
