@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          id: string
+          is_cash: boolean
+          kind: string
+          name: string
+          opening_balance: number
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          is_cash?: boolean
+          kind: string
+          name: string
+          opening_balance?: number
+          owner_id?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          is_cash?: boolean
+          kind?: string
+          name?: string
+          opening_balance?: number
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           bucket: string
@@ -77,6 +118,142 @@ export type Database = {
           owner_id?: string
           record_id?: string | null
           table_name?: string
+        }
+        Relationships: []
+      }
+      budgets: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          month: string
+          owner_id: string
+          planned_amount: number
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          month: string
+          owner_id?: string
+          planned_amount: number
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          month?: string
+          owner_id?: string
+          planned_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          owner_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          debt_id: string
+          id: string
+          owner_id: string
+          paid_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          debt_id: string
+          id?: string
+          owner_id?: string
+          paid_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          debt_id?: string
+          id?: string
+          owner_id?: string
+          paid_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          balance: number
+          created_at: string
+          creditor: string
+          due_day: number | null
+          id: string
+          interest_rate: number | null
+          kind: string
+          limit_amount: number | null
+          minimum_payment: number | null
+          owner_id: string
+          status: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          creditor: string
+          due_day?: number | null
+          id?: string
+          interest_rate?: number | null
+          kind?: string
+          limit_amount?: number | null
+          minimum_payment?: number | null
+          owner_id?: string
+          status?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          creditor?: string
+          due_day?: number | null
+          id?: string
+          interest_rate?: number | null
+          kind?: string
+          limit_amount?: number | null
+          minimum_payment?: number | null
+          owner_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -157,6 +334,140 @@ export type Database = {
           title?: string
           transport_confirmed?: boolean
           transport_needed?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      important_dates: {
+        Row: {
+          created_at: string
+          day: number
+          id: string
+          lead_days: number[]
+          month: number | null
+          notes: string | null
+          owner_id: string
+          recurrence: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          day: number
+          id?: string
+          lead_days?: number[]
+          month?: number | null
+          notes?: string | null
+          owner_id?: string
+          recurrence?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          day?: number
+          id?: string
+          lead_days?: number[]
+          month?: number | null
+          notes?: string | null
+          owner_id?: string
+          recurrence?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      list_items: {
+        Row: {
+          checked: boolean
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          owner_id: string
+          position: number
+          quantity: string | null
+        }
+        Insert: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          owner_id?: string
+          position?: number
+          quantity?: string | null
+        }
+        Update: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          owner_id?: string
+          position?: number
+          quantity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          owner_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          body: string
+          created_at: string
+          folder: string | null
+          id: string
+          owner_id: string
+          pinned: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          owner_id?: string
+          pinned?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          owner_id?: string
+          pinned?: boolean
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -298,6 +609,64 @@ export type Database = {
           owner_id?: string
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string
+          entity_id: string | null
+          id: string
+          occurred_at: string
+          owner_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          id?: string
+          occurred_at?: string
+          owner_id?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          id?: string
+          occurred_at?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -1,20 +1,35 @@
-import { Wallet } from "lucide-react";
-import { ModulePlaceholder } from "@/components/ModulePlaceholder";
+import { createClient } from "@/lib/supabase/server";
+import { MoneyClient } from "./MoneyClient";
 
 export const metadata = { title: "Money" };
 
-export default function MoneyPage() {
+export default async function MoneyPage() {
+  const supabase = await createClient();
+
+  const [
+    { data: accounts },
+    { data: transactions },
+    { data: categories },
+    { data: budgets },
+    { data: debts },
+    { data: entities },
+  ] = await Promise.all([
+    supabase.from("accounts").select("*").order("created_at", { ascending: true }),
+    supabase.from("transactions").select("*").order("occurred_at", { ascending: false }),
+    supabase.from("categories").select("*").order("name", { ascending: true }),
+    supabase.from("budgets").select("*"),
+    supabase.from("debts").select("*").order("created_at", { ascending: true }),
+    supabase.from("entities").select("*"),
+  ]);
+
   return (
-    <ModulePlaceholder
-      icon={Wallet}
-      title="Money"
-      phase="Phase 2"
-      scope={[
-        "Accounts, statement import and budget categories",
-        "Available cash — cash accounts only, credit shown separately",
-        "Debt payoff planner and dispute tracker",
-        "SARS tax-year workspace",
-      ]}
+    <MoneyClient
+      accounts={accounts ?? []}
+      transactions={transactions ?? []}
+      categories={categories ?? []}
+      budgets={budgets ?? []}
+      debts={debts ?? []}
+      entities={entities ?? []}
     />
   );
 }

@@ -1,15 +1,15 @@
-import { CalendarDays } from "lucide-react";
-import { ModulePlaceholder } from "@/components/ModulePlaceholder";
+import { createClient } from "@/lib/supabase/server";
+import { CalendarClient } from "./CalendarClient";
 
 export const metadata = { title: "Calendar" };
 
-export default function CalendarPage() {
-  return (
-    <ModulePlaceholder
-      icon={CalendarDays}
-      title="Calendar & Dates"
-      phase="Phase 1"
-      scope={["Two-way Google Calendar sync", "Important dates with reminder ladders", "Evening transport-needed flag"]}
-    />
-  );
+export default async function CalendarPage() {
+  const supabase = await createClient();
+
+  const [{ data: events }, { data: importantDates }] = await Promise.all([
+    supabase.from("events").select("*").order("starts_at", { ascending: true }),
+    supabase.from("important_dates").select("*").order("day", { ascending: true }),
+  ]);
+
+  return <CalendarClient initialEvents={events ?? []} initialImportantDates={importantDates ?? []} />;
 }

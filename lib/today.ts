@@ -1,7 +1,6 @@
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
-
-export const SAST = "Africa/Johannesburg";
+import { SAST } from "@/lib/timezone";
 
 export async function getGreetingName() {
   const supabase = await createClient();
