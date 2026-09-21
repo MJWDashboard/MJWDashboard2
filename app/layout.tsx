@@ -1,14 +1,34 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { GlobalErrorListener } from "@/components/GlobalErrorListener";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Vorexa | Property Management Dashboard",
+    default: "Vorexa | Personal Dashboard",
     template: "%s | Vorexa",
   },
-  description:
-    "Vorexa's Property Management Dashboard - buildings, tenants, leasing, arrears, meetings and more in one place.",
+  description: "Intelligence. Systems. Decisions. — the private, single-owner dashboard for daily life.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-180.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Vorexa",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B0F17",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -17,9 +37,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body>
-        <GlobalErrorListener />
+    <html lang="en" className={`${inter.variable} ${mono.variable}`}>
+      <body className="font-sans">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

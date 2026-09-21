@@ -30,10 +30,6 @@ jobs:
       - name: Run smoke suite
         env:
           SMOKE_BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
-          CI_TEST_EMAIL: ${{ secrets.CI_TEST_EMAIL }}
-          CI_TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
-          CI_TEST_MEMBER_EMAIL: ${{ secrets.CI_TEST_MEMBER_EMAIL }}
-          CI_TEST_MEMBER_PASSWORD: ${{ secrets.CI_TEST_MEMBER_PASSWORD }}
         run: npm run test:smoke
 
       - name: Upload Playwright report

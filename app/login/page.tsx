@@ -1,140 +1,67 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Logo } from "@/components/Logo";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "./actions";
 
-type Mode = "sign-in" | "activate";
-
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
-
-  const [mode, setMode] = useState<Mode>("sign-in");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function handleSubmit(formData: FormData) {
+    setPending(true);
     setError(null);
-    setInfo(null);
-
-    const supabase = createClient();
-
-    if (mode === "sign-in") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-      router.push(next);
-      router.refresh();
+    const result = await signIn(formData);
+    setPending(false);
+    if (result.error) {
+      setError(result.error);
       return;
     }
-
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    if (data.session) {
-      router.push(next);
-      router.refresh();
-      return;
-    }
-    setInfo("Account created. Check your email to confirm before signing in.");
+    router.push("/today");
+    router.refresh();
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-8 flex flex-col items-center text-center">
-        <Logo size="md" className="mb-3" />
-        <p className="text-sm text-charcoal-300">Property Management Dashboard</p>
-      </div>
-
-      <div className="card">
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Vorexa</p>
+          <h1 className="mt-1 text-xl font-semibold text-text">Personal Dashboard</h1>
+        </div>
+        <form action={handleSubmit} className="card space-y-4">
           <div>
-            <label className="label" htmlFor="email">
+            <label htmlFor="email" className="mb-1 block text-sm text-muted">
               Email
             </label>
             <input
               id="email"
+              name="email"
               type="email"
               required
               autoComplete="email"
-              className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
             />
           </div>
           <div>
-            <label className="label" htmlFor="password">
+            <label htmlFor="password" className="mb-1 block text-sm text-muted">
               Password
             </label>
             <input
               id="password"
+              name="password"
               type="password"
               required
-              minLength={6}
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
             />
           </div>
-
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          {info && <p className="text-sm text-cyan-400">{info}</p>}
-
-          <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading
-              ? "Please wait…"
-              : mode === "sign-in"
-                ? "Sign In"
-                : "Activate Account"}
+          {error && <p className="text-sm text-overdue">{error}</p>}
+          <button type="submit" disabled={pending} className="btn-primary w-full">
+            {pending ? "Signing in..." : "Sign in"}
           </button>
         </form>
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === "sign-in" ? "activate" : "sign-in");
-            setError(null);
-            setInfo(null);
-          }}
-          className="mt-4 w-full text-center text-xs text-charcoal-400 hover:text-cyan-400"
-        >
-          {mode === "sign-in"
-            ? "Activating an invitation for the first time? Set up your account"
-            : "Already have an account? Sign in"}
-        </button>
       </div>
-
-      {mode === "activate" && (
-        <p className="mt-4 text-center text-xs text-charcoal-400">
-          Access is by invitation only. Use the email address your
-          administrator invited to activate your account.
-        </p>
-      )}
-    </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-charcoal-950 px-4">
-      <Suspense fallback={null}>
-        <LoginForm />
-      </Suspense>
     </div>
   );
 }

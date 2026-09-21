@@ -1,14 +1,19 @@
+import { type LucideIcon } from "lucide-react";
+
 export function EmptyState({
+  icon: Icon,
   title,
-  description,
+  detail,
 }: {
+  icon: LucideIcon;
   title: string;
-  description?: string;
+  detail: string;
 }) {
   return (
-    <div className="table-shell flex flex-col items-center justify-center gap-1 bg-charcoal-800/30 py-16 text-center">
-      <p className="text-sm font-medium text-charcoal-200">{title}</p>
-      {description && <p className="text-sm text-charcoal-400">{description}</p>}
+    <div className="card flex flex-col items-center gap-2 py-8 text-center">
+      <Icon className="text-muted" size={24} />
+      <p className="text-sm font-medium text-text">{title}</p>
+      <p className="max-w-xs text-xs text-muted">{detail}</p>
     </div>
   );
 }
