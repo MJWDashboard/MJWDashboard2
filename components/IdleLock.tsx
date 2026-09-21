@@ -64,7 +64,7 @@ export function IdleLock({ children }: { children: React.ReactNode }) {
           onChange={(e) => setPassword(e.target.value)}
           autoFocus
           required
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-center text-sm text-text outline-none focus:border-accent"
+          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-center text-sm text-text outline-none focus:border-accent"
         />
         {error && <p className="text-sm text-overdue">{error}</p>}
         <button type="submit" disabled={verifying} className="btn-primary w-full">

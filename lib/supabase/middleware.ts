@@ -1,13 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/manifest.json"];
-const MFA_SETUP_PATH = "/mfa-setup";
-const MFA_CHALLENGE_PATH = "/mfa-challenge";
+const PUBLIC_PATHS = ["/", "/login", "/manifest.json"];
 
 function isPublic(pathname: string) {
   return (
-    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p)) ||
+    PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith("/brand") ||
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons") ||
@@ -54,29 +53,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Mandatory MFA: every signed-in session must reach aal2 before it can
-  // reach app data. aal1->aal1 (no factor yet) forces enrollment; aal1->aal2
-  // (factor exists, not verified this session) forces the challenge.
-  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal) {
-    if (aal.currentLevel === "aal1" && aal.nextLevel === "aal1" && pathname !== MFA_SETUP_PATH) {
-      const url = request.nextUrl.clone();
-      url.pathname = MFA_SETUP_PATH;
-      return NextResponse.redirect(url);
-    }
-    if (aal.currentLevel === "aal1" && aal.nextLevel === "aal2" && pathname !== MFA_CHALLENGE_PATH) {
-      const url = request.nextUrl.clone();
-      url.pathname = MFA_CHALLENGE_PATH;
-      return NextResponse.redirect(url);
-    }
-  }
-
-  if (pathname === "/login" || pathname === MFA_SETUP_PATH || pathname === MFA_CHALLENGE_PATH) {
-    if (aal?.currentLevel === "aal2" || !aal) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/today";
-      return NextResponse.redirect(url);
-    }
+  if (pathname === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/today";
+    return NextResponse.redirect(url);
   }
 
   return response;

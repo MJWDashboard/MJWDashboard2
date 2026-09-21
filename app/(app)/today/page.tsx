@@ -1,12 +1,17 @@
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
-import { getWatchlist, getTodayEvents } from "@/lib/today";
+import { getWatchlist, getTodayEvents, getGreetingName, timeOfDayGreeting } from "@/lib/today";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
 
 export const metadata = { title: "Today" };
 
 export default async function TodayPage() {
-  const [watchlist, events] = await Promise.all([getWatchlist(), getTodayEvents()]);
+  const [watchlist, events, name] = await Promise.all([
+    getWatchlist(),
+    getTodayEvents(),
+    getGreetingName(),
+  ]);
+  const greeting = timeOfDayGreeting();
 
   return (
     <div className="space-y-6">
@@ -14,7 +19,9 @@ export default async function TodayPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted">
           {new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}
         </p>
-        <h1 className="text-lg font-semibold text-text">Today</h1>
+        <h1 className="text-xl font-semibold text-text">
+          {greeting}{name ? `, ${name}` : ""}
+        </h1>
       </div>
 
       <Section title="Doses due" icon={CheckCircle2}>

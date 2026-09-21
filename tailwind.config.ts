@@ -16,6 +16,7 @@ const config: Config = {
         text: "rgb(var(--color-text) / <alpha-value>)",
         muted: "rgb(var(--color-muted) / <alpha-value>)",
         accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-2": "rgb(var(--color-accent-2) / <alpha-value>)",
         ok: "rgb(var(--color-ok) / <alpha-value>)",
         soon: "rgb(var(--color-soon) / <alpha-value>)",
         overdue: "rgb(var(--color-overdue) / <alpha-value>)",
@@ -26,9 +27,6 @@ const config: Config = {
       },
       fontFeatureSettings: {
         tabular: '"tnum"',
-      },
-      borderRadius: {
-        card: "0.875rem",
       },
     },
   },

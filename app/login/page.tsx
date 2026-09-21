@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "./actions";
 
@@ -23,11 +25,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Vorexa</p>
-          <h1 className="mt-1 text-xl font-semibold text-text">Personal Dashboard</h1>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div
+        className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+        style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
+      />
+      <div className="relative w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image src="/brand/mark.png" alt="Vorexa" width={48} height={48} priority />
+          <h1 className="mt-3 text-xl font-semibold text-text">Welcome back</h1>
+          <p className="mt-1 text-sm text-muted">Sign in to your Personal Dashboard</p>
         </div>
         <form action={handleSubmit} className="card space-y-4">
           <div>
@@ -40,7 +47,7 @@ export default function LoginPage() {
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
             />
           </div>
           <div>
@@ -53,7 +60,7 @@ export default function LoginPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
             />
           </div>
           {error && <p className="text-sm text-overdue">{error}</p>}

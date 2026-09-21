@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
@@ -11,9 +12,12 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface/60 p-4 lg:flex">
-      <div className="mb-6 px-2">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Vorexa</p>
-        <p className="text-sm font-semibold text-text">Personal Dashboard</p>
+      <div className="mb-6 flex items-center gap-2 px-2">
+        <Image src="/brand/mark.png" alt="" width={28} height={28} priority />
+        <div>
+          <p className="text-sm font-bold tracking-wide text-text">VOREXA</p>
+          <p className="text-xs text-muted">Personal Dashboard</p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1">

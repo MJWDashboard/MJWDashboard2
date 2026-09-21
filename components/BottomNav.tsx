@@ -14,38 +14,38 @@ export function BottomNav({
   onOpenLife: () => void;
 }) {
   const pathname = usePathname();
-  const primaryItems = NAV_ITEMS.filter((item) => MOBILE_PRIMARY.includes(item.href));
+  const [today, health, money, vault] = MOBILE_PRIMARY.map(
+    (href) => NAV_ITEMS.find((item) => item.href === href)!
+  );
   const lifeActive = MOBILE_LIFE_HREFS.some((href) => pathname.startsWith(href));
 
-  const [today, health, money, vault] = primaryItems;
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-surface/95 py-2 backdrop-blur lg:hidden">
-      <NavLink item={today} active={pathname.startsWith(today.href)} />
-      <NavLink item={health} active={pathname.startsWith(health.href)} />
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-1 border-t border-border bg-surface/95 px-2 py-2 backdrop-blur lg:hidden">
+      <div className="flex flex-1 items-center justify-around">
+        <NavLink item={today} active={pathname.startsWith(today.href)} />
+        <NavLink item={health} active={pathname.startsWith(health.href)} />
+        <NavLink item={money} active={pathname.startsWith(money.href)} />
+        <button
+          onClick={onOpenLife}
+          className={clsx(
+            "flex flex-col items-center gap-0.5 px-2.5 py-1 text-xs",
+            lifeActive ? "text-accent" : "text-muted"
+          )}
+        >
+          <Menu size={20} />
+          Life
+        </button>
+        <NavLink item={vault} active={pathname.startsWith(vault.href)} />
+      </div>
 
       <button
         onClick={onOpenCapture}
         aria-label="Quick capture"
-        className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg"
+        className="ml-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-accent/30 active:scale-95"
+        style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
       >
-        <Plus size={26} />
+        <Plus size={24} />
       </button>
-
-      <NavLink item={money} active={pathname.startsWith(money.href)} />
-
-      <button
-        onClick={onOpenLife}
-        className={clsx(
-          "flex flex-col items-center gap-0.5 px-3 text-xs",
-          lifeActive ? "text-accent" : "text-muted"
-        )}
-      >
-        <Menu size={20} />
-        Life
-      </button>
-
-      <NavLink item={vault} active={pathname.startsWith(vault.href)} />
     </nav>
   );
 }
@@ -56,7 +56,7 @@ function NavLink({ item, active }: { item: (typeof NAV_ITEMS)[number]; active: b
     <Link
       href={item.href}
       className={clsx(
-        "flex flex-col items-center gap-0.5 px-3 text-xs",
+        "flex flex-col items-center gap-0.5 px-2.5 py-1 text-xs",
         active ? "text-accent" : "text-muted"
       )}
     >

@@ -82,7 +82,7 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
               placeholder={type === "weight" ? "Weight (kg)" : "Amount (R)"}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
               autoFocus
             />
           )}
@@ -92,7 +92,7 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
               placeholder={type === "note" ? "Note" : type === "shopping_item" ? "Item" : "Detail (optional)"}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-accent"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
               autoFocus={!needsAmount}
             />
           )}
