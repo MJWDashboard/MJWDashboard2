@@ -36,7 +36,7 @@ export default function LoginPage() {
           <Image src="/brand/mark.png" alt="" width={48} height={48} priority />
           <Wordmark width={130} className="mt-3" />
           <h1 className="mt-4 text-xl font-semibold text-text">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted">Sign in to your Personal Dashboard</p>
+          <p className="mt-1 text-sm text-muted">Sign in to Vorexa Personal</p>
         </div>
         <form action={handleSubmit} className="card space-y-4">
           <div>

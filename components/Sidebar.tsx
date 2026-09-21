@@ -17,7 +17,7 @@ export function Sidebar() {
         <Image src="/brand/mark.png" alt="" width={28} height={28} priority />
         <div>
           <Wordmark width={90} />
-          <p className="mt-0.5 text-xs text-muted">Personal Dashboard</p>
+          <p className="mt-0.5 text-xs text-muted">Personal</p>
         </div>
       </div>
 

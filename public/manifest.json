@@ -1,6 +1,6 @@
 {
-  "name": "Vorexa Personal Dashboard",
-  "short_name": "Vorexa",
+  "name": "Vorexa Personal",
+  "short_name": "Vorexa Personal",
   "description": "Intelligence. Systems. Decisions. — the private, single-owner dashboard for daily life.",
   "start_url": "/today",
   "display": "standalone",

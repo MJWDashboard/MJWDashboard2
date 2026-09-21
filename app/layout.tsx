@@ -8,8 +8,8 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Vorexa | Personal Dashboard",
-    template: "%s | Vorexa",
+    default: "Vorexa Personal",
+    template: "%s · Vorexa Personal",
   },
   description: "Intelligence. Systems. Decisions. — the private, single-owner dashboard for daily life.",
   manifest: "/manifest.json",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Vorexa",
+    title: "Vorexa Personal",
   },
 };
 
