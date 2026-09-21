@@ -1,15 +1,17 @@
+import Link from "next/link";
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
-import { getWatchlist, getTodayEvents, getGreetingName, timeOfDayGreeting } from "@/lib/today";
+import { getWatchlist, getTodayEvents, getGreetingName, timeOfDayGreeting, getDosesDueSummary } from "@/lib/today";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
 
 export const metadata = { title: "Today" };
 
 export default async function TodayPage() {
-  const [watchlist, events, name] = await Promise.all([
+  const [watchlist, events, name, doses] = await Promise.all([
     getWatchlist(),
     getTodayEvents(),
     getGreetingName(),
+    getDosesDueSummary(),
   ]);
   const greeting = timeOfDayGreeting();
 
@@ -25,11 +27,19 @@ export default async function TodayPage() {
       </div>
 
       <Section title="Doses due" icon={CheckCircle2}>
-        <EmptyState
-          icon={CheckCircle2}
-          title="Health arrives in Phase 1"
-          detail="Medication schedules and daily ticks will show up here once the Health module is built."
-        />
+        {doses.total === 0 ? (
+          <EmptyState icon={CheckCircle2} title="No medicines scheduled" detail="Add a medicine in Health to see today's checklist here." />
+        ) : (
+          <Link href="/health" className="card flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-text">{doses.remaining} of {doses.total} remaining</p>
+              <p className="text-xs text-muted">Counts only — open Health for detail</p>
+            </div>
+            <span className={doses.remaining === 0 ? "status-pill-ok" : "status-pill-soon"}>
+              {doses.remaining === 0 ? "All done" : "Open Health"}
+            </span>
+          </Link>
+        )}
       </Section>
 
       <Section title="Calendar" icon={CalendarDays}>

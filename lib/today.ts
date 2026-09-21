@@ -1,6 +1,7 @@
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { SAST } from "@/lib/timezone";
+import { todaysChecklist } from "@/lib/health";
 
 export async function getGreetingName() {
   const supabase = await createClient();
@@ -36,6 +37,21 @@ export async function getWatchlist() {
     .order("due_at", { ascending: true })
     .limit(10);
   return data ?? [];
+}
+
+/** Counts only, never medicine names — Health detail stays behind the idle lock. */
+export async function getDosesDueSummary() {
+  const supabase = await createClient();
+  const today = toZonedTime(new Date(), SAST).toISOString().slice(0, 10);
+
+  const [{ data: medicines }, { data: doses }] = await Promise.all([
+    supabase.from("medicines").select("*").eq("active", true),
+    supabase.from("med_doses").select("*").eq("dose_date", today),
+  ]);
+
+  const checklist = todaysChecklist(medicines ?? [], doses ?? [], today);
+  const remaining = checklist.filter((c) => !c.dose).length;
+  return { total: checklist.length, remaining };
 }
 
 export async function getTodayEvents() {

@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          appointment_at: string
+          completed: boolean
+          cost: number | null
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          provider: string
+          purpose: string | null
+        }
+        Insert: {
+          appointment_at: string
+          completed?: boolean
+          cost?: number | null
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          provider: string
+          purpose?: string | null
+        }
+        Update: {
+          appointment_at?: string
+          completed?: boolean
+          cost?: number | null
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          provider?: string
+          purpose?: string | null
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           category: string | null
@@ -453,6 +492,36 @@ export type Database = {
           },
         ]
       }
+      health_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric: string
+          owner_id: string
+          recorded_at: string
+          unit: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric?: string
+          owner_id?: string
+          recorded_at?: string
+          unit?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric?: string
+          owner_id?: string
+          recorded_at?: string
+          unit?: string
+          value?: number
+        }
+        Relationships: []
+      }
       important_dates: {
         Row: {
           created_at: string
@@ -551,6 +620,95 @@ export type Database = {
           kind?: string
           name?: string
           owner_id?: string
+        }
+        Relationships: []
+      }
+      med_doses: {
+        Row: {
+          created_at: string
+          dose_date: string
+          id: string
+          medicine_id: string
+          owner_id: string
+          skip_reason: string | null
+          status: string
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string
+          dose_date?: string
+          id?: string
+          medicine_id: string
+          owner_id?: string
+          skip_reason?: string | null
+          status: string
+          time_slot: string
+        }
+        Update: {
+          created_at?: string
+          dose_date?: string
+          id?: string
+          medicine_id?: string
+          owner_id?: string
+          skip_reason?: string | null
+          status?: string
+          time_slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "med_doses_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicines: {
+        Row: {
+          active: boolean
+          created_at: string
+          dose_text: string | null
+          id: string
+          monthly_collection_date: string | null
+          name: string
+          owner_id: string
+          pharmacy: string | null
+          repeats_left: number | null
+          schedule: string[]
+          script_expiry: string | null
+          stock_on_hand: number
+          strength: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dose_text?: string | null
+          id?: string
+          monthly_collection_date?: string | null
+          name: string
+          owner_id?: string
+          pharmacy?: string | null
+          repeats_left?: number | null
+          schedule?: string[]
+          script_expiry?: string | null
+          stock_on_hand?: number
+          strength?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dose_text?: string | null
+          id?: string
+          monthly_collection_date?: string | null
+          name?: string
+          owner_id?: string
+          pharmacy?: string | null
+          repeats_left?: number | null
+          schedule?: string[]
+          script_expiry?: string | null
+          stock_on_hand?: number
+          strength?: string | null
         }
         Relationships: []
       }
