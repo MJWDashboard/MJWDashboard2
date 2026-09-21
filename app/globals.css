@@ -2,30 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Vorexa Core design tokens — see Vorexa Core Product Update Specification.
+   Dark mode uses the brand's Deep Navy foundation rather than a generic
+   near-black, so both themes stay unmistakably Vorexa. --color-navy is
+   theme-independent: the app sidebar is always dark navy per spec. */
 :root {
-  --color-background: 11 15 23;
-  --color-surface: 19 26 38;
-  --color-border: 34 44 61;
-  --color-text: 232 236 243;
-  --color-muted: 138 148 166;
-  --color-accent: 14 132 255;
-  --color-accent-2: 34 224 224;
-  --color-ok: 52 195 143;
-  --color-soon: 242 184 75;
-  --color-overdue: 242 109 120;
+  --color-navy: 11 31 68;
+
+  --color-background: 11 31 68;
+  --color-surface: 20 42 82;
+  --color-border: 38 58 94;
+  --color-text: 255 255 255;
+  --color-muted: 148 163 184;
+  --color-accent: 0 122 255;
+  --color-accent-2: 0 229 255;
+  --color-ok: 16 185 129;
+  --color-soon: 245 158 11;
+  --color-overdue: 239 68 68;
 }
 
 :root[data-theme="light"] {
-  --color-background: 246 247 249;
+  --color-background: 247 250 252;
   --color-surface: 255 255 255;
-  --color-border: 225 229 235;
-  --color-text: 16 24 40;
-  --color-muted: 91 100 116;
-  --color-accent: 13 110 235;
-  --color-accent-2: 8 145 178;
-  --color-ok: 20 128 79;
-  --color-soon: 183 121 31;
-  --color-overdue: 192 51 63;
+  --color-border: 220 230 240;
+  --color-text: 10 24 51;
+  --color-muted: 95 111 134;
+  --color-accent: 0 122 255;
+  --color-accent-2: 0 229 255;
+  --color-ok: 16 185 129;
+  --color-soon: 245 158 11;
+  --color-overdue: 239 68 68;
+}
+
+/* The public landing/login surfaces have one fixed Vorexa Core presentation
+   (light canvas, or the navy/white login split) — they don't follow the
+   authenticated app's dark/light preference toggle. Scoped, not :root, so
+   it overrides regardless of the user's stored app theme. */
+[data-vx-theme="light"] {
+  --color-background: 247 250 252;
+  --color-surface: 255 255 255;
+  --color-border: 220 230 240;
+  --color-text: 10 24 51;
+  --color-muted: 95 111 134;
+  --color-accent: 0 122 255;
+  --color-accent-2: 0 229 255;
+  --color-ok: 16 185 129;
+  --color-soon: 245 158 11;
+  --color-overdue: 239 68 68;
 }
 
 @layer base {
@@ -36,7 +59,7 @@
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-border bg-surface p-5 text-[15px] leading-snug shadow-sm shadow-black/5;
+    @apply rounded-xl border border-border bg-surface p-5 text-[15px] leading-snug shadow-sm shadow-black/5;
   }
 
   .status-pill {
@@ -53,11 +76,10 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] px-5 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn text-white shadow-md shadow-accent/20 hover:brightness-110 active:scale-[0.98];
-    background-image: linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)));
+    @apply btn bg-accent text-white shadow-sm hover:brightness-110 active:scale-[0.98];
   }
   .btn-secondary {
     @apply btn border border-border bg-transparent text-text hover:bg-surface;

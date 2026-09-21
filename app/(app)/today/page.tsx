@@ -56,7 +56,7 @@ export default async function TodayPage() {
       </div>
 
       {needsTriage.length > 0 && (
-        <Section title="Inbox" icon={Inbox} color="#0E84FF">
+        <Section title="Inbox" icon={Inbox} color="#007AFF">
           <InboxCard captures={needsTriage} vehicles={vehicles} accounts={accounts} />
         </Section>
       )}
@@ -101,7 +101,7 @@ export default async function TodayPage() {
         )}
       </Section>
 
-      <Section title="Tasks" icon={ListTodo} color="#0E84FF">
+      <Section title="Tasks" icon={ListTodo} color="#007AFF">
         <TasksCard tasks={tasks} />
       </Section>
 

@@ -20,10 +20,9 @@ export function BottomNav({ onOpenCapture }: { onOpenCapture: () => void }) {
       <button
         onClick={onOpenCapture}
         aria-label="Quick capture"
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-lg shadow-accent/30 active:scale-95"
-        style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-accent text-white shadow-sm active:scale-95"
       >
-        <Plus size={24} />
+        <Plus size={22} />
       </button>
     </nav>
   );
@@ -34,10 +33,12 @@ function NavLink({ item, active }: { item: (typeof NAV_ITEMS)[number]; active: b
   return (
     <Link
       href={item.href}
-      style={{ color: active ? item.color : undefined }}
-      className={clsx("flex flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium", !active && "text-muted")}
+      className={clsx(
+        "flex flex-col items-center justify-center gap-1 py-1 text-[11px] font-medium",
+        active ? "text-accent" : "text-muted"
+      )}
     >
-      <Icon size={22} style={active ? undefined : { color: item.color, opacity: 0.8 }} />
+      <Icon size={22} />
       <span className="leading-none">{item.label.split(" ")[0]}</span>
     </Link>
   );

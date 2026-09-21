@@ -21,7 +21,7 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/today", label: "Today", icon: LayoutDashboard, color: "#0E84FF" },
+  { href: "/today", label: "Today", icon: LayoutDashboard, color: "#007AFF" },
   { href: "/health", label: "Health", icon: HeartPulse, sensitive: true, color: "#FB7185" },
   { href: "/notes", label: "Notes & Lists", icon: StickyNote, color: "#FBBF24" },
   { href: "/calendar", label: "Calendar", icon: CalendarDays, color: "#A78BFA" },

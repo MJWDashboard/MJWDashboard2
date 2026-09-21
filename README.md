@@ -1,4 +1,4 @@
-# Vorexa Personal
+# Vorexa Core
 
 A private, mobile-first, single-owner dashboard built on Next.js 14 (App
 Router) + TypeScript + Supabase, deployed on Vercel. It is deliberately

@@ -34,7 +34,7 @@ export function TopBar({
         onClick={onTogglePrivacy}
         aria-label="Toggle privacy blur"
         aria-pressed={privacyBlur}
-        className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:text-text"
+        className="flex items-center gap-2 rounded-[10px] border border-border px-3 py-1.5 text-xs text-muted hover:text-text"
       >
         {privacyBlur ? <EyeOff size={16} /> : <Eye size={16} />}
         {privacyBlur ? "Blurred" : "Visible"}
@@ -42,14 +42,14 @@ export function TopBar({
       <button
         onClick={onToggleTheme}
         aria-label="Toggle theme"
-        className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted hover:text-text"
+        className="flex items-center justify-center rounded-[10px] border border-border p-1.5 text-muted hover:text-text"
       >
         {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
       </button>
       <Link
         href="/settings"
         aria-label="Settings"
-        className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted hover:text-text"
+        className="flex items-center justify-center rounded-[10px] border border-border p-1.5 text-muted hover:text-text"
       >
         <Settings size={16} />
       </Link>
@@ -57,7 +57,7 @@ export function TopBar({
         onClick={handleSignOut}
         disabled={pending}
         aria-label="Sign out"
-        className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted hover:border-overdue hover:text-overdue"
+        className="flex items-center justify-center rounded-[10px] border border-border p-1.5 text-muted hover:border-overdue hover:text-overdue"
       >
         <LogOut size={16} />
       </button>

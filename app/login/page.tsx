@@ -5,58 +5,82 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
+import { AlertCircle } from "lucide-react";
 import { signIn, register } from "./actions";
-import { Wordmark } from "@/components/Wordmark";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <div
-        className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
-      />
-      <div className="relative w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <Image src="/brand/mark.png" alt="" width={48} height={48} priority />
-          <Wordmark width={130} className="mt-3" />
-          <h1 className="mt-4 text-xl font-semibold text-text">
-            {mode === "signin" ? "Welcome back" : "Create your account"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {mode === "signin" ? "Sign in to Vorexa Personal" : "First account on this platform becomes the developer"}
-          </p>
+    <div data-vx-theme="light" className="min-h-screen bg-background lg:grid lg:grid-cols-2">
+      {/* Brand panel — desktop only, always dark navy regardless of app theme. */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-[rgb(var(--color-navy))] p-12 text-white lg:flex">
+        <div
+          className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full opacity-20 blur-3xl"
+          style={{ backgroundImage: "linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)))" }}
+        />
+        <Image src="/brand/wordmark-light.png" alt="Vorexa Core" width={150} height={50} priority className="relative" />
+        <div className="relative">
+          <p className="text-3xl font-bold leading-tight">Your life, organised around you.</p>
+          <p className="mt-4 text-sm uppercase tracking-[0.2em] text-white/50">Plan. Track. Live better.</p>
         </div>
+        <p className="relative text-xs text-white/40">A brighter tomorrow awaits.</p>
+      </div>
 
-        <div className="mb-4 flex rounded-full border border-border bg-surface/60 p-1 text-sm">
-          <button
-            onClick={() => setMode("signin")}
-            className={clsx(
-              "flex-1 rounded-full py-1.5 font-medium transition",
-              mode === "signin" ? "bg-accent text-white" : "text-muted"
-            )}
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => setMode("register")}
-            className={clsx(
-              "flex-1 rounded-full py-1.5 font-medium transition",
-              mode === "register" ? "bg-accent text-white" : "text-muted"
-            )}
-          >
-            Create account
-          </button>
+      {/* Compact header — mobile only. */}
+      <div className="flex flex-col items-center px-6 pt-12 text-center lg:hidden">
+        <Image src="/brand/wordmark.png" alt="Vorexa Core" width={120} height={40} priority />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center px-4 py-10 lg:bg-white">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 text-center lg:text-left">
+            <h1 className="text-xl font-semibold text-text">
+              {mode === "signin" ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="mt-1 text-sm text-muted">
+              {mode === "signin" ? "Sign in to your Vorexa Core account" : "First account on this platform becomes the developer"}
+            </p>
+          </div>
+
+          <div className="mb-4 flex rounded-[10px] border border-border bg-background p-1 text-sm">
+            <button
+              onClick={() => setMode("signin")}
+              className={clsx(
+                "flex-1 rounded-[8px] py-1.5 font-medium transition",
+                mode === "signin" ? "bg-accent text-white" : "text-muted"
+              )}
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => setMode("register")}
+              className={clsx(
+                "flex-1 rounded-[8px] py-1.5 font-medium transition",
+                mode === "register" ? "bg-accent text-white" : "text-muted"
+              )}
+            >
+              Create account
+            </button>
+          </div>
+
+          {mode === "signin" ? <SignInForm /> : <RegisterForm />}
+
+          <Link href="/" className="mt-4 block text-center text-xs text-muted hover:text-text">
+            Back to home
+          </Link>
         </div>
-
-        {mode === "signin" ? <SignInForm /> : <RegisterForm />}
-
-        <Link href="/" className="mt-4 block text-center text-xs text-muted hover:text-text">
-          Back to home
-        </Link>
       </div>
     </div>
+  );
+}
+
+function FormError({ message }: { message: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-sm text-overdue">
+      <AlertCircle size={14} className="shrink-0" />
+      {message}
+    </p>
   );
 }
 
@@ -90,7 +114,7 @@ function SignInForm() {
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
       </div>
       <div>
@@ -103,10 +127,10 @@ function SignInForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
       </div>
-      {error && <p className="text-sm text-overdue">{error}</p>}
+      {error && <FormError message={error} />}
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? "Signing in..." : "Sign in"}
       </button>
@@ -154,13 +178,13 @@ function RegisterForm() {
           name="firstName"
           placeholder="First name"
           autoComplete="given-name"
-          className="w-1/2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-1/2 rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
         <input
           name="lastName"
           placeholder="Surname"
           autoComplete="family-name"
-          className="w-1/2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-1/2 rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
       </div>
       <div>
@@ -173,7 +197,7 @@ function RegisterForm() {
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
       </div>
       <div>
@@ -187,10 +211,10 @@ function RegisterForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
         />
       </div>
-      {error && <p className="text-sm text-overdue">{error}</p>}
+      {error && <FormError message={error} />}
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? "Creating account..." : "Create account"}
       </button>
