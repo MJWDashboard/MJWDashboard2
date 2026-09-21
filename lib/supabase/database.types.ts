@@ -55,6 +55,71 @@ export type Database = {
           },
         ]
       }
+      assets: {
+        Row: {
+          category: string | null
+          created_at: string
+          entity_id: string | null
+          id: string
+          insured: boolean
+          item: string
+          location: string | null
+          make: string | null
+          model: string | null
+          owner_id: string
+          purchase_date: string | null
+          purchase_price: number | null
+          replacement_value: number | null
+          retailer: string | null
+          serial_number: string | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          insured?: boolean
+          item: string
+          location?: string | null
+          make?: string | null
+          model?: string | null
+          owner_id?: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          replacement_value?: number | null
+          retailer?: string | null
+          serial_number?: string | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          entity_id?: string | null
+          id?: string
+          insured?: boolean
+          item?: string
+          location?: string | null
+          make?: string | null
+          model?: string | null
+          owner_id?: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          replacement_value?: number | null
+          retailer?: string | null
+          serial_number?: string | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           bucket: string
@@ -519,6 +584,151 @@ export type Database = {
           pinned?: boolean
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pet_care_items: {
+        Row: {
+          created_at: string
+          id: string
+          interval_days: number | null
+          kind: string
+          label: string
+          last_done: string | null
+          next_due: string | null
+          owner_id: string
+          pet_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interval_days?: number | null
+          kind: string
+          label: string
+          last_done?: string | null
+          next_due?: string | null
+          owner_id?: string
+          pet_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interval_days?: number | null
+          kind?: string
+          label?: string
+          last_done?: string | null
+          next_due?: string | null
+          owner_id?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_care_items_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_visits: {
+        Row: {
+          cost: number
+          created_at: string
+          diagnosis: string | null
+          id: string
+          occurred_at: string
+          owner_id: string
+          paid_by: string
+          pet_id: string
+          reason: string | null
+          settled: boolean
+          split_pct: number
+          treatment: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          occurred_at?: string
+          owner_id?: string
+          paid_by?: string
+          pet_id: string
+          reason?: string | null
+          settled?: boolean
+          split_pct?: number
+          treatment?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          occurred_at?: string
+          owner_id?: string
+          paid_by?: string
+          pet_id?: string
+          reason?: string | null
+          settled?: boolean
+          split_pct?: number
+          treatment?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_visits_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pets: {
+        Row: {
+          breed: string | null
+          co_owners: string | null
+          created_at: string
+          diet: string | null
+          estimated_age: number | null
+          id: string
+          insurer: string | null
+          microchip: string | null
+          name: string
+          owner_id: string
+          species: string
+          vet: string | null
+        }
+        Insert: {
+          breed?: string | null
+          co_owners?: string | null
+          created_at?: string
+          diet?: string | null
+          estimated_age?: number | null
+          id?: string
+          insurer?: string | null
+          microchip?: string | null
+          name: string
+          owner_id?: string
+          species?: string
+          vet?: string | null
+        }
+        Update: {
+          breed?: string | null
+          co_owners?: string | null
+          created_at?: string
+          diet?: string | null
+          estimated_age?: number | null
+          id?: string
+          insurer?: string | null
+          microchip?: string | null
+          name?: string
+          owner_id?: string
+          species?: string
+          vet?: string | null
         }
         Relationships: []
       }
