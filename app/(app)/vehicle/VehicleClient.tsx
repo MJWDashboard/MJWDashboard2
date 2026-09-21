@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Car, Fuel, Plus, Trash2, Wrench, X, MapPin } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { costPerKm } from "@/lib/vehicle";
 import { formatZAR } from "@/lib/money";
 import {
@@ -131,10 +133,12 @@ export function VehicleClient({
 
 function Header() {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-[0.2em] text-muted">Vehicle & Travel</p>
-      <h1 className="text-xl font-semibold text-text">Your vehicles</h1>
-    </div>
+    <PageHeader
+      icon={Car}
+      color={NAV_ITEMS.find((n) => n.href === "/vehicle")!.color}
+      eyebrow="Vehicle & Travel"
+      title="Your vehicles"
+    />
   );
 }
 

@@ -842,7 +842,9 @@ export type Database = {
       }
       notes: {
         Row: {
+          archived: boolean
           body: string
+          category: string
           created_at: string
           folder: string | null
           id: string
@@ -852,7 +854,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           body?: string
+          category?: string
           created_at?: string
           folder?: string | null
           id?: string
@@ -862,7 +866,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           body?: string
+          category?: string
           created_at?: string
           folder?: string | null
           id?: string
@@ -1065,7 +1071,9 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
           privacy_blur: boolean
           theme: string
           updated_at: string
@@ -1074,7 +1082,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
           id: string
+          last_name?: string | null
           privacy_blur?: boolean
           theme?: string
           updated_at?: string
@@ -1083,7 +1093,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           privacy_blur?: boolean
           theme?: string
           updated_at?: string

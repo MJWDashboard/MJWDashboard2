@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "./actions";
+import { Wordmark } from "@/components/Wordmark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,8 +33,9 @@ export default function LoginPage() {
       />
       <div className="relative w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Image src="/brand/mark.png" alt="Vorexa" width={48} height={48} priority />
-          <h1 className="mt-3 text-xl font-semibold text-text">Welcome back</h1>
+          <Image src="/brand/mark.png" alt="" width={48} height={48} priority />
+          <Wordmark width={130} className="mt-3" />
+          <h1 className="mt-4 text-xl font-semibold text-text">Welcome back</h1>
           <p className="mt-1 text-sm text-muted">Sign in to your Personal Dashboard</p>
         </div>
         <form action={handleSubmit} className="card space-y-4">
@@ -68,6 +70,9 @@ export default function LoginPage() {
             {pending ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <Link href="/" className="mt-4 block text-center text-xs text-muted hover:text-text">
+          Back to home
+        </Link>
       </div>
     </div>
   );

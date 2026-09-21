@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
-import { getWatchlist, getTodayEvents, getGreetingName, timeOfDayGreeting, getDosesDueSummary } from "@/lib/today";
+import { getWatchlist, getTodayEvents, getGreetingName, getDosesDueSummary } from "@/lib/today";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
+import { LiveClock } from "@/components/LiveClock";
+import { NAV_ITEMS } from "@/lib/nav";
+
+const healthColor = NAV_ITEMS.find((n) => n.href === "/health")!.color;
+const calendarColor = NAV_ITEMS.find((n) => n.href === "/calendar")!.color;
 
 export const metadata = { title: "Today" };
 
@@ -13,20 +18,21 @@ export default async function TodayPage() {
     getGreetingName(),
     getDosesDueSummary(),
   ]);
-  const greeting = timeOfDayGreeting();
 
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">
-          {new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
-        <h1 className="text-xl font-semibold text-text">
-          {greeting}{name ? `, ${name}` : ""}
+        <h1 className="text-2xl font-semibold text-text">
+          Welcome{name ? `, ${name}` : ""}
         </h1>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+          {new Date().toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long" })}
+          <span className="text-border">·</span>
+          <LiveClock />
+        </p>
       </div>
 
-      <Section title="Doses due" icon={CheckCircle2}>
+      <Section title="Doses due" icon={CheckCircle2} color={healthColor}>
         {doses.total === 0 ? (
           <EmptyState icon={CheckCircle2} title="No medicines scheduled" detail="Add a medicine in Health to see today's checklist here." />
         ) : (
@@ -42,7 +48,7 @@ export default async function TodayPage() {
         )}
       </Section>
 
-      <Section title="Calendar" icon={CalendarDays}>
+      <Section title="Calendar" icon={CalendarDays} color={calendarColor}>
         {events.length === 0 ? (
           <EmptyState icon={CalendarDays} title="Nothing on today" detail="Events will appear here once Google Calendar sync is connected in Phase 1." />
         ) : (
@@ -66,7 +72,7 @@ export default async function TodayPage() {
         )}
       </Section>
 
-      <Section title="Tasks" icon={ListTodo}>
+      <Section title="Tasks" icon={ListTodo} color="#0E84FF">
         <EmptyState
           icon={ListTodo}
           title="Personal task caps arrive in Phase 1"
@@ -74,7 +80,7 @@ export default async function TodayPage() {
         />
       </Section>
 
-      <Section title="Watchlist" icon={AlertTriangle}>
+      <Section title="Watchlist" icon={AlertTriangle} color="#F26D78">
         {watchlist.length === 0 ? (
           <EmptyState
             icon={AlertTriangle}
@@ -96,16 +102,18 @@ export default async function TodayPage() {
 function Section({
   title,
   icon: Icon,
+  color,
   children,
 }: {
   title: string;
   icon: typeof CheckCircle2;
+  color: string;
   children: React.ReactNode;
 }) {
   return (
     <section>
       <div className="mb-2 flex items-center gap-2 text-sm font-medium text-text">
-        <Icon size={16} className="text-muted" />
+        <Icon size={16} style={{ color }} />
         {title}
       </div>
       {children}

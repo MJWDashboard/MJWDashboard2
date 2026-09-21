@@ -55,12 +55,10 @@ function NavLink({ item, active }: { item: (typeof NAV_ITEMS)[number]; active: b
   return (
     <Link
       href={item.href}
-      className={clsx(
-        "flex flex-col items-center gap-0.5 px-2.5 py-1 text-xs",
-        active ? "text-accent" : "text-muted"
-      )}
+      style={{ color: active ? item.color : undefined }}
+      className={clsx("flex flex-col items-center gap-0.5 px-2.5 py-1 text-xs", !active && "text-muted")}
     >
-      <Icon size={20} />
+      <Icon size={20} style={active ? undefined : { color: item.color, opacity: 0.75 }} />
       {item.label.split(" ")[0]}
     </Link>
   );

@@ -12,10 +12,11 @@ export async function getGreetingName() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("first_name, display_name")
     .eq("id", user.id)
     .single();
 
+  if (profile?.first_name) return profile.first_name;
   const name = profile?.display_name || user.email || "";
   return name.split("@")[0].split(" ")[0];
 }

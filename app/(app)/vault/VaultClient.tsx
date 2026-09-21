@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { FileText, ShieldCheck, KeyRound, Scale, Plus, Trash2, X, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { formatZAR } from "@/lib/money";
 import {
   createDocument,
@@ -42,10 +44,12 @@ export function VaultClient({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Vault</p>
-        <h1 className="text-xl font-semibold text-text">Documents, policies & the estate file</h1>
-      </div>
+      <PageHeader
+        icon={ShieldCheck}
+        color={NAV_ITEMS.find((n) => n.href === "/vault")!.color}
+        eyebrow="Vault"
+        title="Documents, policies & the estate file"
+      />
 
       <div className="flex gap-1 overflow-x-auto">
         {TABS.map((t) => (

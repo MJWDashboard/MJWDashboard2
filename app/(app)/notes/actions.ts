@@ -7,18 +7,18 @@ async function client() {
   return createClient();
 }
 
-export async function createNote(title: string) {
+export async function createNote(title: string, category: string = "note") {
   const supabase = await client();
   const { data, error } = await supabase
     .from("notes")
-    .insert({ title: title || "Untitled", body: "" })
+    .insert({ title: title || "Untitled", body: "", category })
     .select()
     .single();
   revalidatePath("/notes");
   return { data, error: error?.message ?? null };
 }
 
-export async function updateNote(id: string, fields: { title?: string; body?: string }) {
+export async function updateNote(id: string, fields: { title?: string; body?: string; category?: string }) {
   const supabase = await client();
   const { error } = await supabase
     .from("notes")
@@ -31,6 +31,12 @@ export async function updateNote(id: string, fields: { title?: string; body?: st
 export async function togglePinNote(id: string, pinned: boolean) {
   const supabase = await client();
   await supabase.from("notes").update({ pinned }).eq("id", id);
+  revalidatePath("/notes");
+}
+
+export async function toggleArchiveNote(id: string, archived: boolean) {
+  const supabase = await client();
+  await supabase.from("notes").update({ archived }).eq("id", id);
   revalidatePath("/notes");
 }
 

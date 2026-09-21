@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { NAV_ITEMS } from "@/lib/nav";
 import { SignOutButton } from "./SignOutButton";
+import { Wordmark } from "./Wordmark";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -15,8 +16,8 @@ export function Sidebar() {
       <div className="mb-6 flex items-center gap-2 px-2">
         <Image src="/brand/mark.png" alt="" width={28} height={28} priority />
         <div>
-          <p className="text-sm font-bold tracking-wide text-text">VOREXA</p>
-          <p className="text-xs text-muted">Personal Dashboard</p>
+          <Wordmark width={90} />
+          <p className="mt-0.5 text-xs text-muted">Personal Dashboard</p>
         </div>
       </div>
 
@@ -28,14 +29,13 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              style={active ? { backgroundColor: `${item.color}22`, color: item.color } : undefined}
               className={clsx(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                active
-                  ? "bg-accent/15 text-accent"
-                  : "text-muted hover:bg-surface hover:text-text"
+                !active && "text-muted hover:bg-surface hover:text-text"
               )}
             >
-              <Icon size={18} />
+              <Icon size={18} style={active ? undefined : { color: item.color, opacity: 0.85 }} />
               {item.label}
             </Link>
           );

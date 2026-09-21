@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, Sun, Moon } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, Sun, Moon, Settings } from "lucide-react";
 
 export function TopBar({
   privacyBlur,
@@ -31,6 +32,13 @@ export function TopBar({
       >
         {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
       </button>
+      <Link
+        href="/settings"
+        aria-label="Settings"
+        className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted hover:text-text"
+      >
+        <Settings size={16} />
+      </Link>
     </header>
   );
 }

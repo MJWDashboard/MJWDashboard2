@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { CheckCircle2, Circle, Pill, Plus, Trash2, X, Stethoscope, Scale } from "lucide-react";
+import { CheckCircle2, Circle, Pill, Plus, Trash2, X, Stethoscope, Scale, HeartPulse } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { todaysChecklist } from "@/lib/health";
 import { formatZAR } from "@/lib/money";
 import {
@@ -42,10 +44,12 @@ export function HealthClient({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Health</p>
-        <h1 className="text-xl font-semibold text-text">Doses, appointments & trends</h1>
-      </div>
+      <PageHeader
+        icon={HeartPulse}
+        color={NAV_ITEMS.find((n) => n.href === "/health")!.color}
+        eyebrow="Health"
+        title="Doses, appointments & trends"
+      />
 
       <div className="flex gap-1 overflow-x-auto">
         {TABS.map((t) => (

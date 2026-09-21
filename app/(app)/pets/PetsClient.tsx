@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { PawPrint, Plus, Trash2, X, Stethoscope, Package, CheckCircle2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { settleUpBalance } from "@/lib/pets";
 import { formatZAR } from "@/lib/money";
 import {
@@ -44,10 +46,12 @@ export function PetsClient({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Home & Pets</p>
-        <h1 className="text-xl font-semibold text-text">Prince, Tigger & the home</h1>
-      </div>
+      <PageHeader
+        icon={PawPrint}
+        color={NAV_ITEMS.find((n) => n.href === "/pets")!.color}
+        eyebrow="Home & Pets"
+        title="Prince, Tigger & the home"
+      />
 
       {visits.length > 0 && (
         <div className="card flex items-center justify-between">

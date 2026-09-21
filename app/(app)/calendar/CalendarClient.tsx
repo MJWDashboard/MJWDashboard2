@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { CalendarDays, Car, Plus, Trash2, X } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { nextOccurrence, daysUntil } from "@/lib/recurrence";
 import {
   createEvent,
@@ -52,10 +54,12 @@ export function CalendarClient({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Calendar & Dates</p>
-          <h1 className="text-xl font-semibold text-text">Agenda</h1>
-        </div>
+        <PageHeader
+          icon={CalendarDays}
+          color={NAV_ITEMS.find((n) => n.href === "/calendar")!.color}
+          eyebrow="Calendar & Dates"
+          title="Agenda"
+        />
         <div className="flex gap-2">
           <button onClick={() => setShowDateForm(true)} className="btn-secondary px-3 py-1.5 text-xs">
             Recurring date

@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Plus, Trash2, X, Wallet, Landmark, CreditCard, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { NAV_ITEMS } from "@/lib/nav";
 import { accountBalance, availableCash, totalDebtCapacity, currentMonth, monthToDateSpend, formatZAR } from "@/lib/money";
 import {
   createAccount,
@@ -50,10 +52,12 @@ export function MoneyClient({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Money</p>
-        <h1 className="text-xl font-semibold text-text">Budget & Debt</h1>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        color={NAV_ITEMS.find((n) => n.href === "/money")!.color}
+        eyebrow="Money"
+        title="Budget & Debt"
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <div className="card">

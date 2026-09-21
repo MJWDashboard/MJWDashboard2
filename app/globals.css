@@ -79,4 +79,19 @@
     filter: blur(6px);
     user-select: none;
   }
+
+  /* Wordmark PNGs are theme-specific (white text vs navy text) — swap by
+     visibility instead of re-rendering, so there's no hydration flicker. */
+  .wordmark-for-dark {
+    display: block;
+  }
+  .wordmark-for-light {
+    display: none;
+  }
+  :root[data-theme="light"] .wordmark-for-dark {
+    display: none;
+  }
+  :root[data-theme="light"] .wordmark-for-light {
+    display: block;
+  }
 }

@@ -1,18 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, HeartPulse, Lock, PawPrint, ShieldCheck, StickyNote, Wallet, Car } from "lucide-react";
+import { Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { Wordmark } from "@/components/Wordmark";
+import { NAV_ITEMS } from "@/lib/nav";
 
-const MODULES = [
-  { icon: HeartPulse, label: "Health", detail: "Doses, appointments, weight trends" },
-  { icon: StickyNote, label: "Notes & Lists", detail: "Fast capture, shopping lists" },
-  { icon: CalendarDays, label: "Calendar", detail: "One timeline for everything due" },
-  { icon: Wallet, label: "Money", detail: "Budget, debt, tax — one set of accounts" },
-  { icon: Car, label: "Vehicle & Travel", detail: "Fuel, trips, real cost per km" },
-  { icon: PawPrint, label: "Home & Pets", detail: "Care schedules, shared costs" },
-  { icon: ShieldCheck, label: "Vault", detail: "Documents, policies, the estate file" },
-];
+const MODULE_DETAILS: Record<string, string> = {
+  "/health": "Doses, appointments, weight trends",
+  "/notes": "Fast capture, shopping lists",
+  "/calendar": "One timeline for everything due",
+  "/money": "Budget, debt, tax — one set of accounts",
+  "/vehicle": "Fuel, trips, real cost per km",
+  "/pets": "Care schedules, shared costs",
+  "/vault": "Documents, policies, the estate file",
+};
+const MODULES = NAV_ITEMS.filter((n) => n.href !== "/today").map((n) => ({
+  icon: n.icon,
+  label: n.label,
+  color: n.color,
+  detail: MODULE_DETAILS[n.href],
+}));
 
 export default async function RootPage() {
   const supabase = await createClient();
@@ -32,8 +40,8 @@ export default async function RootPage() {
       />
 
       <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 pb-16 pt-14 text-center">
-        <Image src="/brand/mark.png" alt="Vorexa" width={56} height={56} priority />
-        <p className="mt-4 text-sm font-bold tracking-[0.2em] text-text">VOREXA</p>
+        <Image src="/brand/mark.png" alt="" width={56} height={56} priority />
+        <Wordmark width={160} className="mt-4" />
         <h1 className="mt-6 text-3xl font-semibold tracking-tight text-text sm:text-4xl">
           One private dashboard for your whole day
         </h1>
@@ -54,7 +62,12 @@ export default async function RootPage() {
         <div className="mt-16 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
           {MODULES.map((m) => (
             <div key={m.label} className="card flex flex-col items-center gap-2 py-5 text-center">
-              <m.icon size={20} className="text-accent" />
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${m.color}22`, color: m.color }}
+              >
+                <m.icon size={20} />
+              </div>
               <p className="text-sm font-medium text-text">{m.label}</p>
               <p className="text-xs text-muted">{m.detail}</p>
             </div>
