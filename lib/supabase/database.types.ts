@@ -338,6 +338,56 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_logs: {
+        Row: {
+          created_at: string
+          full_tank: boolean
+          id: string
+          litres: number
+          occurred_at: string
+          odometer: number
+          owner_id: string
+          price_per_litre: number | null
+          station: string | null
+          total: number
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_tank?: boolean
+          id?: string
+          litres: number
+          occurred_at?: string
+          odometer: number
+          owner_id?: string
+          price_per_litre?: number | null
+          station?: string | null
+          total: number
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          full_tank?: boolean
+          id?: string
+          litres?: number
+          occurred_at?: string
+          odometer?: number
+          owner_id?: string
+          price_per_litre?: number | null
+          station?: string | null
+          total?: number
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       important_dates: {
         Row: {
           created_at: string
@@ -586,6 +636,56 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          cost: number | null
+          created_at: string
+          id: string
+          next_due_date: string | null
+          next_due_odometer: number | null
+          occurred_at: string
+          odometer: number | null
+          owner_id: string
+          provider: string | null
+          vehicle_id: string
+          work_done: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          id?: string
+          next_due_date?: string | null
+          next_due_odometer?: number | null
+          occurred_at?: string
+          odometer?: number | null
+          owner_id?: string
+          provider?: string | null
+          vehicle_id: string
+          work_done?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          id?: string
+          next_due_date?: string | null
+          next_due_odometer?: number | null
+          occurred_at?: string
+          odometer?: number | null
+          owner_id?: string
+          provider?: string | null
+          vehicle_id?: string
+          work_done?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           color: string | null
@@ -667,6 +767,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trips: {
+        Row: {
+          created_at: string
+          from_location: string | null
+          id: string
+          occurred_at: string
+          odometer_end: number | null
+          odometer_start: number | null
+          owner_id: string
+          purpose: string
+          reimbursed: boolean
+          to_location: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_location?: string | null
+          id?: string
+          occurred_at?: string
+          odometer_end?: number | null
+          odometer_start?: number | null
+          owner_id?: string
+          purpose?: string
+          reimbursed?: boolean
+          to_location?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          from_location?: string | null
+          id?: string
+          occurred_at?: string
+          odometer_end?: number | null
+          odometer_start?: number | null
+          owner_id?: string
+          purpose?: string
+          reimbursed?: boolean
+          to_location?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          financier: string | null
+          fuel_type: string
+          id: string
+          insurer: string | null
+          licence_disc_expiry: string | null
+          main_driver: string | null
+          make: string
+          model: string
+          odometer: number
+          owner_id: string
+          registered_owner: string | null
+          registration: string | null
+          warranty_end: string | null
+          who_pays: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          financier?: string | null
+          fuel_type?: string
+          id?: string
+          insurer?: string | null
+          licence_disc_expiry?: string | null
+          main_driver?: string | null
+          make: string
+          model: string
+          odometer?: number
+          owner_id?: string
+          registered_owner?: string | null
+          registration?: string | null
+          warranty_end?: string | null
+          who_pays?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          financier?: string | null
+          fuel_type?: string
+          id?: string
+          insurer?: string | null
+          licence_disc_expiry?: string | null
+          main_driver?: string | null
+          make?: string
+          model?: string
+          odometer?: number
+          owner_id?: string
+          registered_owner?: string | null
+          registration?: string | null
+          warranty_end?: string | null
+          who_pays?: string | null
+          year?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {
