@@ -6,6 +6,7 @@ import { Car, Fuel, Plus, Trash2, Wrench, X, MapPin } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { AttachmentGallery } from "@/components/AttachmentGallery";
 import { NAV_ITEMS } from "@/lib/nav";
 import { costPerKm } from "@/lib/vehicle";
 import { formatZAR } from "@/lib/money";
@@ -24,6 +25,7 @@ type Vehicle = Tables<"vehicles">;
 type FuelLog = Tables<"fuel_logs">;
 type Trip = Tables<"trips">;
 type Service = Tables<"services">;
+type Attachment = Tables<"attachments">;
 
 const TABS = ["Fuel", "Trips", "Services"] as const;
 
@@ -32,11 +34,13 @@ export function VehicleClient({
   fuelLogs,
   trips,
   services,
+  receipts,
 }: {
   vehicles: Vehicle[];
   fuelLogs: FuelLog[];
   trips: Trip[];
   services: Service[];
+  receipts: Attachment[];
 }) {
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(vehicles[0]?.id ?? null);
@@ -122,7 +126,7 @@ export function VehicleClient({
         ))}
       </div>
 
-      {tab === "Fuel" && <FuelTab vehicleId={active.id} logs={vehicleFuelLogs} />}
+      {tab === "Fuel" && <FuelTab vehicleId={active.id} logs={vehicleFuelLogs} receipts={receipts} />}
       {tab === "Trips" && <TripsTab vehicleId={active.id} trips={vehicleTrips} />}
       {tab === "Services" && <ServicesTab vehicleId={active.id} services={vehicleServices} />}
 
@@ -181,7 +185,7 @@ function VehicleForm({ onClose }: { onClose: () => void }) {
   );
 }
 
-function FuelTab({ vehicleId, logs }: { vehicleId: string; logs: FuelLog[] }) {
+function FuelTab({ vehicleId, logs, receipts }: { vehicleId: string; logs: FuelLog[]; receipts: Attachment[] }) {
   const [showForm, setShowForm] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -194,17 +198,24 @@ function FuelTab({ vehicleId, logs }: { vehicleId: string; logs: FuelLog[] }) {
         <EmptyState icon={Fuel} title="No fuel logs yet" detail="Log full-tank fill-ups to unlock cost-per-km." />
       ) : (
         logs.map((log) => (
-          <div key={log.id} className="card flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text">{log.litres}L · {formatZAR(Number(log.total))}</p>
-              <p className="text-xs text-muted">
-                {new Date(log.occurred_at).toLocaleDateString("en-ZA")} · {Math.round(log.odometer).toLocaleString()} km
-                {!log.full_tank && " · partial"}
-              </p>
+          <div key={log.id} className="card space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-text">{log.litres}L · {formatZAR(Number(log.total))}</p>
+                <p className="text-xs text-muted">
+                  {new Date(log.occurred_at).toLocaleDateString("en-ZA")} · {Math.round(log.odometer).toLocaleString()} km
+                  {!log.full_tank && " · partial"}
+                </p>
+              </div>
+              <button onClick={() => startTransition(() => deleteFuelLog(log.id))} className="text-muted hover:text-overdue">
+                <Trash2 size={14} />
+              </button>
             </div>
-            <button onClick={() => startTransition(() => deleteFuelLog(log.id))} className="text-muted hover:text-overdue">
-              <Trash2 size={14} />
-            </button>
+            <AttachmentGallery
+              recordTable="fuel_logs"
+              recordId={log.id}
+              attachments={receipts.filter((r) => r.record_id === log.id)}
+            />
           </div>
         ))
       )}

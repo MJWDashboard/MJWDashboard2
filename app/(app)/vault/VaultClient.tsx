@@ -6,6 +6,7 @@ import { FileText, ShieldCheck, KeyRound, Scale, Plus, Trash2, X, CheckCircle2 }
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { AttachmentGallery } from "@/components/AttachmentGallery";
 import { NAV_ITEMS } from "@/lib/nav";
 import { formatZAR } from "@/lib/money";
 import {
@@ -25,6 +26,7 @@ type Document = Tables<"documents">;
 type Policy = Tables<"policies">;
 type Credential = Tables<"credentials">;
 type Matter = Tables<"matters">;
+type Attachment = Tables<"attachments">;
 
 const TABS = ["Documents", "Policies", "Credentials", "Open matters"] as const;
 const DOC_TYPES = ["bank_statement", "will", "insurance", "warranty", "tax", "medical", "vehicle", "property", "legal", "other"];
@@ -34,11 +36,13 @@ export function VaultClient({
   policies,
   credentials,
   matters,
+  files,
 }: {
   documents: Document[];
   policies: Policy[];
   credentials: Credential[];
   matters: Matter[];
+  files: Attachment[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Documents");
 
@@ -66,7 +70,7 @@ export function VaultClient({
         ))}
       </div>
 
-      {tab === "Documents" && <DocumentsTab documents={documents} />}
+      {tab === "Documents" && <DocumentsTab documents={documents} files={files} />}
       {tab === "Policies" && <PoliciesTab policies={policies} />}
       {tab === "Credentials" && <CredentialsTab credentials={credentials} />}
       {tab === "Open matters" && <MattersTab matters={matters} />}
@@ -74,7 +78,7 @@ export function VaultClient({
   );
 }
 
-function DocumentsTab({ documents }: { documents: Document[] }) {
+function DocumentsTab({ documents, files }: { documents: Document[]; files: Attachment[] }) {
   const [showForm, setShowForm] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -90,20 +94,27 @@ function DocumentsTab({ documents }: { documents: Document[] }) {
         documents.map((d) => {
           const expiring = d.expiry_date && new Date(d.expiry_date) < new Date(Date.now() + 45 * 86400000);
           return (
-            <div key={d.id} className="card flex items-center justify-between">
-              <div>
-                <p className="text-sm text-text">{d.doc_type.replace("_", " ")} {d.issuer && `· ${d.issuer}`}</p>
-                <p className="text-xs text-muted">
-                  {d.document_date && new Date(d.document_date).toLocaleDateString("en-ZA")}
-                  {d.expiry_date && ` · expires ${new Date(d.expiry_date).toLocaleDateString("en-ZA")}`}
-                </p>
+            <div key={d.id} className="card space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-text">{d.doc_type.replace("_", " ")} {d.issuer && `· ${d.issuer}`}</p>
+                  <p className="text-xs text-muted">
+                    {d.document_date && new Date(d.document_date).toLocaleDateString("en-ZA")}
+                    {d.expiry_date && ` · expires ${new Date(d.expiry_date).toLocaleDateString("en-ZA")}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {expiring && <span className="status-pill-soon">Expiring</span>}
+                  <button onClick={() => startTransition(() => deleteDocument(d.id))} className="text-muted hover:text-overdue">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {expiring && <span className="status-pill-soon">Expiring</span>}
-                <button onClick={() => startTransition(() => deleteDocument(d.id))} className="text-muted hover:text-overdue">
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              <AttachmentGallery
+                recordTable="documents"
+                recordId={d.id}
+                attachments={files.filter((f) => f.record_id === d.id)}
+              />
             </div>
           );
         })
