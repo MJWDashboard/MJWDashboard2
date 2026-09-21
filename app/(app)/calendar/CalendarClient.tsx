@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
-import { CalendarDays, Car, Plus, Trash2, X } from "lucide-react";
+import { CalendarDays, Car, Plus, Trash2, X, RefreshCw, Unlink } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,10 +15,13 @@ import {
   toggleTransportConfirmed,
   createImportantDate,
   deleteImportantDate,
+  syncGoogleNow,
+  disconnectGoogleAccount,
 } from "./actions";
 
 type EventRow = Tables<"events">;
 type ImportantDate = Tables<"important_dates">;
+type GoogleAccount = Tables<"google_accounts">;
 
 type AgendaEntry =
   | { kind: "event"; date: Date; event: EventRow }
@@ -26,9 +30,11 @@ type AgendaEntry =
 export function CalendarClient({
   initialEvents,
   initialImportantDates,
+  googleAccount,
 }: {
   initialEvents: EventRow[];
   initialImportantDates: ImportantDate[];
+  googleAccount: GoogleAccount | null;
 }) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showDateForm, setShowDateForm] = useState(false);
@@ -70,6 +76,8 @@ export function CalendarClient({
         </div>
       </div>
 
+      <GoogleSyncCard googleAccount={googleAccount} />
+
       {agenda.length === 0 ? (
         <EmptyState icon={CalendarDays} title="Nothing coming up" detail="Add an event or a recurring date to get started." />
       ) : (
@@ -82,6 +90,71 @@ export function CalendarClient({
 
       {showEventForm && <EventForm onClose={() => setShowEventForm(false)} />}
       {showDateForm && <ImportantDateForm onClose={() => setShowDateForm(false)} />}
+    </div>
+  );
+}
+
+function GoogleSyncCard({ googleAccount }: { googleAccount: GoogleAccount | null }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [syncing, startTransition] = useTransition();
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const googleStatus = searchParams.get("google");
+  const errorMessage = searchParams.get("message");
+
+  function handleSync() {
+    startTransition(async () => {
+      const result = await syncGoogleNow();
+      setSyncMessage("count" in result ? `Synced ${result.count} events` : result.error);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="card space-y-2">
+      {googleStatus === "connected" && (
+        <p className="text-xs text-ok">Google Calendar connected — hit &quot;Sync now&quot; to pull events in.</p>
+      )}
+      {googleStatus === "error" && (
+        <p className="text-xs text-overdue">Couldn&apos;t connect Google Calendar{errorMessage ? `: ${errorMessage}` : ""}.</p>
+      )}
+
+      {googleAccount ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-text">Google Calendar connected</p>
+            <p className="text-xs text-muted">
+              {googleAccount.google_email}
+              {googleAccount.last_synced_at &&
+                ` · last synced ${new Date(googleAccount.last_synced_at).toLocaleString("en-ZA", { dateStyle: "short", timeStyle: "short" })}`}
+            </p>
+            {syncMessage && <p className="text-xs text-muted">{syncMessage}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleSync} disabled={syncing} className="btn-secondary px-3 py-1.5 text-xs">
+              <RefreshCw size={12} className={syncing ? "animate-spin" : ""} /> {syncing ? "Syncing" : "Sync now"}
+            </button>
+            <button
+              onClick={() => startTransition(() => disconnectGoogleAccount())}
+              className="text-muted hover:text-overdue"
+              aria-label="Disconnect Google"
+            >
+              <Unlink size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-text">Google Calendar</p>
+            <p className="text-xs text-muted">Not connected — pulls events in one-way for now.</p>
+          </div>
+          <a href="/api/google/connect" className="btn-primary px-3 py-1.5 text-xs">
+            Connect
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -271,8 +344,8 @@ function ImportantDateForm({ onClose }: { onClose: () => void }) {
 
 function FormSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center">
-      <div className="w-full max-w-md space-y-3 rounded-t-2xl border border-border bg-surface p-4 lg:rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{title}</p>
           <button onClick={onClose} className="text-muted hover:text-text">

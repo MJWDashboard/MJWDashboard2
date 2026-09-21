@@ -578,6 +578,42 @@ export type Database = {
           },
         ]
       }
+      google_accounts: {
+        Row: {
+          access_token: string
+          created_at: string
+          google_email: string | null
+          id: string
+          last_synced_at: string | null
+          owner_id: string
+          refresh_token: string
+          scope: string
+          token_expires_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          last_synced_at?: string | null
+          owner_id?: string
+          refresh_token: string
+          scope: string
+          token_expires_at: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          last_synced_at?: string | null
+          owner_id?: string
+          refresh_token?: string
+          scope?: string
+          token_expires_at?: string
+        }
+        Relationships: []
+      }
       health_metrics: {
         Row: {
           created_at: string

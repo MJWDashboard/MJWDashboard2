@@ -2,6 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { syncGoogleCalendar, disconnectGoogle } from "@/lib/google";
+
+export async function syncGoogleNow() {
+  const result = await syncGoogleCalendar();
+  revalidatePath("/calendar");
+  revalidatePath("/today");
+  return result;
+}
+
+export async function disconnectGoogleAccount() {
+  await disconnectGoogle();
+  revalidatePath("/calendar");
+}
 
 export async function createEvent(input: {
   title: string;
