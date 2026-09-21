@@ -172,6 +172,7 @@ function MedicineForm({ onClose }: { onClose: () => void }) {
   const [schedule, setSchedule] = useState<string[]>(["morning"]);
   const [stock, setStock] = useState("30");
   const [pharmacy, setPharmacy] = useState("");
+  const [scriptExpiry, setScriptExpiry] = useState("");
   const [pending, startTransition] = useTransition();
 
   function toggleSlot(slot: string) {
@@ -189,6 +190,7 @@ function MedicineForm({ onClose }: { onClose: () => void }) {
         stock_on_hand: Number(stock),
         pharmacy: pharmacy.trim() || null,
         monthly_collection_date: null,
+        script_expiry: scriptExpiry || null,
       });
       onClose();
     });
@@ -220,6 +222,10 @@ function MedicineForm({ onClose }: { onClose: () => void }) {
         <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" placeholder="Stock on hand" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
         <input value={pharmacy} onChange={(e) => setPharmacy(e.target.value)} placeholder="Pharmacy" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
+      <div>
+        <label className="mb-1 block text-xs text-muted">Script expiry (optional)</label>
+        <input value={scriptExpiry} onChange={(e) => setScriptExpiry(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
       <button onClick={save} disabled={pending} className="btn-primary w-full">Save medicine</button>
     </FormSheet>
   );
@@ -245,6 +251,7 @@ function AppointmentsTab({ appointments }: { appointments: Appointment[] }) {
               <p className="text-xs text-muted">
                 {new Date(a.appointment_at).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })}
                 {a.purpose && ` · ${a.purpose}`}
+                {a.follow_up_date && ` · follow up ${new Date(a.follow_up_date).toLocaleDateString("en-ZA")}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -270,6 +277,7 @@ function AppointmentForm({ onClose }: { onClose: () => void }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [cost, setCost] = useState("");
+  const [followUpDate, setFollowUpDate] = useState("");
   const [pending, startTransition] = useTransition();
 
   function save() {
@@ -279,7 +287,7 @@ function AppointmentForm({ onClose }: { onClose: () => void }) {
         provider: provider.trim(),
         purpose: purpose.trim() || null,
         appointment_at: new Date(`${date}T${time}:00+02:00`).toISOString(),
-        follow_up_date: null,
+        follow_up_date: followUpDate || null,
         cost: cost ? Number(cost) : null,
       });
       onClose();
@@ -295,6 +303,10 @@ function AppointmentForm({ onClose }: { onClose: () => void }) {
         <input value={time} onChange={(e) => setTime(e.target.value)} type="time" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
       <input value={cost} onChange={(e) => setCost(e.target.value)} type="number" placeholder="Cost (optional)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <div>
+        <label className="mb-1 block text-xs text-muted">Follow-up date (optional)</label>
+        <input value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
       <button onClick={save} disabled={pending} className="btn-primary w-full">Save appointment</button>
     </FormSheet>
   );

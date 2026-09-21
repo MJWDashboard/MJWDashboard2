@@ -11,6 +11,7 @@ export async function createMedicine(input: {
   stock_on_hand: number;
   pharmacy: string | null;
   monthly_collection_date: string | null;
+  script_expiry?: string | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("medicines").insert(input);

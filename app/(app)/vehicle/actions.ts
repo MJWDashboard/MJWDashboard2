@@ -11,6 +11,9 @@ export async function createVehicle(input: {
   registration: string | null;
   fuel_type: string;
   odometer: number;
+  licence_disc_expiry?: string | null;
+  warranty_end?: string | null;
+  insurer?: string | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from("vehicles").insert(input);

@@ -28,18 +28,6 @@ export function timeOfDayGreeting(date = new Date()) {
   return "Good evening";
 }
 
-export async function getWatchlist() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("reminders")
-    .select("*")
-    .neq("status", "done")
-    .order("severity", { ascending: false })
-    .order("due_at", { ascending: true })
-    .limit(10);
-  return data ?? [];
-}
-
 /** Counts only, never medicine names — Health detail stays behind the idle lock. */
 export async function getDosesDueSummary() {
   const supabase = await createClient();

@@ -1,16 +1,16 @@
+import Link from "next/link";
 import { clsx } from "clsx";
-import type { Tables } from "@/lib/supabase/database.types";
+import type { WatchlistItem } from "@/lib/watchlist";
 
-const SEVERITY_LABEL: Record<string, string> = { ok: "OK", soon: "Soon", overdue: "Overdue" };
+const SEVERITY_LABEL: Record<string, string> = { soon: "Soon", overdue: "Overdue" };
 const SEVERITY_CLASS: Record<string, string> = {
-  ok: "status-pill-ok",
   soon: "status-pill-soon",
   overdue: "status-pill-overdue",
 };
 
-export function WatchCard({ reminder }: { reminder: Tables<"reminders"> }) {
+export function WatchCard({ reminder }: { reminder: WatchlistItem }) {
   return (
-    <div className="card flex items-center justify-between gap-3">
+    <Link href={reminder.href} className="card flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-text">{reminder.title}</p>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted">
@@ -22,9 +22,7 @@ export function WatchCard({ reminder }: { reminder: Tables<"reminders"> }) {
           )}
         </div>
       </div>
-      <span className={clsx(SEVERITY_CLASS[reminder.severity] ?? SEVERITY_CLASS.ok)}>
-        {SEVERITY_LABEL[reminder.severity] ?? "OK"}
-      </span>
-    </div>
+      <span className={clsx(SEVERITY_CLASS[reminder.severity])}>{SEVERITY_LABEL[reminder.severity]}</span>
+    </Link>
   );
 }

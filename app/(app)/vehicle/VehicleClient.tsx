@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { Car, Fuel, Plus, Trash2, Wrench, X, MapPin } from "lucide-react";
+import { Car, Fuel, Plus, Trash2, Wrench, X, MapPin, Pencil } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -12,6 +12,7 @@ import { costPerKm } from "@/lib/vehicle";
 import { formatZAR } from "@/lib/money";
 import {
   createVehicle,
+  updateVehicle,
   deleteVehicle,
   addFuelLog,
   deleteFuelLog,
@@ -43,6 +44,7 @@ export function VehicleClient({
   receipts: Attachment[];
 }) {
   const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [activeId, setActiveId] = useState<string | null>(vehicles[0]?.id ?? null);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Fuel");
 
@@ -93,10 +95,22 @@ export function VehicleClient({
             <p className="text-sm font-medium text-text">{active.make} {active.model} {active.year ?? ""}</p>
             <p className="text-xs text-muted">{active.registration ?? "No registration on file"} · {Math.round(active.odometer).toLocaleString()} km</p>
           </div>
-          <button onClick={() => deleteVehicle(active.id)} className="text-muted hover:text-overdue">
-            <Trash2 size={14} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setEditingVehicle(active)} className="text-muted hover:text-text" aria-label="Edit vehicle">
+              <Pencil size={14} />
+            </button>
+            <button onClick={() => deleteVehicle(active.id)} className="text-muted hover:text-overdue" aria-label="Delete vehicle">
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
+        {(active.licence_disc_expiry || active.warranty_end || active.insurer) && (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border pt-3 text-xs text-muted">
+            {active.licence_disc_expiry && <span>Licence disc: {new Date(active.licence_disc_expiry).toLocaleDateString("en-ZA")}</span>}
+            {active.warranty_end && <span>Warranty until: {new Date(active.warranty_end).toLocaleDateString("en-ZA")}</span>}
+            {active.insurer && <span>Insured with: {active.insurer}</span>}
+          </div>
+        )}
         {stats && (
           <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
             <div>
@@ -131,6 +145,7 @@ export function VehicleClient({
       {tab === "Services" && <ServicesTab vehicleId={active.id} services={vehicleServices} />}
 
       {showVehicleForm && <VehicleForm onClose={() => setShowVehicleForm(false)} />}
+      {editingVehicle && <VehicleForm vehicle={editingVehicle} onClose={() => setEditingVehicle(null)} />}
     </div>
   );
 }
@@ -146,31 +161,50 @@ function Header() {
   );
 }
 
-function VehicleForm({ onClose }: { onClose: () => void }) {
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState("");
-  const [registration, setRegistration] = useState("");
-  const [odometer, setOdometer] = useState("");
+function VehicleForm({ vehicle, onClose }: { vehicle?: Vehicle; onClose: () => void }) {
+  const [make, setMake] = useState(vehicle?.make ?? "");
+  const [model, setModel] = useState(vehicle?.model ?? "");
+  const [year, setYear] = useState(vehicle?.year?.toString() ?? "");
+  const [registration, setRegistration] = useState(vehicle?.registration ?? "");
+  const [odometer, setOdometer] = useState(vehicle?.odometer?.toString() ?? "");
+  const [licenceDiscExpiry, setLicenceDiscExpiry] = useState(vehicle?.licence_disc_expiry ?? "");
+  const [warrantyEnd, setWarrantyEnd] = useState(vehicle?.warranty_end ?? "");
+  const [insurer, setInsurer] = useState(vehicle?.insurer ?? "");
   const [pending, startTransition] = useTransition();
 
   function save() {
     if (!make.trim() || !model.trim()) return;
     startTransition(async () => {
-      await createVehicle({
-        make: make.trim(),
-        model: model.trim(),
-        year: year ? Number(year) : null,
-        registration: registration.trim() || null,
-        fuel_type: "petrol",
-        odometer: odometer ? Number(odometer) : 0,
-      });
+      if (vehicle) {
+        await updateVehicle(vehicle.id, {
+          make: make.trim(),
+          model: model.trim(),
+          year: year ? Number(year) : null,
+          registration: registration.trim() || null,
+          odometer: odometer ? Number(odometer) : 0,
+          licence_disc_expiry: licenceDiscExpiry || null,
+          warranty_end: warrantyEnd || null,
+          insurer: insurer.trim() || null,
+        });
+      } else {
+        await createVehicle({
+          make: make.trim(),
+          model: model.trim(),
+          year: year ? Number(year) : null,
+          registration: registration.trim() || null,
+          fuel_type: "petrol",
+          odometer: odometer ? Number(odometer) : 0,
+          licence_disc_expiry: licenceDiscExpiry || null,
+          warranty_end: warrantyEnd || null,
+          insurer: insurer.trim() || null,
+        });
+      }
       onClose();
     });
   }
 
   return (
-    <FormSheet title="New vehicle" onClose={onClose}>
+    <FormSheet title={vehicle ? "Edit vehicle" : "New vehicle"} onClose={onClose}>
       <div className="flex gap-2">
         <input value={make} onChange={(e) => setMake(e.target.value)} placeholder="Make" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
         <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -180,7 +214,16 @@ function VehicleForm({ onClose }: { onClose: () => void }) {
         <input value={registration} onChange={(e) => setRegistration(e.target.value)} placeholder="Registration" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
       <input value={odometer} onChange={(e) => setOdometer(e.target.value)} type="number" placeholder="Current odometer (km)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
-      <button onClick={save} disabled={pending} className="btn-primary w-full">Save vehicle</button>
+      <input value={insurer} onChange={(e) => setInsurer(e.target.value)} placeholder="Insurer (optional)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <div>
+        <label className="mb-1 block text-xs text-muted">Licence disc expiry</label>
+        <input value={licenceDiscExpiry} onChange={(e) => setLicenceDiscExpiry(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs text-muted">Warranty end (optional)</label>
+        <input value={warrantyEnd} onChange={(e) => setWarrantyEnd(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
+      <button onClick={save} disabled={pending} className="btn-primary w-full">{vehicle ? "Save changes" : "Save vehicle"}</button>
     </FormSheet>
   );
 }
@@ -285,6 +328,7 @@ function TripsTab({ vehicleId, trips }: { vehicleId: string; trips: Trip[] }) {
               <p className="text-xs text-muted">
                 {new Date(trip.occurred_at).toLocaleDateString("en-ZA")} · {trip.purpose}
                 {trip.odometer_start != null && trip.odometer_end != null && ` · ${trip.odometer_end - trip.odometer_start} km`}
+                {trip.purpose === "business" && (trip.reimbursed ? " · reimbursed" : " · not yet reimbursed")}
               </p>
             </div>
             <button onClick={() => startTransition(() => deleteTrip(trip.id))} className="text-muted hover:text-overdue">
@@ -304,6 +348,7 @@ function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
   const [odoStart, setOdoStart] = useState("");
   const [odoEnd, setOdoEnd] = useState("");
   const [purpose, setPurpose] = useState<"business" | "private">("private");
+  const [reimbursed, setReimbursed] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [pending, startTransition] = useTransition();
 
@@ -317,7 +362,7 @@ function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
         odometer_start: odoStart ? Number(odoStart) : null,
         odometer_end: odoEnd ? Number(odoEnd) : null,
         purpose,
-        reimbursed: false,
+        reimbursed: purpose === "business" ? reimbursed : false,
       });
       onClose();
     });
@@ -340,6 +385,12 @@ function TripForm({ vehicleId, onClose }: { vehicleId: string; onClose: () => vo
         </select>
         <input value={date} onChange={(e) => setDate(e.target.value)} type="date" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
+      {purpose === "business" && (
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" checked={reimbursed} onChange={(e) => setReimbursed(e.target.checked)} />
+          Already reimbursed
+        </label>
+      )}
       <button onClick={save} disabled={pending} className="btn-primary w-full">Save trip</button>
     </FormSheet>
   );

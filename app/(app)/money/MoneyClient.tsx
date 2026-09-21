@@ -26,6 +26,7 @@ type Transaction = Tables<"transactions">;
 type Category = Tables<"categories">;
 type Budget = Tables<"budgets">;
 type Debt = Tables<"debts">;
+type DebtPayment = Tables<"debt_payments">;
 type Entity = Tables<"entities">;
 
 const ACCOUNT_KINDS = ["cheque", "savings", "credit_card", "business", "loan", "store_account"] as const;
@@ -37,6 +38,7 @@ export function MoneyClient({
   categories,
   budgets,
   debts,
+  debtPayments,
   entities,
 }: {
   accounts: Account[];
@@ -44,6 +46,7 @@ export function MoneyClient({
   categories: Category[];
   budgets: Budget[];
   debts: Debt[];
+  debtPayments: DebtPayment[];
   entities: Entity[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
@@ -96,7 +99,7 @@ export function MoneyClient({
       {tab === "Transactions" && (
         <TransactionsTab accounts={accounts} categories={categories} transactions={transactions} />
       )}
-      {tab === "Debt" && <DebtTab debts={debts} />}
+      {tab === "Debt" && <DebtTab debts={debts} debtPayments={debtPayments} />}
     </div>
   );
 }
@@ -464,9 +467,10 @@ function ImportForm({ accounts, onClose }: { accounts: Account[]; onClose: () =>
   );
 }
 
-function DebtTab({ debts }: { debts: Debt[] }) {
+function DebtTab({ debts, debtPayments }: { debts: Debt[]; debtPayments: DebtPayment[] }) {
   const [showForm, setShowForm] = useState(false);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const active = debts.filter((d) => d.status === "active");
@@ -516,10 +520,36 @@ function DebtTab({ debts }: { debts: Debt[] }) {
                     />
                   </div>
                 )}
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>Min payment: {debt.minimum_payment ? formatZAR(Number(debt.minimum_payment)) : "—"}</span>
+                  <span>{debt.due_day ? `Due on the ${debt.due_day}${ordinalSuffix(debt.due_day)}` : "No due date set"}</span>
+                </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">Min payment: {debt.minimum_payment ? formatZAR(Number(debt.minimum_payment)) : "—"}</span>
+                  <button
+                    onClick={() => setHistoryId(historyId === debt.id ? null : debt.id)}
+                    className="text-muted hover:text-text"
+                  >
+                    {debtPayments.filter((p) => p.debt_id === debt.id).length} payment
+                    {debtPayments.filter((p) => p.debt_id === debt.id).length === 1 ? "" : "s"} logged
+                  </button>
                   <button onClick={() => setPayingId(debt.id)} className="text-accent">Log payment</button>
                 </div>
+                {historyId === debt.id && (
+                  <div className="space-y-1 border-t border-border pt-2">
+                    {debtPayments.filter((p) => p.debt_id === debt.id).length === 0 ? (
+                      <p className="text-xs text-muted">No payments logged yet.</p>
+                    ) : (
+                      debtPayments
+                        .filter((p) => p.debt_id === debt.id)
+                        .map((p) => (
+                          <div key={p.id} className="flex items-center justify-between text-xs">
+                            <span className="text-muted">{new Date(p.paid_at).toLocaleDateString("en-ZA")}</span>
+                            <span data-sensitive className="tabular text-text">{formatZAR(Number(p.amount))}</span>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                )}
                 {payingId === debt.id && (
                   <PaymentInput debtId={debt.id} onDone={() => setPayingId(null)} />
                 )}
@@ -560,6 +590,7 @@ function DebtForm({ onClose }: { onClose: () => void }) {
   const [balance, setBalance] = useState("");
   const [rate, setRate] = useState("");
   const [minPayment, setMinPayment] = useState("");
+  const [dueDay, setDueDay] = useState("");
   const [limit, setLimit] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -572,7 +603,7 @@ function DebtForm({ onClose }: { onClose: () => void }) {
         balance: Number(balance),
         interest_rate: rate ? Number(rate) : null,
         minimum_payment: minPayment ? Number(minPayment) : null,
-        due_day: null,
+        due_day: dueDay ? Number(dueDay) : null,
         limit_amount: limit ? Number(limit) : null,
       });
       onClose();
@@ -594,10 +625,28 @@ function DebtForm({ onClose }: { onClose: () => void }) {
         <input value={rate} onChange={(e) => setRate(e.target.value)} type="number" placeholder="Interest %" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
         <input value={minPayment} onChange={(e) => setMinPayment(e.target.value)} type="number" placeholder="Min payment" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
-      <input value={limit} onChange={(e) => setLimit(e.target.value)} type="number" placeholder="Credit limit (revolving accounts)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <div className="flex gap-2">
+        <input
+          value={dueDay}
+          onChange={(e) => setDueDay(e.target.value)}
+          type="number"
+          min={1}
+          max={31}
+          placeholder="Due day of month (e.g. 25)"
+          className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+        />
+        <input value={limit} onChange={(e) => setLimit(e.target.value)} type="number" placeholder="Credit limit" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
       <button onClick={save} disabled={pending} className="btn-primary w-full">Save debt</button>
     </FormSheet>
   );
+}
+
+function ordinalSuffix(n: number) {
+  if (n % 10 === 1 && n !== 11) return "st";
+  if (n % 10 === 2 && n !== 12) return "nd";
+  if (n % 10 === 3 && n !== 13) return "rd";
+  return "th";
 }
 
 function FormSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {

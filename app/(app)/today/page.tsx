@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, CalendarDays, ListTodo, AlertTriangle } from "lucide-react";
-import { getWatchlist, getTodayEvents, getGreetingName, getDosesDueSummary, timeOfDayGreeting } from "@/lib/today";
+import { getTodayEvents, getGreetingName, getDosesDueSummary, timeOfDayGreeting } from "@/lib/today";
+import { getWatchlist } from "@/lib/watchlist";
 import { getTodayTasks } from "@/lib/tasks";
 import { WatchCard } from "@/components/WatchCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -86,7 +87,7 @@ export default async function TodayPage() {
           <EmptyState
             icon={AlertTriangle}
             title="Nothing at risk"
-            detail="Reminders from Health, Money, Vehicle and Vault land here — amount at risk, due date, distance to threshold — the moment any of them need you."
+            detail="Licence discs, services, policy renewals, script expiries, low medicine stock and debt due dates are checked live — nothing needs you right now."
           />
         ) : (
           <div className="space-y-2">

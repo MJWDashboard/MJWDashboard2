@@ -12,6 +12,7 @@ export default async function MoneyPage() {
     { data: categories },
     { data: budgets },
     { data: debts },
+    { data: debtPayments },
     { data: entities },
   ] = await Promise.all([
     supabase.from("accounts").select("*").order("created_at", { ascending: true }),
@@ -19,6 +20,7 @@ export default async function MoneyPage() {
     supabase.from("categories").select("*").order("name", { ascending: true }),
     supabase.from("budgets").select("*"),
     supabase.from("debts").select("*").order("created_at", { ascending: true }),
+    supabase.from("debt_payments").select("*").order("paid_at", { ascending: false }),
     supabase.from("entities").select("*"),
   ]);
 
@@ -29,6 +31,7 @@ export default async function MoneyPage() {
       categories={categories ?? []}
       budgets={budgets ?? []}
       debts={debts ?? []}
+      debtPayments={debtPayments ?? []}
       entities={entities ?? []}
     />
   );
