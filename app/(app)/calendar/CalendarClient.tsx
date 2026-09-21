@@ -3,12 +3,33 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
-import { CalendarDays, Car, Plus, Trash2, X, RefreshCw, Unlink } from "lucide-react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  startOfDay,
+  endOfDay,
+  eachDayOfInterval,
+  addMonths,
+  subMonths,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
+  isSameMonth,
+  isSameDay,
+  isToday,
+} from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+import { CalendarDays, Car, Plus, Trash2, X, RefreshCw, Unlink, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { NAV_ITEMS } from "@/lib/nav";
-import { nextOccurrence, daysUntil } from "@/lib/recurrence";
+import { SAST } from "@/lib/timezone";
+import { occurrencesInRange, daysUntil } from "@/lib/recurrence";
 import {
   createEvent,
   deleteEvent,
@@ -27,6 +48,30 @@ type AgendaEntry =
   | { kind: "event"; date: Date; event: EventRow }
   | { kind: "important"; date: Date; important: ImportantDate };
 
+type ViewMode = "month" | "week" | "day";
+
+function dayKey(date: Date) {
+  return format(date, "yyyy-MM-dd");
+}
+
+function shiftCursor(view: ViewMode, cursor: Date, direction: 1 | -1) {
+  if (view === "month") return direction > 0 ? addMonths(cursor, 1) : subMonths(cursor, 1);
+  if (view === "week") return direction > 0 ? addWeeks(cursor, 1) : subWeeks(cursor, 1);
+  return direction > 0 ? addDays(cursor, 1) : subDays(cursor, 1);
+}
+
+function headerTitle(view: ViewMode, cursor: Date) {
+  if (view === "month") return format(cursor, "MMMM yyyy");
+  if (view === "week") {
+    const start = startOfWeek(cursor, { weekStartsOn: 1 });
+    const end = endOfWeek(cursor, { weekStartsOn: 1 });
+    return start.getMonth() === end.getMonth()
+      ? `${format(start, "d")} – ${format(end, "d MMM yyyy")}`
+      : `${format(start, "d MMM")} – ${format(end, "d MMM yyyy")}`;
+  }
+  return format(cursor, "EEEE, d MMMM yyyy");
+}
+
 export function CalendarClient({
   initialEvents,
   initialImportantDates,
@@ -38,24 +83,48 @@ export function CalendarClient({
 }) {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showDateForm, setShowDateForm] = useState(false);
+  const [view, setView] = useState<ViewMode>("month");
+  const [cursor, setCursor] = useState(() => toZonedTime(new Date(), SAST));
+  const [selectedDay, setSelectedDay] = useState(() => toZonedTime(new Date(), SAST));
 
-  const agenda = useMemo<AgendaEntry[]>(() => {
-    const now = new Date();
-    const horizon = new Date();
-    horizon.setDate(horizon.getDate() + 60);
+  const range = useMemo(() => {
+    if (view === "month") {
+      return { start: startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 }), end: endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 }) };
+    }
+    if (view === "week") {
+      return { start: startOfWeek(cursor, { weekStartsOn: 1 }), end: endOfWeek(cursor, { weekStartsOn: 1 }) };
+    }
+    return { start: startOfDay(cursor), end: endOfDay(cursor) };
+  }, [view, cursor]);
 
-    const eventEntries: AgendaEntry[] = initialEvents
-      .map((e) => ({ kind: "event" as const, date: new Date(e.starts_at), event: e }))
-      .filter((e) => e.date >= now && e.date <= horizon);
+  const entriesByDay = useMemo(() => {
+    const map = new Map<string, AgendaEntry[]>();
+    const push = (key: string, entry: AgendaEntry) => {
+      const list = map.get(key) ?? [];
+      list.push(entry);
+      map.set(key, list);
+    };
 
-    const importantEntries: AgendaEntry[] = initialImportantDates.map((d) => ({
-      kind: "important" as const,
-      date: nextOccurrence(d.recurrence as "yearly" | "monthly", d.month, d.day),
-      important: d,
-    }));
+    for (const e of initialEvents) {
+      const zoned = toZonedTime(new Date(e.starts_at), SAST);
+      if (zoned < range.start || zoned > range.end) continue;
+      push(dayKey(zoned), { kind: "event", date: zoned, event: e });
+    }
 
-    return [...eventEntries, ...importantEntries].sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [initialEvents, initialImportantDates]);
+    for (const d of initialImportantDates) {
+      const occurrences = occurrencesInRange(d.recurrence as "yearly" | "monthly", d.month, d.day, range.start, range.end);
+      for (const occ of occurrences) push(dayKey(occ), { kind: "important", date: occ, important: d });
+    }
+
+    for (const list of map.values()) list.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return map;
+  }, [initialEvents, initialImportantDates, range]);
+
+  function goToday() {
+    const now = toZonedTime(new Date(), SAST);
+    setCursor(now);
+    setSelectedDay(now);
+  }
 
   return (
     <div className="space-y-4">
@@ -78,18 +147,165 @@ export function CalendarClient({
 
       <GoogleSyncCard googleAccount={googleAccount} />
 
-      {agenda.length === 0 ? (
-        <EmptyState icon={CalendarDays} title="Nothing coming up" detail="Add an event or a recurring date to get started." />
-      ) : (
-        <div className="space-y-2">
-          {agenda.map((entry) => (
-            <AgendaRow key={entry.kind + (entry.kind === "event" ? entry.event.id : entry.important.id)} entry={entry} />
-          ))}
+      <div className="flex rounded-full border border-border bg-surface/60 p-1 text-xs">
+        {(["month", "week", "day"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={clsx(
+              "flex-1 rounded-full py-1.5 font-medium capitalize transition",
+              view === v ? "bg-accent text-white" : "text-muted"
+            )}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      <div className="card flex items-center justify-between p-2">
+        <button
+          onClick={() => setCursor((c) => shiftCursor(view, c, -1))}
+          aria-label="Previous"
+          className="rounded-lg p-2 text-muted hover:text-text"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="flex flex-col items-center">
+          <p className="text-sm font-semibold text-text">{headerTitle(view, cursor)}</p>
+          <button onClick={goToday} className="text-[11px] font-medium text-accent">
+            Today
+          </button>
         </div>
+        <button
+          onClick={() => setCursor((c) => shiftCursor(view, c, 1))}
+          aria-label="Next"
+          className="rounded-lg p-2 text-muted hover:text-text"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {view === "month" && (
+        <>
+          <MonthGrid cursor={cursor} entriesByDay={entriesByDay} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
+          <DayAgenda day={selectedDay} entries={entriesByDay.get(dayKey(selectedDay)) ?? []} />
+        </>
       )}
+
+      {view === "week" && <WeekAgenda cursor={cursor} entriesByDay={entriesByDay} />}
+
+      {view === "day" && <DayAgenda day={cursor} entries={entriesByDay.get(dayKey(cursor)) ?? []} />}
 
       {showEventForm && <EventForm onClose={() => setShowEventForm(false)} />}
       {showDateForm && <ImportantDateForm onClose={() => setShowDateForm(false)} />}
+    </div>
+  );
+}
+
+function MonthGrid({
+  cursor,
+  entriesByDay,
+  selectedDay,
+  onSelectDay,
+}: {
+  cursor: Date;
+  entriesByDay: Map<string, AgendaEntry[]>;
+  selectedDay: Date;
+  onSelectDay: (day: Date) => void;
+}) {
+  const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
+  const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
+  const days = eachDayOfInterval({ start, end });
+  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <div className="card space-y-2 p-3">
+      <div className="grid grid-cols-7 text-center text-[10px] font-medium uppercase tracking-wide text-muted">
+        {weekdayLabels.map((w) => (
+          <div key={w}>{w}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day) => {
+          const key = dayKey(day);
+          const entries = entriesByDay.get(key) ?? [];
+          const inMonth = isSameMonth(day, cursor);
+          const today = isToday(day);
+          const selected = isSameDay(day, selectedDay);
+          return (
+            <button
+              key={key}
+              onClick={() => onSelectDay(day)}
+              className={clsx(
+                "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl text-sm transition",
+                !inMonth && "opacity-30",
+                selected
+                  ? "bg-accent text-white"
+                  : today
+                    ? "border border-accent text-text"
+                    : "text-text hover:bg-border/40"
+              )}
+            >
+              <span>{format(day, "d")}</span>
+              {entries.length > 0 && (
+                <span className="flex gap-0.5">
+                  {entries.slice(0, 3).map((e, i) => (
+                    <span
+                      key={i}
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: selected ? "#fff" : e.kind === "important" ? "#A78BFA" : "#0E84FF" }}
+                    />
+                  ))}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekAgenda({ cursor, entriesByDay }: { cursor: Date; entriesByDay: Map<string, AgendaEntry[]> }) {
+  const days = eachDayOfInterval({ start: startOfWeek(cursor, { weekStartsOn: 1 }), end: endOfWeek(cursor, { weekStartsOn: 1 }) });
+
+  return (
+    <div className="space-y-4">
+      {days.map((day) => {
+        const key = dayKey(day);
+        const entries = entriesByDay.get(key) ?? [];
+        return (
+          <div key={key}>
+            <p className={clsx("mb-1.5 text-xs font-semibold uppercase tracking-wide", isToday(day) ? "text-accent" : "text-muted")}>
+              {format(day, "EEEE, d MMM")}
+            </p>
+            {entries.length === 0 ? (
+              <p className="pl-1 text-xs text-muted/70">Nothing</p>
+            ) : (
+              <div className="space-y-2">
+                {entries.map((entry) => (
+                  <AgendaRow key={entry.kind + (entry.kind === "event" ? entry.event.id : entry.important.id + key)} entry={entry} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayAgenda({ day, entries }: { day: Date; entries: AgendaEntry[] }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{format(day, "EEEE, d MMMM")}</p>
+      {entries.length === 0 ? (
+        <EmptyState icon={CalendarDays} title="Nothing this day" detail="Add an event or a recurring date to get started." />
+      ) : (
+        entries.map((entry) => (
+          <AgendaRow key={entry.kind + (entry.kind === "event" ? entry.event.id : entry.important.id)} entry={entry} />
+        ))
+      )}
     </div>
   );
 }
@@ -200,7 +416,7 @@ function AgendaRow({ entry }: { entry: AgendaEntry }) {
     <div className="card flex items-center justify-between gap-2">
       <div className="min-w-0">
         <p className="text-xs text-muted">
-          {dateLabel} · {days === 0 ? "today" : `in ${days} day${days === 1 ? "" : "s"}`}
+          {dateLabel} · {days === 0 ? "today" : days > 0 ? `in ${days} day${days === 1 ? "" : "s"}` : `${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago`}
         </p>
         <p className="truncate text-sm font-medium text-text">{d.title}</p>
         <p className="text-xs text-muted">{d.recurrence === "yearly" ? "Yearly" : "Monthly"}</p>

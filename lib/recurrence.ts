@@ -25,3 +25,30 @@ export function daysUntil(date: Date) {
   const diff = date.getTime() - now.getTime();
   return Math.round(diff / (1000 * 60 * 60 * 24));
 }
+
+/** Every occurrence of a yearly/monthly recurring date that falls within
+ * [rangeStart, rangeEnd] — for rendering a month/week grid, as opposed to
+ * nextOccurrence's single "what's coming up" answer. */
+export function occurrencesInRange(
+  recurrence: "yearly" | "monthly",
+  month: number | null,
+  day: number,
+  rangeStart: Date,
+  rangeEnd: Date
+) {
+  const results: Date[] = [];
+  const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+
+  while (cursor <= rangeEnd) {
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth();
+    if (recurrence === "monthly" || (recurrence === "yearly" && (month ?? 1) - 1 === m)) {
+      const candidate = new Date(y, m, day);
+      if (candidate.getMonth() === m && candidate >= rangeStart && candidate <= rangeEnd) {
+        results.push(candidate);
+      }
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return results;
+}
