@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
 
   return (
-    <div data-vx-theme="light" className="min-h-screen bg-background lg:grid lg:grid-cols-2">
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
       {/* Brand panel — desktop only, always dark navy regardless of app theme. */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-[rgb(var(--color-navy))] p-12 text-white lg:flex">
         <div
@@ -29,11 +29,15 @@ export default function LoginPage() {
 
       {/* Compact header — mobile only. */}
       <div className="flex flex-col items-center px-6 pt-12 text-center lg:hidden">
-        <Image src="/brand/wordmark.png" alt="Vorexa Core" width={120} height={40} priority />
+        <Image src="/brand/wordmark-light.png" alt="Vorexa Core" width={120} height={40} priority />
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-4 py-10 lg:bg-white">
-        <div className="w-full max-w-sm">
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-10">
+        <div
+          className="pointer-events-none absolute -top-16 right-0 h-80 w-80 rounded-full opacity-[0.12] blur-3xl"
+          style={{ backgroundColor: "rgb(var(--color-accent-2))" }}
+        />
+        <div className="relative w-full max-w-sm">
           <div className="mb-8 text-center lg:text-left">
             <h1 className="text-xl font-semibold text-text">
               {mode === "signin" ? "Welcome back" : "Create your account"}

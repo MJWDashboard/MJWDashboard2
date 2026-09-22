@@ -34,23 +34,6 @@
   --color-overdue: 239 68 68;
 }
 
-/* The public landing/login surfaces have one fixed Vorexa Core presentation
-   (light canvas, or the navy/white login split) — they don't follow the
-   authenticated app's dark/light preference toggle. Scoped, not :root, so
-   it overrides regardless of the user's stored app theme. */
-[data-vx-theme="light"] {
-  --color-background: 247 250 252;
-  --color-surface: 255 255 255;
-  --color-border: 220 230 240;
-  --color-text: 10 24 51;
-  --color-muted: 95 111 134;
-  --color-accent: 0 122 255;
-  --color-accent-2: 0 229 255;
-  --color-ok: 16 185 129;
-  --color-soon: 245 158 11;
-  --color-overdue: 239 68 68;
-}
-
 @layer base {
   body {
     @apply bg-background text-text antialiased;
@@ -79,7 +62,8 @@
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] px-5 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-accent text-white shadow-sm hover:brightness-110 active:scale-[0.98];
+    @apply btn text-white shadow-lg shadow-accent/25 hover:brightness-110 hover:shadow-accent/40 active:scale-[0.98];
+    background-image: linear-gradient(135deg, rgb(var(--color-accent)), rgb(var(--color-accent-2)));
   }
   .btn-secondary {
     @apply btn border border-border bg-transparent text-text hover:bg-surface;

@@ -7,7 +7,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     data: { user },
   } = await supabase.auth.getUser();
 
-  let theme: "dark" | "light" = "light";
+  let theme: "dark" | "light" = "dark";
   let privacyBlur = false;
 
   if (user) {
