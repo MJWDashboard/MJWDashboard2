@@ -1171,10 +1171,12 @@ export type Database = {
           created_at: string
           display_name: string | null
           first_name: string | null
+          height_cm: number | null
           id: string
           last_name: string | null
           privacy_blur: boolean
           role: string
+          target_weight: number | null
           theme: string
           updated_at: string
         }
@@ -1183,10 +1185,12 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          height_cm?: number | null
           id: string
           last_name?: string | null
           privacy_blur?: boolean
           role?: string
+          target_weight?: number | null
           theme?: string
           updated_at?: string
         }
@@ -1195,12 +1199,187 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          height_cm?: number | null
           id?: string
           last_name?: string | null
           privacy_blur?: boolean
           role?: string
+          target_weight?: number | null
           theme?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      habits: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          frequency: string
+          icon: string
+          id: string
+          name: string
+          owner_id: string
+          preferred_time: string | null
+          reminder: boolean
+          start_date: string
+          target: number
+          times_per_week: number | null
+          unit: string | null
+          weekdays: number[]
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          frequency?: string
+          icon?: string
+          id?: string
+          name: string
+          owner_id?: string
+          preferred_time?: string | null
+          reminder?: boolean
+          start_date?: string
+          target?: number
+          times_per_week?: number | null
+          unit?: string | null
+          weekdays?: number[]
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          frequency?: string
+          icon?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          preferred_time?: string | null
+          reminder?: boolean
+          start_date?: string
+          target?: number
+          times_per_week?: number | null
+          unit?: string | null
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          completed: boolean
+          created_at: string
+          habit_id: string
+          id: string
+          log_date: string
+          owner_id: string
+          skip_reason: string | null
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          habit_id: string
+          id?: string
+          log_date?: string
+          owner_id?: string
+          skip_reason?: string | null
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          habit_id?: string
+          id?: string
+          log_date?: string
+          owner_id?: string
+          skip_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          gratitude: string | null
+          highlight: string | null
+          id: string
+          mood: number | null
+          energy: number | null
+          note: string | null
+          owner_id: string
+          sleep_quality: number | null
+          stress: number | null
+          symptoms: string | null
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          gratitude?: string | null
+          highlight?: string | null
+          id?: string
+          mood?: number | null
+          energy?: number | null
+          note?: string | null
+          owner_id?: string
+          sleep_quality?: number | null
+          stress?: number | null
+          symptoms?: string | null
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          gratitude?: string | null
+          highlight?: string | null
+          id?: string
+          mood?: number | null
+          energy?: number | null
+          note?: string | null
+          owner_id?: string
+          sleep_quality?: number | null
+          stress?: number | null
+          symptoms?: string | null
+        }
+        Relationships: []
+      }
+      sleep_entries: {
+        Row: {
+          bedtime: string | null
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          owner_id: string
+          quality: number | null
+          sleep_date: string
+          wake_time: string | null
+        }
+        Insert: {
+          bedtime?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          quality?: number | null
+          sleep_date?: string
+          wake_time?: string | null
+        }
+        Update: {
+          bedtime?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          quality?: number | null
+          sleep_date?: string
+          wake_time?: string | null
         }
         Relationships: []
       }

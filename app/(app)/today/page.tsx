@@ -163,6 +163,7 @@ export default async function TodayPage() {
       <Section title="Wellness Today" icon={HeartPulse} color="#0FAE9C">
         <div className="card grid grid-cols-2 gap-4">
           <Stat label="Doses" value={doses.total === 0 ? "None scheduled" : `${doses.remaining}/${doses.total} left`} />
+          <Stat label="Habits" value={wellness.habitsDueToday === 0 ? "None due" : `${wellness.habitsDoneToday}/${wellness.habitsDueToday} done`} />
           <Stat label="Appointments" value={wellness.appointmentsToday > 0 ? `${wellness.appointmentsToday} today` : "None today"} />
         </div>
       </Section>

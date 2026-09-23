@@ -53,6 +53,20 @@ consent-based bank integration are Phase 2/3 of that specific spec section
 and were not attempted (no online banking credentials are ever requested
 or stored, per the spec).
 
+## v2.0 "Wellness" — Phase 3
+
+Extends the existing Health module (Medicines, Appointments, weight — kept
+as-is) into a full Wellness hub: a Habit Management system (frequency
+options including weekdays/x-per-week/custom, streaks, completion rate,
+pause/archive), a Daily Check-in (mood/energy/stress/sleep quality, all
+optional per the spec), Sleep tracking (bedtime/wake/quality, average
+duration, bedtime consistency), BMI (only shown when a height is on file —
+never estimated), and a Wellness dashboard tab pulling all of it together
+alongside doses-due and upcoming appointments. Habit completion now feeds
+the Today Wellness card, and Quick Capture gained a Mood type. See
+`supabase/migrations/0022_wellness_v2.sql` — **also not yet applied to the
+live database**, same caveat as 0020/0021 above.
+
 ## Current state
 
 - **Database** — Supabase project `eaxyxsrsljdonkravpoj`, schema `public`.

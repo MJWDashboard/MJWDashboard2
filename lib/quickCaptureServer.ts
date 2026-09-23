@@ -28,6 +28,13 @@ export async function autoFileCapture(id: string, type: string, payload: Capture
     if (!kg) return;
     await supabase.from("health_metrics").insert({ metric: "weight", value: kg, unit: "kg" });
     revalidatePath("/health");
+  } else if (type === "mood") {
+    const mood = Number(payload.mood);
+    if (!mood || mood < 1 || mood > 5) return;
+    await supabase
+      .from("wellness_entries")
+      .upsert({ entry_date: new Date().toISOString().slice(0, 10), mood }, { onConflict: "owner_id,entry_date" });
+    revalidatePath("/health");
   } else if (type === "shopping_item") {
     const item = String(payload.item ?? "").trim();
     if (!item) return;

@@ -6,7 +6,7 @@ import { parseCaptureRules, type ParsedCapture, type CaptureKind } from "@/lib/c
 
 const KINDS: CaptureKind[] = [
   "task", "expense", "note", "appointment", "reminder", "shopping_item",
-  "debt_payment", "weight", "fuel", "vehicle_expense", "pet_expense", "general",
+  "debt_payment", "weight", "fuel", "vehicle_expense", "pet_expense", "general", "mood",
 ];
 const RECURRENCES: ParsedCapture["recurrence"][] = ["none", "daily", "weekly", "monthly"];
 const PRIORITIES: ParsedCapture["priority"][] = ["critical", "high", "normal", "low"];

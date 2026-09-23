@@ -21,3 +21,18 @@ export function todaysChecklist(medicines: Medicine[], doses: MedDose[], today: 
   }
   return entries.sort((a, b) => SLOT_ORDER.indexOf(a.timeSlot) - SLOT_ORDER.indexOf(b.timeSlot));
 }
+
+/** Standard BMI (kg / m²). Returns null without both a weight and a
+ * recorded height — never estimated. */
+export function calculateBmi(weightKg: number, heightCm: number | null): number | null {
+  if (!heightCm) return null;
+  const heightM = heightCm / 100;
+  return Math.round((weightKg / (heightM * heightM)) * 10) / 10;
+}
+
+export function bmiCategory(bmi: number): string {
+  if (bmi < 18.5) return "Underweight";
+  if (bmi < 25) return "Normal";
+  if (bmi < 30) return "Overweight";
+  return "Obese";
+}

@@ -13,7 +13,8 @@ export type CaptureKind =
   | "fuel"
   | "vehicle_expense"
   | "pet_expense"
-  | "general";
+  | "general"
+  | "mood";
 
 export type ParsedCapture = {
   /** Text with the recognised date/time/amount fragments stripped out. */
@@ -135,6 +136,7 @@ function guessKind(text: string, hasAmount: boolean): CaptureKind {
   if (/\bvet\b|\bpet\b/.test(lower) && hasAmount) return "pet_expense";
   if (/\bremind\b|\brenew\b|\bexpir/.test(lower)) return "reminder";
   if (/\bgym\b|\bmeeting\b|\bappointment\b|\bdentist\b|\bdoctor\b/.test(lower)) return "appointment";
+  if (/\bfeeling\b|\bmood\b/.test(lower)) return "mood";
   if (hasAmount) return "expense";
   return "task";
 }

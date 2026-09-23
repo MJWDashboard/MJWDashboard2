@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Sparkles, Fuel, Receipt, Scale, StickyNote, ShoppingCart, ListTodo, CalendarClock, Bell, CreditCard } from "lucide-react";
+import { X, Sparkles, Fuel, Receipt, Scale, StickyNote, ShoppingCart, ListTodo, CalendarClock, Bell, CreditCard, Smile } from "lucide-react";
 import { clsx } from "clsx";
 import { queueQuickCapture } from "@/lib/quickCapture";
 import { parseCaptureSmart } from "@/lib/captureParserAI";
@@ -21,8 +21,9 @@ const KIND_META: Record<CaptureKind, { label: string; icon: typeof Fuel }> = {
   vehicle_expense: { label: "Vehicle", icon: Fuel },
   pet_expense: { label: "Pet", icon: Fuel },
   general: { label: "Note", icon: StickyNote },
+  mood: { label: "Mood", icon: Smile },
 };
-const QUICK_KINDS: CaptureKind[] = ["task", "expense", "note", "appointment", "reminder", "shopping_item", "debt_payment", "weight", "fuel"];
+const QUICK_KINDS: CaptureKind[] = ["task", "expense", "note", "appointment", "reminder", "shopping_item", "debt_payment", "weight", "mood", "fuel"];
 
 export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -78,6 +79,8 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
         return { item: title };
       case "weight":
         return { kg: Number(amount) };
+      case "mood":
+        return { mood: Number(amount) };
       case "expense":
       case "fuel":
       case "debt_payment":
@@ -105,9 +108,10 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
     }, 500);
   }
 
-  const needsAmount = kind === "expense" || kind === "fuel" || kind === "weight" || kind === "debt_payment";
+  const needsAmount = kind === "expense" || kind === "fuel" || kind === "weight" || kind === "debt_payment" || kind === "mood";
   const needsDate = kind === "task" || kind === "appointment" || kind === "reminder";
-  const canSave = title.trim() && (!needsAmount || amount);
+  const needsTitle = kind !== "weight" && kind !== "mood";
+  const canSave = (!needsTitle || title.trim()) && (!needsAmount || amount);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -176,20 +180,24 @@ export function QuickCaptureSheet({ onClose }: { onClose: () => void }) {
               </p>
             )}
 
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Title"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
-            />
+            {needsTitle && (
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+              />
+            )}
 
             {needsAmount && (
               <input
                 type="number"
                 inputMode="decimal"
+                min={kind === "mood" ? 1 : undefined}
+                max={kind === "mood" ? 5 : undefined}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder={kind === "weight" ? "Weight (kg)" : "Amount (R)"}
+                placeholder={kind === "weight" ? "Weight (kg)" : kind === "mood" ? "Mood (1-5)" : "Amount (R)"}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
               />
             )}
