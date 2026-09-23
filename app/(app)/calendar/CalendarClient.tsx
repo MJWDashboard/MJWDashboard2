@@ -255,7 +255,13 @@ function MonthGrid({
                     <span
                       key={i}
                       className="h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: selected ? "#fff" : e.kind === "important" ? "#A78BFA" : "#007AFF" }}
+                      style={{
+                        backgroundColor: selected
+                          ? "#fff"
+                          : e.kind === "important"
+                            ? "rgb(var(--color-soon))"
+                            : "rgb(var(--color-accent))",
+                      }}
                     />
                   ))}
                 </span>

@@ -10,6 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        navy: "rgb(var(--color-navy) / <alpha-value>)",
+        midnight: "rgb(var(--color-midnight) / <alpha-value>)",
         background: "rgb(var(--color-background) / <alpha-value>)",
         surface: "rgb(var(--color-surface) / <alpha-value>)",
         border: "rgb(var(--color-border) / <alpha-value>)",

@@ -16,17 +16,20 @@ export type NavItem = {
   icon: LucideIcon;
   /** Idle-locked per the architecture doc (15 min, sensitive data). */
   sensitive?: boolean;
-  /** Each module gets its own colour so the nav reads as more than one blue. */
+  /** One brand active colour per the Vorexa interface language spec — module
+   * identity comes from the icon and label only, not from unrelated hues. */
   color: string;
 };
 
+const CORE_TEAL = "#0FAE9C";
+
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/today", label: "Today", icon: LayoutDashboard, color: "#007AFF" },
-  { href: "/health", label: "Health", icon: HeartPulse, sensitive: true, color: "#FB7185" },
-  { href: "/notes", label: "Notes & Lists", icon: StickyNote, color: "#FBBF24" },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays, color: "#A78BFA" },
-  { href: "/money", label: "Money", icon: Wallet, color: "#34D399" },
-  { href: "/vehicle", label: "Vehicle & Travel", icon: Car, color: "#FB923C" },
-  { href: "/pets", label: "Home & Pets", icon: PawPrint, color: "#2DD4BF" },
-  { href: "/vault", label: "Vault", icon: ShieldCheck, sensitive: true, color: "#818CF8" },
+  { href: "/today", label: "Today", icon: LayoutDashboard, color: CORE_TEAL },
+  { href: "/health", label: "Health", icon: HeartPulse, sensitive: true, color: CORE_TEAL },
+  { href: "/notes", label: "Notes & Lists", icon: StickyNote, color: CORE_TEAL },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays, color: CORE_TEAL },
+  { href: "/money", label: "Money", icon: Wallet, color: CORE_TEAL },
+  { href: "/vehicle", label: "Vehicle & Travel", icon: Car, color: CORE_TEAL },
+  { href: "/pets", label: "Home & Pets", icon: PawPrint, color: CORE_TEAL },
+  { href: "/vault", label: "Vault", icon: ShieldCheck, sensitive: true, color: CORE_TEAL },
 ];

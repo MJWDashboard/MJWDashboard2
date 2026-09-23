@@ -11,7 +11,11 @@ import { addTask, updateTask, toggleTask, deleteTask } from "./actions";
 type Task = Tables<"tasks">;
 
 const TIER_LABEL: Record<TaskTier, string> = { critical: "Critical", important: "Important", admin: "Admin" };
-const TIER_COLOR: Record<TaskTier, string> = { critical: "#F26D78", important: "#FBBF24", admin: "#38BDF8" };
+const TIER_COLOR: Record<TaskTier, string> = {
+  critical: "rgb(var(--color-overdue))",
+  important: "rgb(var(--color-soon))",
+  admin: "rgb(var(--color-accent))",
+};
 
 export function TasksCard({ tasks }: { tasks: Task[] }) {
   const router = useRouter();
