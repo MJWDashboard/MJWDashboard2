@@ -1,17 +1,26 @@
-import { House } from "lucide-react";
-import { ComingSoon } from "@/components/ComingSoon";
+import { createClient } from "@/lib/supabase/server";
+import { HomeClient } from "./HomeClient";
 
 export const metadata = { title: "Home" };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+
+  const [{ data: maintenance }, { data: contacts }, { data: bills }] = await Promise.all([
+    supabase.from("home_maintenance").select("*").order("date_reported", { ascending: false }),
+    supabase.from("home_contacts").select("*").order("name", { ascending: true }),
+    supabase
+      .from("recurring_expenses")
+      .select("id, provider, amount, frequency, next_due_date, active")
+      .eq("active", true)
+      .order("next_due_date", { ascending: true }),
+  ]);
+
   return (
-    <ComingSoon
-      icon={House}
-      color="#0FAE9C"
-      eyebrow="Life"
-      title="Home"
-      phase="Coming in Phase 4 — Life Management"
-      detail="Utilities, service providers, maintenance, warranties and household costs in one register, feeding Today when something needs attention."
+    <HomeClient
+      maintenance={maintenance ?? []}
+      contacts={contacts ?? []}
+      bills={bills ?? []}
     />
   );
 }

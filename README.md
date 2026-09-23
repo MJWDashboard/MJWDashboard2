@@ -67,6 +67,34 @@ the Today Wellness card, and Quick Capture gained a Mood type. See
 `supabase/migrations/0022_wellness_v2.sql` — **also not yet applied to the
 live database**, same caveat as 0020/0021 above.
 
+## v2.0 "Life Management" — Phase 4
+
+Adds Goals as a first-class module (purpose, target, deadline, next action,
+milestones, and links to Money savings goals plus any task/habit that
+carries a `goal_id`), a new Life Admin register (passports, licences,
+insurance, warranties, memberships, contracts, subscriptions, tax, policy
+reviews, anniversaries and documents, each with configurable lead-day
+alerts — urgency is computed live from `due_date` + `lead_days` rather than
+a stored status, the same approach as the existing watchlist), a real Home
+module (maintenance register, emergency/service contacts, and a read-only
+bills summary that reuses Money's `recurring_expenses` rather than
+duplicating it — full management stays in Money), and a real Travel module
+(trips with bookings/itinerary/checklist/document/expense items). Notes
+gained tags, a favourite/star, and five new categories (checklist, journal,
+reference, decision, travel note — Personal Journal reuses the notes table
+with `category='journal'` rather than a parallel table); Vault documents
+gained a broad `category` alongside the existing specific `doc_type`, with
+a filter row in the Documents tab. Life Admin action items and upcoming
+trips now feed the Today watchlist, and Goals/Life Admin/Travel/Home
+contacts are searchable from the universal search (⌘K). See
+`supabase/migrations/0023_life_management_v2.sql` — **also not yet applied
+to the live database**, same caveat as 0020/0021/0022 above.
+
+Scope cuts made deliberately rather than left half-built: Home's bills
+section is read-only (manage in Money); household assets stay on the
+existing Pets/Home & Pets page rather than a duplicate Assets tab, since
+they're the same underlying `assets` table.
+
 ## Current state
 
 - **Database** — Supabase project `eaxyxsrsljdonkravpoj`, schema `public`.
@@ -101,10 +129,10 @@ live database**, same caveat as 0020/0021 above.
   count and top-3 watchlist on the schedule in `vercel.json` (04:30 SAST /
   02:30 UTC). It currently logs rather than sending; email/push delivery is
   a future phase once a provider is chosen.
-- **Modules** — Today, Health, Notes & Lists, Calendar (with one-way Google
-  Calendar sync), Money, Vehicle & Travel, Home & Pets and Vault are all
-  live with their own data models — see `supabase/migrations/` for the
-  full schema history.
+- **Modules** — Today, Plan, Wellness, Notes & Lists, Calendar (with one-way
+  Google Calendar sync), Money, Goals, Life Admin, Home, Vehicle, Travel,
+  Home & Pets and Vault are all live with their own data models — see
+  `supabase/migrations/` for the full schema history.
 - **Brand** — public marketing/auth surfaces (landing, login, `/privacy`,
   `/terms`, `/security`, `/popia`, `/contact`) use the Vorexa Core teal/mint
   identity on a Deep Navy canvas; the in-app shell shares the same design
@@ -155,3 +183,10 @@ SQL migrations live in `supabase/migrations/` and have already been applied
 to the `eaxyxsrsljdonkravpoj` project directly. Apply new ones with the
 Supabase CLI or MCP tooling — this repo does not run migrations at deploy
 time.
+
+**`0020_plan_v2.sql` through `0023_life_management_v2.sql` (Phases 1–4) have
+not yet been applied** — this session's Supabase MCP access doesn't reach
+the live project. Apply them in order before the corresponding modules
+(Plan, Money v2, Wellness, Goals/Life Admin/Home/Travel) will work against
+real data; `lib/supabase/database.types.ts` has already been hand-updated
+to match.

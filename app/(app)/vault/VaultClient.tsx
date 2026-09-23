@@ -34,6 +34,10 @@ type Attachment = Tables<"attachments">;
 
 const TABS = ["Documents", "Policies", "Credentials", "Open matters"] as const;
 const DOC_TYPES = ["bank_statement", "will", "insurance", "warranty", "tax", "medical", "vehicle", "property", "legal", "other"];
+const DOC_CATEGORIES = [
+  "identity", "finance", "insurance", "tax", "vehicle", "property",
+  "medical", "estate", "employment", "contracts", "pets", "travel", "receipts", "other",
+] as const;
 
 export function VaultClient({
   documents,
@@ -85,7 +89,11 @@ export function VaultClient({
 function DocumentsTab({ documents, files }: { documents: Document[]; files: Attachment[] }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Document | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [, startTransition] = useTransition();
+
+  const usedCategories = DOC_CATEGORIES.filter((c) => documents.some((d) => d.category === c));
+  const filtered = categoryFilter === "all" ? documents : documents.filter((d) => d.category === categoryFilter);
 
   return (
     <div className="space-y-2">
@@ -93,10 +101,30 @@ function DocumentsTab({ documents, files }: { documents: Document[]; files: Atta
         <Plus size={14} /> Add document
       </button>
 
-      {documents.length === 0 ? (
+      {usedCategories.length > 0 && (
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          <button
+            onClick={() => setCategoryFilter("all")}
+            className={clsx("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium capitalize", categoryFilter === "all" ? "bg-accent text-white" : "border border-border text-muted")}
+          >
+            All
+          </button>
+          {usedCategories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategoryFilter(c)}
+              className={clsx("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium capitalize", categoryFilter === c ? "bg-accent text-white" : "border border-border text-muted")}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
         <EmptyState icon={FileText} title="No documents yet" detail="Track document metadata — bank statements, the will, warranties, tax records." />
       ) : (
-        documents.map((d) => {
+        filtered.map((d) => {
           const expiring = d.expiry_date && new Date(d.expiry_date) < new Date(Date.now() + 45 * 86400000);
           return (
             <div key={d.id} className="card space-y-2">
@@ -104,7 +132,8 @@ function DocumentsTab({ documents, files }: { documents: Document[]; files: Atta
                 <div>
                   <p className="text-sm text-text">{d.doc_type.replace("_", " ")} {d.issuer && `· ${d.issuer}`}</p>
                   <p className="text-xs text-muted">
-                    {d.document_date && new Date(d.document_date).toLocaleDateString("en-ZA")}
+                    <span className="capitalize">{d.category}</span>
+                    {d.document_date && ` · ${new Date(d.document_date).toLocaleDateString("en-ZA")}`}
                     {d.expiry_date && ` · expires ${new Date(d.expiry_date).toLocaleDateString("en-ZA")}`}
                   </p>
                 </div>
@@ -136,6 +165,7 @@ function DocumentsTab({ documents, files }: { documents: Document[]; files: Atta
 
 function DocumentForm({ document, onClose }: { document?: Document; onClose: () => void }) {
   const [docType, setDocType] = useState(document?.doc_type ?? DOC_TYPES[0]);
+  const [category, setCategory] = useState<string>(document?.category ?? "other");
   const [issuer, setIssuer] = useState(document?.issuer ?? "");
   const [docDate, setDocDate] = useState(document?.document_date ?? "");
   const [expiryDate, setExpiryDate] = useState(document?.expiry_date ?? "");
@@ -146,6 +176,7 @@ function DocumentForm({ document, onClose }: { document?: Document; onClose: () 
     startTransition(async () => {
       const fields = {
         doc_type: docType,
+        category,
         issuer: issuer.trim() || null,
         document_date: docDate || null,
         expiry_date: expiryDate || null,
@@ -162,11 +193,18 @@ function DocumentForm({ document, onClose }: { document?: Document; onClose: () 
 
   return (
     <FormSheet title={document ? "Edit document" : "New document"} onClose={onClose}>
-      <select value={docType} onChange={(e) => setDocType(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
-        {DOC_TYPES.map((t) => (
-          <option key={t} value={t}>{t.replace("_", " ")}</option>
-        ))}
-      </select>
+      <div className="grid grid-cols-2 gap-2">
+        <select value={docType} onChange={(e) => setDocType(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
+          {DOC_TYPES.map((t) => (
+            <option key={t} value={t}>{t.replace("_", " ")}</option>
+          ))}
+        </select>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
+          {DOC_CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
       <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Issuer" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <div className="flex gap-2">
         <input value={docDate} onChange={(e) => setDocDate(e.target.value)} type="date" placeholder="Document date" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />

@@ -1,17 +1,26 @@
-import { Target } from "lucide-react";
-import { ComingSoon } from "@/components/ComingSoon";
+import { createClient } from "@/lib/supabase/server";
+import { GoalsClient } from "./GoalsClient";
 
 export const metadata = { title: "Goals" };
 
-export default function GoalsPage() {
+export default async function GoalsPage() {
+  const supabase = await createClient();
+
+  const [{ data: goals }, { data: milestones }, { data: savingsGoals }, { data: taskCounts }, { data: habitCounts }] = await Promise.all([
+    supabase.from("goals").select("*").order("created_at", { ascending: true }),
+    supabase.from("goal_milestones").select("*").order("position", { ascending: true }),
+    supabase.from("savings_goals").select("id, title, current_amount, target_amount"),
+    supabase.from("tasks").select("id, goal_id, status").not("goal_id", "is", null),
+    supabase.from("habits").select("id, goal_id").not("goal_id", "is", null),
+  ]);
+
   return (
-    <ComingSoon
-      icon={Target}
-      color="#0FAE9C"
-      eyebrow="Life Planning"
-      title="Goals"
-      phase="Coming in Phase 4 — Life Management"
-      detail="Personal, financial, wellness and career goals, each with milestones and a visible next action, linked to the tasks and habits that move them forward."
+    <GoalsClient
+      goals={goals ?? []}
+      milestones={milestones ?? []}
+      savingsGoals={savingsGoals ?? []}
+      linkedTasks={taskCounts ?? []}
+      linkedHabits={habitCounts ?? []}
     />
   );
 }

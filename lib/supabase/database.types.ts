@@ -462,6 +462,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          category: string
           created_at: string
           doc_type: string
           document_date: string | null
@@ -475,6 +476,7 @@ export type Database = {
           tax_year: string | null
         }
         Insert: {
+          category?: string
           created_at?: string
           doc_type: string
           document_date?: string | null
@@ -488,6 +490,7 @@ export type Database = {
           tax_year?: string | null
         }
         Update: {
+          category?: string
           created_at?: string
           doc_type?: string
           document_date?: string | null
@@ -945,10 +948,12 @@ export type Database = {
           body: string
           category: string
           created_at: string
+          favourite: boolean
           folder: string | null
           id: string
           owner_id: string
           pinned: boolean
+          tags: string[]
           title: string
           updated_at: string
         }
@@ -957,10 +962,12 @@ export type Database = {
           body?: string
           category?: string
           created_at?: string
+          favourite?: boolean
           folder?: string | null
           id?: string
           owner_id?: string
           pinned?: boolean
+          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -969,10 +976,12 @@ export type Database = {
           body?: string
           category?: string
           created_at?: string
+          favourite?: boolean
           folder?: string | null
           id?: string
           owner_id?: string
           pinned?: boolean
+          tags?: string[]
           title?: string
           updated_at?: string
         }
@@ -1216,6 +1225,7 @@ export type Database = {
           category: string | null
           created_at: string
           frequency: string
+          goal_id: string | null
           icon: string
           id: string
           name: string
@@ -1233,6 +1243,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           frequency?: string
+          goal_id?: string | null
           icon?: string
           id?: string
           name: string
@@ -1250,6 +1261,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           frequency?: string
+          goal_id?: string | null
           icon?: string
           id?: string
           name?: string
@@ -1262,7 +1274,15 @@ export type Database = {
           unit?: string | null
           weekdays?: number[]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "habits_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       habit_logs: {
         Row: {
@@ -1298,6 +1318,282 @@ export type Database = {
             columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          area: string
+          created_at: string
+          deadline: string | null
+          id: string
+          linked_savings_goal_id: string | null
+          next_action: string | null
+          owner_id: string
+          purpose: string | null
+          status: string
+          target: string | null
+          title: string
+        }
+        Insert: {
+          area?: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          linked_savings_goal_id?: string | null
+          next_action?: string | null
+          owner_id?: string
+          purpose?: string | null
+          status?: string
+          target?: string | null
+          title: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          linked_savings_goal_id?: string | null
+          next_action?: string | null
+          owner_id?: string
+          purpose?: string | null
+          status?: string
+          target?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_linked_savings_goal_id_fkey"
+            columns: ["linked_savings_goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_milestones: {
+        Row: {
+          created_at: string
+          done: boolean
+          goal_id: string
+          id: string
+          owner_id: string
+          position: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          goal_id: string
+          id?: string
+          owner_id?: string
+          position?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          goal_id?: string
+          id?: string
+          owner_id?: string
+          position?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_milestones_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      life_admin_items: {
+        Row: {
+          category: string
+          created_at: string
+          due_date: string | null
+          id: string
+          lead_days: number[]
+          notes: string | null
+          owner_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          lead_days?: number[]
+          notes?: string | null
+          owner_id?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          lead_days?: number[]
+          notes?: string | null
+          owner_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      home_maintenance: {
+        Row: {
+          contractor: string | null
+          cost: number | null
+          created_at: string
+          date_reported: string
+          id: string
+          issue: string | null
+          item: string
+          next_service_date: string | null
+          owner_id: string
+          status: string
+        }
+        Insert: {
+          contractor?: string | null
+          cost?: number | null
+          created_at?: string
+          date_reported?: string
+          id?: string
+          issue?: string | null
+          item: string
+          next_service_date?: string | null
+          owner_id?: string
+          status?: string
+        }
+        Update: {
+          contractor?: string | null
+          cost?: number | null
+          created_at?: string
+          date_reported?: string
+          id?: string
+          issue?: string | null
+          item?: string
+          next_service_date?: string | null
+          owner_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      home_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
+      travel_trips: {
+        Row: {
+          budget: number | null
+          created_at: string
+          destination: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          start_date: string | null
+          status: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          destination: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          start_date?: string | null
+          status?: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          destination?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          start_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      travel_items: {
+        Row: {
+          cost: number | null
+          created_at: string
+          detail: string | null
+          done: boolean
+          id: string
+          kind: string
+          owner_id: string
+          position: number
+          title: string
+          trip_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          kind?: string
+          owner_id?: string
+          position?: number
+          title: string
+          trip_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          kind?: string
+          owner_id?: string
+          position?: number
+          title?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "travel_trips"
             referencedColumns: ["id"]
           },
         ]
@@ -1787,6 +2083,7 @@ export type Database = {
           due_date: string | null
           due_time: string | null
           estimated_minutes: number | null
+          goal_id: string | null
           id: string
           is_today_priority: boolean
           notes: string | null
@@ -1810,6 +2107,7 @@ export type Database = {
           due_date?: string | null
           due_time?: string | null
           estimated_minutes?: number | null
+          goal_id?: string | null
           id?: string
           is_today_priority?: boolean
           notes?: string | null
@@ -1833,6 +2131,7 @@ export type Database = {
           due_date?: string | null
           due_time?: string | null
           estimated_minutes?: number | null
+          goal_id?: string | null
           id?: string
           is_today_priority?: boolean
           notes?: string | null
@@ -1861,6 +2160,13 @@ export type Database = {
             columns: ["scheduled_event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
             referencedColumns: ["id"]
           },
         ]

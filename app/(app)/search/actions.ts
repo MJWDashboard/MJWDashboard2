@@ -19,7 +19,7 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
   const supabase = await createClient();
   const like = `%${q}%`;
 
-  const [tasks, notes, listItems, events, importantDates, vehicles, pets, documents, policies, debts, accounts] = await Promise.all([
+  const [tasks, notes, listItems, events, importantDates, vehicles, pets, documents, policies, debts, accounts, goals, lifeAdmin, trips, homeContacts] = await Promise.all([
     supabase.from("tasks").select("id, title, due_date").ilike("title", like).limit(6),
     supabase.from("notes").select("id, title, body").ilike("title", like).limit(6),
     supabase.from("list_items").select("id, name, list_id").ilike("name", like).limit(6),
@@ -31,6 +31,10 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
     supabase.from("policies").select("id, insurer, kind").ilike("insurer", like).limit(6),
     supabase.from("debts").select("id, creditor").ilike("creditor", like).limit(4),
     supabase.from("accounts").select("id, name").ilike("name", like).limit(4),
+    supabase.from("goals").select("id, title, area").ilike("title", like).limit(4),
+    supabase.from("life_admin_items").select("id, title, category").ilike("title", like).limit(4),
+    supabase.from("travel_trips").select("id, destination, status").ilike("destination", like).limit(4),
+    supabase.from("home_contacts").select("id, name, role").ilike("name", like).limit(4),
   ]);
 
   const results: SearchResult[] = [];
@@ -57,6 +61,14 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
     results.push({ id: d.id, title: d.creditor, subtitle: "Debt", category: "Money", href: "/money" });
   for (const a of accounts.data ?? [])
     results.push({ id: a.id, title: a.name, subtitle: "Account", category: "Money", href: "/money" });
+  for (const g of goals.data ?? [])
+    results.push({ id: g.id, title: g.title, subtitle: `${g.area} goal`, category: "Goals", href: "/goals" });
+  for (const la of lifeAdmin.data ?? [])
+    results.push({ id: la.id, title: la.title, subtitle: la.category.replace("_", " "), category: "Life Admin", href: "/life-admin" });
+  for (const t of trips.data ?? [])
+    results.push({ id: t.id, title: t.destination, subtitle: `Trip · ${t.status.replace("_", " ")}`, category: "Travel", href: "/travel" });
+  for (const c of homeContacts.data ?? [])
+    results.push({ id: c.id, title: c.name, subtitle: c.role ?? "Home contact", category: "Home", href: "/home" });
 
   return results;
 }

@@ -15,6 +15,7 @@ async function logAudit(action: string, table: string, recordId?: string) {
 
 export async function createDocument(input: {
   doc_type: string;
+  category: string;
   issuer: string | null;
   document_date: string | null;
   expiry_date: string | null;

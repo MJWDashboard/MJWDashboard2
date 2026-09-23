@@ -15,6 +15,7 @@ import {
   House,
   Plane,
   Inbox,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,6 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/money", label: "Money", icon: Wallet, color: CORE_TEAL },
   { href: "/goals", label: "Goals", icon: Target, color: CORE_TEAL },
   { href: "/life", label: "Life", icon: Compass, color: CORE_TEAL },
+  { href: "/life-admin", label: "Life Admin", icon: ClipboardList, color: CORE_TEAL },
   { href: "/home", label: "Home", icon: House, color: CORE_TEAL },
   { href: "/pets", label: "Home & Pets", icon: PawPrint, color: CORE_TEAL },
   { href: "/vehicle", label: "Vehicle & Travel", icon: Car, color: CORE_TEAL },
@@ -66,7 +68,7 @@ export const SIDEBAR_ITEMS = pick("/today", "/plan", "/inbox", "/calendar", "/he
 export const BOTTOM_NAV_ITEMS = pick("/today", "/plan", "/money");
 
 /** Mobile "More" sheet — every other module, flat (not grouped under Life). */
-export const MORE_SHEET_ITEMS = pick("/inbox", "/health", "/goals", "/home", "/pets", "/vehicle", "/travel", "/notes", "/vault", "/insights", "/settings");
+export const MORE_SHEET_ITEMS = pick("/inbox", "/health", "/goals", "/life-admin", "/home", "/pets", "/vehicle", "/travel", "/notes", "/vault", "/insights", "/settings");
 
 /** Cards on the Life hub page (desktop's stand-in for the flat mobile list). */
-export const LIFE_HUB_ITEMS = pick("/home", "/pets", "/vehicle", "/travel");
+export const LIFE_HUB_ITEMS = pick("/life-admin", "/home", "/pets", "/vehicle", "/travel");

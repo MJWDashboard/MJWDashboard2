@@ -6,6 +6,7 @@ import { LIFE_HUB_ITEMS } from "@/lib/nav";
 export const metadata = { title: "Life" };
 
 const DETAIL: Record<string, string> = {
+  "/life-admin": "Passports, licences, insurance, warranties and renewals with lead-time alerts.",
   "/home": "Utilities, maintenance, warranties and household costs.",
   "/pets": "Profiles, care schedules, vet visits and recurring costs.",
   "/vehicle": "Fuel, services, licence renewals and cost per kilometre.",

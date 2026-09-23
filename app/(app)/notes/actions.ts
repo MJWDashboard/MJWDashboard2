@@ -18,7 +18,10 @@ export async function createNote(title: string, category: string = "note") {
   return { data, error: error?.message ?? null };
 }
 
-export async function updateNote(id: string, fields: { title?: string; body?: string; category?: string }) {
+export async function updateNote(
+  id: string,
+  fields: { title?: string; body?: string; category?: string; tags?: string[]; favourite?: boolean }
+) {
   const supabase = await client();
   const { error } = await supabase
     .from("notes")
