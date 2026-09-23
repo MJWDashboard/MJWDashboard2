@@ -137,7 +137,7 @@ function TripForm({ trip, items = [], onClose }: { trip?: Trip; items?: Item[]; 
       <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{trip ? "Edit trip" : "New trip"}</p>
-          <button onClick={onClose} className="text-muted hover:text-text"><X size={18} /></button>
+          <button onClick={onClose} className="text-muted hover:text-text" aria-label="Close"><X size={18} /></button>
         </div>
 
         <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Destination" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -161,6 +161,7 @@ function TripForm({ trip, items = [], onClose }: { trip?: Trip; items?: Item[]; 
                 <button
                   onClick={() => startTransition(() => toggleTripItem(i.id, !i.done))}
                   className={clsx("flex h-5 w-5 items-center justify-center rounded-full border", i.done ? "border-ok bg-ok text-white" : "border-border")}
+                  aria-label={i.done ? "Mark item not done" : "Mark item done"}
                 >
                   {i.done && <Check size={12} />}
                 </button>
@@ -168,7 +169,7 @@ function TripForm({ trip, items = [], onClose }: { trip?: Trip; items?: Item[]; 
                   {i.title} <span className="text-[10px] uppercase text-muted">{i.kind}</span>
                 </span>
                 {i.cost != null && <span data-sensitive className="tabular text-xs text-muted">{formatZAR(Number(i.cost))}</span>}
-                <button onClick={() => startTransition(() => deleteTripItem(i.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => startTransition(() => deleteTripItem(i.id))} className="text-muted hover:text-overdue" aria-label="Delete item">
                   <Trash2 size={12} />
                 </button>
               </div>
@@ -178,14 +179,14 @@ function TripForm({ trip, items = [], onClose }: { trip?: Trip; items?: Item[]; 
                 {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
               <input value={newItemTitle} onChange={(e) => setNewItemTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addItem()} placeholder="Add item" className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-accent" />
-              <button onClick={addItem} className="btn-secondary px-2"><Plus size={14} /></button>
+              <button onClick={addItem} className="btn-secondary px-2" aria-label="Add item"><Plus size={14} /></button>
             </div>
           </div>
         )}
 
         <div className="flex gap-2">
           {trip && (
-            <button onClick={() => startTransition(async () => { await deleteTrip(trip.id); onClose(); })} className="btn-secondary px-3 text-overdue">
+            <button onClick={() => startTransition(async () => { await deleteTrip(trip.id); onClose(); })} className="btn-secondary px-3 text-overdue" aria-label="Delete trip">
               <Trash2 size={16} />
             </button>
           )}

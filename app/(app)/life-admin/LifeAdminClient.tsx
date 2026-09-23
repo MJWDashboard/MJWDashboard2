@@ -137,7 +137,7 @@ function ItemForm({ item, onClose }: { item?: Item; onClose: () => void }) {
       <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{item ? "Edit item" : "New item"}</p>
-          <button onClick={onClose} className="text-muted hover:text-text"><X size={18} /></button>
+          <button onClick={onClose} className="text-muted hover:text-text" aria-label="Close"><X size={18} /></button>
         </div>
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (e.g. Passport renewal)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -153,7 +153,7 @@ function ItemForm({ item, onClose }: { item?: Item; onClose: () => void }) {
 
         <div className="flex gap-2">
           {item && (
-            <button onClick={() => startTransition(async () => { await deleteLifeAdminItem(item.id); onClose(); })} className="btn-secondary px-3 text-overdue">
+            <button onClick={() => startTransition(async () => { await deleteLifeAdminItem(item.id); onClose(); })} className="btn-secondary px-3 text-overdue" aria-label="Delete item">
               <Trash2 size={16} />
             </button>
           )}

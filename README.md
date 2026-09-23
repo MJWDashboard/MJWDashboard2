@@ -121,6 +121,37 @@ says so rather than pretending to work. Answers are logged to
 `supabase/migrations/0024_intelligence_v2.sql` — **also not yet applied to
 the live database**, same caveat as 0020–0023 above.
 
+## v2.0 "Professionalisation" — Phase 6 (partial)
+
+This phase is about hardening rather than new features, and most of its
+items (a real backup strategy, error monitoring, field-level encryption)
+need external credentials or a live/connected environment this sandboxed
+session doesn't have — see "Not yet built" below for what's still
+genuinely outstanding. What was actually completable this session:
+
+- **Fixed a filter-injection bug** in universal search: two queries built
+  their PostgREST `.or()` filter by interpolating the raw search string
+  directly into it, so a query containing a comma or parenthesis could
+  rewrite the filter's own logic (RLS still limited it to the owner's own
+  rows, so this was never a cross-account leak, but it could still break
+  or misdirect a search). Replaced both with two plain `ilike()` queries
+  merged in code, the same fix pattern used for the rest of the app's
+  search calls. Reviewed the rest of the codebase for `dangerouslySetInnerHTML`,
+  `.rpc()` and similar interpolation-into-query patterns — none found.
+- **Data export** (`Settings → Your data → Export my data`) — the
+  completable slice of the spec's broader import/export item. Bundles
+  every one of the owner's own records, across every module, into one
+  downloadable JSON file. Deliberately excludes `google_accounts` (holds
+  live OAuth tokens) and the internal `audit_log`.
+- **Accessibility pass** on every icon-only button added in Phases 4–5
+  (close/delete/toggle/add controls that had no visible text) — added
+  `aria-label`s so screen readers announce what each one does.
+- **PWA review** — confirmed the existing service worker and manifest need
+  no changes: the service worker is a deliberate route-agnostic
+  passthrough (no per-page cache list to maintain) and `start_url: "/today"`
+  is still correct, so every module added across Phases 1–5 is already
+  covered without modification.
+
 ## Current state
 
 - **Database** — Supabase project `eaxyxsrsljdonkravpoj`, schema `public`.
@@ -179,6 +210,16 @@ the live database**, same caveat as 0020–0023 above.
 - Field-level encryption for Vault/Health sensitive fields, and the nightly
   Drive backup (needs its own OAuth/credential setup before it can be
   wired up)
+- Error monitoring (Sentry or similar — needs its own account/DSN)
+- A first-login onboarding flow
+- A full accessibility audit (automated, e.g. axe/Lighthouse, plus a manual
+  screen-reader pass) and a full security audit (dependency scanning,
+  pen-test-style review) — this session's Phase 6 work fixed one real
+  issue it found (search filter injection) and did a manual pass over the
+  Phase 4/5 UI, but that is a spot-check, not an audit
+- Broader CSV/JSON import beyond Money's bank-statement importer (the new
+  Settings → Export covers read-only export of every module; import
+  remains Money-only)
 
 ## Local setup
 

@@ -196,7 +196,7 @@ function MaintenanceForm({ item, onClose }: { item?: Maintenance; onClose: () =>
       </div>
       {item && (
         <div className="flex gap-2">
-          <button onClick={() => startTransition(async () => { await deleteMaintenanceItem(item.id); onClose(); })} className="btn-secondary px-3 text-overdue"><Trash2 size={16} /></button>
+          <button onClick={() => startTransition(async () => { await deleteMaintenanceItem(item.id); onClose(); })} className="btn-secondary px-3 text-overdue" aria-label="Delete maintenance entry"><Trash2 size={16} /></button>
           <button onClick={save} disabled={pending} className="btn-primary flex-1">Save changes</button>
         </div>
       )}
@@ -264,7 +264,7 @@ function ContactForm({ contact, onClose }: { contact?: Contact; onClose: () => v
       <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes" rows={2} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       {contact && (
         <div className="flex gap-2">
-          <button onClick={() => startTransition(async () => { await deleteHomeContact(contact.id); onClose(); })} className="btn-secondary px-3 text-overdue"><Trash2 size={16} /></button>
+          <button onClick={() => startTransition(async () => { await deleteHomeContact(contact.id); onClose(); })} className="btn-secondary px-3 text-overdue" aria-label="Delete contact"><Trash2 size={16} /></button>
           <button onClick={save} disabled={pending} className="btn-primary flex-1">Save changes</button>
         </div>
       )}
@@ -279,7 +279,7 @@ function FormSheet({ title, onClose, children }: { title: string; onClose: () =>
       <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{title}</p>
-          <button onClick={onClose} className="text-muted hover:text-text"><X size={18} /></button>
+          <button onClick={onClose} className="text-muted hover:text-text" aria-label="Close"><X size={18} /></button>
         </div>
         {children}
       </div>

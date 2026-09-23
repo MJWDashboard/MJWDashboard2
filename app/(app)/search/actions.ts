@@ -19,15 +19,39 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
   const supabase = await createClient();
   const like = `%${q}%`;
 
-  const [tasks, notes, listItems, events, importantDates, vehicles, pets, documents, policies, debts, accounts, goals, lifeAdmin, trips, homeContacts] = await Promise.all([
+  const [
+    tasks,
+    notes,
+    listItems,
+    events,
+    importantDates,
+    vehiclesByMake,
+    vehiclesByModel,
+    pets,
+    documentsByType,
+    documentsByIssuer,
+    policies,
+    debts,
+    accounts,
+    goals,
+    lifeAdmin,
+    trips,
+    homeContacts,
+  ] = await Promise.all([
     supabase.from("tasks").select("id, title, due_date").ilike("title", like).limit(6),
     supabase.from("notes").select("id, title, body").ilike("title", like).limit(6),
     supabase.from("list_items").select("id, name, list_id").ilike("name", like).limit(6),
     supabase.from("events").select("id, title, starts_at").ilike("title", like).limit(6),
     supabase.from("important_dates").select("id, title").ilike("title", like).limit(4),
-    supabase.from("vehicles").select("id, make, model").or(`make.ilike.${like},model.ilike.${like}`).limit(4),
+    // Two plain ilike queries merged below, rather than a single .or() with
+    // the query interpolated into its filter string — PostgREST's or()
+    // syntax treats comma/parentheses as delimiters, so a search containing
+    // them would otherwise let the input rewrite the query's own filter.
+    supabase.from("vehicles").select("id, make, model").ilike("make", like).limit(4),
+    supabase.from("vehicles").select("id, make, model").ilike("model", like).limit(4),
     supabase.from("pets").select("id, name, breed").ilike("name", like).limit(4),
-    supabase.from("documents").select("id, doc_type, issuer").or(`doc_type.ilike.${like},issuer.ilike.${like}`).limit(6),
+    supabase.from("documents").select("id, doc_type, issuer").ilike("doc_type", like).limit(6),
+    supabase.from("documents").select("id, doc_type, issuer").ilike("issuer", like).limit(6),
     supabase.from("policies").select("id, insurer, kind").ilike("insurer", like).limit(6),
     supabase.from("debts").select("id, creditor").ilike("creditor", like).limit(4),
     supabase.from("accounts").select("id, name").ilike("name", like).limit(4),
@@ -36,6 +60,9 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
     supabase.from("travel_trips").select("id, destination, status").ilike("destination", like).limit(4),
     supabase.from("home_contacts").select("id, name, role").ilike("name", like).limit(4),
   ]);
+
+  const vehicleById = new Map((vehiclesByMake.data ?? []).concat(vehiclesByModel.data ?? []).map((v) => [v.id, v]));
+  const documentById = new Map((documentsByType.data ?? []).concat(documentsByIssuer.data ?? []).map((d) => [d.id, d]));
 
   const results: SearchResult[] = [];
 
@@ -49,11 +76,11 @@ export async function searchEverything(query: string): Promise<SearchResult[]> {
     results.push({ id: e.id, title: e.title, subtitle: new Date(e.starts_at).toLocaleDateString("en-ZA"), category: "Calendar", href: "/calendar" });
   for (const d of importantDates.data ?? [])
     results.push({ id: d.id, title: d.title, subtitle: "Important date", category: "Calendar", href: "/calendar" });
-  for (const v of vehicles.data ?? [])
+  for (const v of vehicleById.values())
     results.push({ id: v.id, title: `${v.make} ${v.model}`, subtitle: "Vehicle", category: "Vehicle & Travel", href: "/vehicle" });
   for (const p of pets.data ?? [])
     results.push({ id: p.id, title: p.name, subtitle: p.breed ?? "Pet", category: "Home & Pets", href: "/pets" });
-  for (const doc of documents.data ?? [])
+  for (const doc of documentById.values())
     results.push({ id: doc.id, title: doc.doc_type, subtitle: doc.issuer ?? "Document", category: "Vault", href: "/vault" });
   for (const pol of policies.data ?? [])
     results.push({ id: pol.id, title: pol.insurer, subtitle: `${pol.kind} policy`, category: "Vault", href: "/vault" });

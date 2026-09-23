@@ -189,7 +189,7 @@ function GoalForm({
       <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-text">{goal ? "Edit goal" : "New goal"}</p>
-          <button onClick={onClose} className="text-muted hover:text-text"><X size={18} /></button>
+          <button onClick={onClose} className="text-muted hover:text-text" aria-label="Close"><X size={18} /></button>
         </div>
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Goal title" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
@@ -221,25 +221,26 @@ function GoalForm({
                 <button
                   onClick={() => startTransition(() => toggleMilestone(m.id, !m.done))}
                   className={clsx("flex h-5 w-5 items-center justify-center rounded-full border", m.done ? "border-ok bg-ok text-white" : "border-border")}
+                  aria-label={m.done ? "Mark milestone incomplete" : "Mark milestone done"}
                 >
                   {m.done && <Check size={12} />}
                 </button>
                 <span className={clsx("flex-1 text-sm", m.done ? "text-muted line-through" : "text-text")}>{m.title}</span>
-                <button onClick={() => startTransition(() => deleteMilestone(m.id))} className="text-muted hover:text-overdue">
+                <button onClick={() => startTransition(() => deleteMilestone(m.id))} className="text-muted hover:text-overdue" aria-label="Delete milestone">
                   <Trash2 size={12} />
                 </button>
               </div>
             ))}
             <div className="flex gap-2">
               <input value={newMilestone} onChange={(e) => setNewMilestone(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addMilestone()} placeholder="Add milestone" className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-accent" />
-              <button onClick={addMilestone} className="btn-secondary px-2"><Plus size={14} /></button>
+              <button onClick={addMilestone} className="btn-secondary px-2" aria-label="Add milestone"><Plus size={14} /></button>
             </div>
           </div>
         )}
 
         <div className="flex gap-2">
           {goal && (
-            <button onClick={() => startTransition(async () => { await deleteGoal(goal.id); onClose(); })} className="btn-secondary px-3 text-overdue">
+            <button onClick={() => startTransition(async () => { await deleteGoal(goal.id); onClose(); })} className="btn-secondary px-3 text-overdue" aria-label="Delete goal">
               <Trash2 size={16} />
             </button>
           )}

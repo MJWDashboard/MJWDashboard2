@@ -76,7 +76,7 @@ export function AssistantClient({ history, hasApiKey }: { history: Query[]; hasA
           disabled={!hasApiKey}
           className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent disabled:opacity-50"
         />
-        <button onClick={() => ask(question)} disabled={!hasApiKey || pending} className="btn-primary px-3">
+        <button onClick={() => ask(question)} disabled={!hasApiKey || pending} className="btn-primary px-3" aria-label="Ask">
           <Send size={16} />
         </button>
       </div>
