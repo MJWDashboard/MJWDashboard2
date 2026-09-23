@@ -2392,6 +2392,99 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reviews: {
+        Row: {
+          challenges_note: string | null
+          created_at: string
+          id: string
+          overall_rating: number | null
+          owner_id: string
+          priorities_next_week: string | null
+          week_start: string
+          wins_note: string | null
+        }
+        Insert: {
+          challenges_note?: string | null
+          created_at?: string
+          id?: string
+          overall_rating?: number | null
+          owner_id?: string
+          priorities_next_week?: string | null
+          week_start: string
+          wins_note?: string | null
+        }
+        Update: {
+          challenges_note?: string | null
+          created_at?: string
+          id?: string
+          overall_rating?: number | null
+          owner_id?: string
+          priorities_next_week?: string | null
+          week_start?: string
+          wins_note?: string | null
+        }
+        Relationships: []
+      }
+      monthly_reviews: {
+        Row: {
+          created_at: string
+          focus_next_month: string | null
+          goals_note: string | null
+          id: string
+          net_worth_note: string | null
+          overall_rating: number | null
+          owner_id: string
+          review_month: string
+          spending_note: string | null
+        }
+        Insert: {
+          created_at?: string
+          focus_next_month?: string | null
+          goals_note?: string | null
+          id?: string
+          net_worth_note?: string | null
+          overall_rating?: number | null
+          owner_id?: string
+          review_month: string
+          spending_note?: string | null
+        }
+        Update: {
+          created_at?: string
+          focus_next_month?: string | null
+          goals_note?: string | null
+          id?: string
+          net_worth_note?: string | null
+          overall_rating?: number | null
+          owner_id?: string
+          review_month?: string
+          spending_note?: string | null
+        }
+        Relationships: []
+      }
+      assistant_queries: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          owner_id: string
+          question: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          question: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          question?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

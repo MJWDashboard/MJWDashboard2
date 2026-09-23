@@ -95,6 +95,32 @@ section is read-only (manage in Money); household assets stay on the
 existing Pets/Home & Pets page rather than a duplicate Assets tab, since
 they're the same underlying `assets` table.
 
+## v2.0 "Intelligence" — Phase 5
+
+Adds a real Insights module (replacing the placeholder): short, factual,
+computed-live observations across Money (spend pace vs last month, budget
+over-runs, projected month-end spend vs plan, a cash-flow runway warning
+against committed bills and debt minimums, top merchant, net worth change,
+debt-free date at current minimum payments), Time (task completion rate,
+overdue count), Habits (30-day completion rate, current/best streaks) and
+Vehicle (cost per km). Deliberately no generic motivational copy — every
+line names a real number pulled from the owner's own records, the same
+computed-not-stored approach as `lib/watchlist.ts`. Adds guided **Weekly
+Review** and **Monthly Review** flows (`/insights/weekly-review`,
+`/insights/monthly-review`) that open with the week's/month's actual
+numbers before asking for reflection notes and a rating, saved to the new
+`weekly_reviews`/`monthly_reviews` tables. Adds a **Core Assistant**
+(`/assistant`) — ask a natural-language question about your own data (spend,
+tasks, habits, goals, upcoming bills); a server action assembles a compact,
+bounded JSON snapshot of the owner's own records and calls the Claude API
+with an explicit instruction to answer only from that context and say so
+plainly when something isn't on file, never to invent numbers. Requires
+`ANTHROPIC_API_KEY` (same env var Quick Capture uses) — without it the page
+says so rather than pretending to work. Answers are logged to
+`assistant_queries` for the owner's own history. See
+`supabase/migrations/0024_intelligence_v2.sql` — **also not yet applied to
+the live database**, same caveat as 0020–0023 above.
+
 ## Current state
 
 - **Database** — Supabase project `eaxyxsrsljdonkravpoj`, schema `public`.
@@ -131,8 +157,9 @@ they're the same underlying `assets` table.
   a future phase once a provider is chosen.
 - **Modules** — Today, Plan, Wellness, Notes & Lists, Calendar (with one-way
   Google Calendar sync), Money, Goals, Life Admin, Home, Vehicle, Travel,
-  Home & Pets and Vault are all live with their own data models — see
-  `supabase/migrations/` for the full schema history.
+  Home & Pets, Vault, Insights and the Core Assistant are all live with
+  their own data models — see `supabase/migrations/` for the full schema
+  history.
 - **Brand** — public marketing/auth surfaces (landing, login, `/privacy`,
   `/terms`, `/security`, `/popia`, `/contact`) use the Vorexa Core teal/mint
   identity on a Deep Navy canvas; the in-app shell shares the same design
@@ -184,9 +211,9 @@ to the `eaxyxsrsljdonkravpoj` project directly. Apply new ones with the
 Supabase CLI or MCP tooling — this repo does not run migrations at deploy
 time.
 
-**`0020_plan_v2.sql` through `0023_life_management_v2.sql` (Phases 1–4) have
+**`0020_plan_v2.sql` through `0024_intelligence_v2.sql` (Phases 1–5) have
 not yet been applied** — this session's Supabase MCP access doesn't reach
 the live project. Apply them in order before the corresponding modules
-(Plan, Money v2, Wellness, Goals/Life Admin/Home/Travel) will work against
-real data; `lib/supabase/database.types.ts` has already been hand-updated
-to match.
+(Plan, Money v2, Wellness, Goals/Life Admin/Home/Travel, Insights/Reviews/
+Assistant) will work against real data; `lib/supabase/database.types.ts`
+has already been hand-updated to match.
