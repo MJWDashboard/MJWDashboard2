@@ -29,6 +29,30 @@ could only be written to the repo, not run. Apply it via the Supabase CLI
 or SQL editor before deploying this branch, or the new Plan/Today code will
 error against the old `tasks` schema.
 
+## v2.0 "Financial Core" — Phase 2
+
+Phase 2 extends the existing Money module (which already had accounts,
+transactions, category budgets and debt tracking) rather than replacing it:
+a Money Command Centre dashboard (cash/income/expenses/remaining
+budget/debt/savings/net worth/cash flow), category management (rename/
+hide/reorder + Flexible Budget grouping), a Needs-Review queue with
+merchant→category memory, CSV import v2 (column mapping, duplicate
+detection, reusable per-bank templates), a Recurring Expenses/Subscriptions
+register with review flagging, a Debt Payoff Simulator (snowball/avalanche/
+custom strategies with scenario comparison), Savings Goals, and a Net Worth
+tracker with monthly snapshots. Recurring expenses and debts due soon feed
+the Today watchlist and Money Today card. See
+`supabase/migrations/0021_money_v2.sql` — **also not yet applied to the
+live database**, same caveat as 0020 above.
+
+Expense Analytics is intentionally kept lean (top merchants + largest
+expenses on the Overview tab) rather than a separate page — a full
+dedicated analytics view is Phase 5 (Insights) work. Financial Import is
+Phase 1 only (CSV/manual mapping) — email statement extraction and
+consent-based bank integration are Phase 2/3 of that specific spec section
+and were not attempted (no online banking credentials are ever requested
+or stored, per the spec).
+
 ## Current state
 
 - **Database** — Supabase project `eaxyxsrsljdonkravpoj`, schema `public`.

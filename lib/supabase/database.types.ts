@@ -16,34 +16,52 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          active: boolean
           created_at: string
+          credit_limit: number | null
           entity_id: string | null
           id: string
+          institution: string | null
+          interest_rate: number | null
           is_cash: boolean
           kind: string
+          minimum_payment: number | null
           name: string
           opening_balance: number
           owner_id: string
+          payment_date: number | null
         }
         Insert: {
+          active?: boolean
           created_at?: string
+          credit_limit?: number | null
           entity_id?: string | null
           id?: string
+          institution?: string | null
+          interest_rate?: number | null
           is_cash?: boolean
           kind: string
+          minimum_payment?: number | null
           name: string
           opening_balance?: number
           owner_id?: string
+          payment_date?: number | null
         }
         Update: {
+          active?: boolean
           created_at?: string
+          credit_limit?: number | null
           entity_id?: string | null
           id?: string
+          institution?: string | null
+          interest_rate?: number | null
           is_cash?: boolean
           kind?: string
+          minimum_payment?: number | null
           name?: string
           opening_balance?: number
           owner_id?: string
+          payment_date?: number | null
         }
         Relationships: [
           {
@@ -262,25 +280,34 @@ export type Database = {
       }
       categories: {
         Row: {
+          budget_group: string
           created_at: string
+          hidden: boolean
           id: string
           kind: string
           name: string
           owner_id: string
+          position: number
         }
         Insert: {
+          budget_group?: string
           created_at?: string
+          hidden?: boolean
           id?: string
           kind?: string
           name: string
           owner_id?: string
+          position?: number
         }
         Update: {
+          budget_group?: string
           created_at?: string
+          hidden?: boolean
           id?: string
           kind?: string
           name?: string
           owner_id?: string
+          position?: number
         }
         Relationships: []
       }
@@ -1204,6 +1231,207 @@ export type Database = {
         }
         Relationships: []
       }
+      import_templates: {
+        Row: {
+          column_mapping: Json
+          created_at: string
+          date_format: string
+          delimiter: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          column_mapping: Json
+          created_at?: string
+          date_format?: string
+          delimiter?: string
+          id?: string
+          name: string
+          owner_id?: string
+        }
+        Update: {
+          column_mapping?: Json
+          created_at?: string
+          date_format?: string
+          delimiter?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      merchant_category_rules: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          merchant_pattern: string
+          owner_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          merchant_pattern: string
+          owner_id?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          merchant_pattern?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_category_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      net_worth_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          net_worth: number
+          owner_id: string
+          snapshot_month: string
+          total_assets: number
+          total_liabilities: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          net_worth: number
+          owner_id?: string
+          snapshot_month: string
+          total_assets: number
+          total_liabilities: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          net_worth?: number
+          owner_id?: string
+          snapshot_month?: string
+          total_assets?: number
+          total_liabilities?: number
+        }
+        Relationships: []
+      }
+      recurring_expenses: {
+        Row: {
+          active: boolean
+          amount: number
+          annual_increase_pct: number | null
+          cancellation_notice_days: number | null
+          category_id: string | null
+          contract_end_date: string | null
+          created_at: string
+          frequency: string
+          id: string
+          last_reviewed_at: string | null
+          next_due_date: string | null
+          notes: string | null
+          owner_id: string
+          payment_method: string | null
+          provider: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          annual_increase_pct?: number | null
+          cancellation_notice_days?: number | null
+          category_id?: string | null
+          contract_end_date?: string | null
+          created_at?: string
+          frequency?: string
+          id?: string
+          last_reviewed_at?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          owner_id?: string
+          payment_method?: string | null
+          provider: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          annual_increase_pct?: number | null
+          cancellation_notice_days?: number | null
+          category_id?: string | null
+          contract_end_date?: string | null
+          created_at?: string
+          frequency?: string
+          id?: string
+          last_reviewed_at?: string | null
+          next_due_date?: string | null
+          notes?: string | null
+          owner_id?: string
+          payment_method?: string | null
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_goals: {
+        Row: {
+          created_at: string
+          current_amount: number
+          id: string
+          linked_account_id: string | null
+          monthly_contribution: number | null
+          owner_id: string
+          status: string
+          target_amount: number
+          target_date: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          linked_account_id?: string | null
+          monthly_contribution?: number | null
+          owner_id?: string
+          status?: string
+          target_amount: number
+          target_date?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          linked_account_id?: string | null
+          monthly_contribution?: number | null
+          owner_id?: string
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_goals_linked_account_id_fkey"
+            columns: ["linked_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           amount_at_risk: number | null
@@ -1505,8 +1733,14 @@ export type Database = {
           description: string
           entity_id: string | null
           id: string
+          merchant: string | null
+          notes: string | null
           occurred_at: string
           owner_id: string
+          payment_method: string | null
+          recurring: boolean
+          reviewed: boolean
+          tags: string[]
         }
         Insert: {
           account_id: string
@@ -1516,8 +1750,14 @@ export type Database = {
           description?: string
           entity_id?: string | null
           id?: string
+          merchant?: string | null
+          notes?: string | null
           occurred_at?: string
           owner_id?: string
+          payment_method?: string | null
+          recurring?: boolean
+          reviewed?: boolean
+          tags?: string[]
         }
         Update: {
           account_id?: string
@@ -1527,8 +1767,14 @@ export type Database = {
           description?: string
           entity_id?: string | null
           id?: string
+          merchant?: string | null
+          notes?: string | null
           occurred_at?: string
           owner_id?: string
+          payment_method?: string | null
+          recurring?: boolean
+          reviewed?: boolean
+          tags?: string[]
         }
         Relationships: [
           {

@@ -52,6 +52,7 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     { data: debts },
     { data: matters },
     { data: appointments },
+    { data: recurringExpenses },
   ] = await Promise.all([
     supabase.from("vehicles").select("id, make, model, licence_disc_expiry"),
     supabase.from("services").select("id, work_done, next_due_date"),
@@ -61,6 +62,7 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     supabase.from("debts").select("id, creditor, balance, due_day, minimum_payment, status"),
     supabase.from("matters").select("id, matter, due_date, status"),
     supabase.from("appointments").select("id, provider, follow_up_date, completed"),
+    supabase.from("recurring_expenses").select("id, provider, amount, next_due_date, contract_end_date, active"),
   ]);
 
   const items: WatchlistItem[] = [];
@@ -174,6 +176,36 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         severity: "soon",
         href: "/money",
       });
+    }
+  }
+
+  for (const r of recurringExpenses ?? []) {
+    if (!r.active) continue;
+    if (r.next_due_date) {
+      const severity = severityForDays(daysUntilDate(r.next_due_date, today));
+      if (severity === "soon" && daysUntilDate(r.next_due_date, today) <= DEBT_DUE_WINDOW_DAYS) {
+        items.push({
+          id: `recurring-due-${r.id}`,
+          title: `${r.provider} payment due`,
+          due_at: r.next_due_date,
+          amount_at_risk: r.amount,
+          severity: "soon",
+          href: "/money",
+        });
+      }
+    }
+    if (r.contract_end_date) {
+      const severity = severityForDays(daysUntilDate(r.contract_end_date, today));
+      if (severity) {
+        items.push({
+          id: `recurring-contract-${r.id}`,
+          title: `${r.provider} contract ending`,
+          due_at: r.contract_end_date,
+          amount_at_risk: null,
+          severity,
+          href: "/money",
+        });
+      }
     }
   }
 

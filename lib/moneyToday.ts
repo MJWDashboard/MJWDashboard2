@@ -18,10 +18,11 @@ export async function getMoneyToday(): Promise<MoneyToday> {
   const todayISO = today.toISOString().slice(0, 10);
   const month = currentMonth(today);
 
-  const [{ data: accounts }, { data: transactions }, { data: debts }] = await Promise.all([
+  const [{ data: accounts }, { data: transactions }, { data: debts }, { data: recurring }] = await Promise.all([
     supabase.from("accounts").select("*"),
     supabase.from("transactions").select("*"),
     supabase.from("debts").select("id, creditor, minimum_payment, balance, due_day, status").eq("status", "active"),
+    supabase.from("recurring_expenses").select("id, provider, amount, next_due_date, active").eq("active", true),
   ]);
 
   const txns = transactions ?? [];
@@ -43,6 +44,15 @@ export async function getMoneyToday(): Promise<MoneyToday> {
     }
     if (days >= 0 && days <= 7 && (!debtDueSoon || days < debtDueSoon.dueInDays)) {
       debtDueSoon = { creditor: d.creditor, amount: Number(amount ?? 0), dueInDays: days };
+    }
+  }
+
+  for (const r of recurring ?? []) {
+    if (!r.next_due_date) continue;
+    const days = Math.round((new Date(r.next_due_date).getTime() - today.getTime()) / 86400000);
+    if (days >= 0 && days <= 30) {
+      upcomingBillsCount += 1;
+      upcomingBillsTotal += Number(r.amount);
     }
   }
 
