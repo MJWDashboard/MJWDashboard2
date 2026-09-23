@@ -33,6 +33,24 @@ export function monthToDateSpend(transactions: Transaction[], categoryId: string
     .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
 }
 
+export function totalMonthToDateExpenses(transactions: Transaction[], month: string) {
+  return transactions
+    .filter((t) => t.occurred_at.startsWith(month) && Number(t.amount) < 0)
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+}
+
+export function totalMonthToDateIncome(transactions: Transaction[], month: string) {
+  return transactions
+    .filter((t) => t.occurred_at.startsWith(month) && Number(t.amount) > 0)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+}
+
+export function todaysSpend(transactions: Transaction[], todayISO: string) {
+  return transactions
+    .filter((t) => t.occurred_at === todayISO && Number(t.amount) < 0)
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+}
+
 export function formatZAR(amount: number) {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", maximumFractionDigits: 0 }).format(amount);
 }

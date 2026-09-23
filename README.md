@@ -1,13 +1,33 @@
 # Vorexa Core
 
-A private, single-owner personal operating system — Today, Health, Notes &
-Lists, Calendar, Money, Vehicle & Travel, Home & Pets and Vault — built on
-Next.js (App Router) + TypeScript + Supabase, deployed on Vercel. It is
-deliberately separate from any multi-tenant platform: its own Supabase
-project, its own login, its own Google connection. It shares its visual
-identity, component language and legal/footer structure with the wider
-Vorexa product family (see the Vorexa Master Brand Identity & Product
+A private, single-owner personal operating system — Today, Plan, Wellness,
+Money, Goals, Life (Home/Pets/Vehicle/Travel), Notes & Lists and Vault —
+built on Next.js (App Router) + TypeScript + Supabase, deployed on Vercel.
+It is deliberately separate from any multi-tenant platform: its own
+Supabase project, its own login, its own Google connection. It shares its
+visual identity, component language and legal/footer structure with the
+wider Vorexa product family (see the Vorexa Master Brand Identity & Product
 System spec) but is otherwise fully independent.
+
+## v2.0 "Daily OS" — Phase 1
+
+Per the Vorexa Core v2.0 Personal Operating System Upgrade Build Scope,
+Phase 1 (Daily OS) is built: a rebuilt Today command centre, a real Plan
+module (rich tasks with subtasks/priority/status/due dates/time-blocking/
+focus timer), Universal Quick Capture (natural-language, AI-assisted when
+`ANTHROPIC_API_KEY` is set, rule-based fallback otherwise), a Personal
+Inbox, Morning Review / Evening Shutdown guided flows, cross-module search
+(⌘K), and the new navigation IA (desktop sidebar + mobile bottom nav/More
+sheet). Goals, Life, Home, Travel and Insights are routed with "coming in
+Phase N" placeholders — their full data models are Phase 3-5 work, not yet
+built. See `supabase/migrations/0020_plan_v2.sql` for the schema behind it.
+
+**⚠ That migration has not been applied to the live database.** This
+session's Supabase MCP connection doesn't have access to project
+`eaxyxsrsljdonkravpoj` (the one this app actually uses — see below), so it
+could only be written to the repo, not run. Apply it via the Supabase CLI
+or SQL editor before deploying this branch, or the new Plan/Today code will
+error against the old `tasks` schema.
 
 ## Current state
 
@@ -16,7 +36,9 @@ System spec) but is otherwise fully independent.
   `reminders` (drives the Today watchlist, calendar auto-events and the
   04:30 digest), `attachments`, `audit_log` (currently written to by the
   Vault module), `events`, `quick_captures` (the generic capture inbox that
-  module pages claim rows out of), plus each module's own tables (see
+  module pages claim rows out of), `tasks` (extended in 0020 with
+  priority/status/subtasks/scheduling — see above), `task_focus_sessions`,
+  `daily_reviews`, plus each module's own tables (see
   `supabase/migrations/`). Every table is row-level-secured to `owner_id =
   auth.uid()`.
 - **Auth** — Supabase email/password. There is **no public sign-up**:
@@ -84,7 +106,10 @@ Connect this repo to a Vercel project and add the env vars from
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`,
 plus `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` for Calendar sync) in the
 Vercel project settings, then set the same `CRON_SECRET` value on the
-`/api/cron/digest` Cron Job.
+`/api/cron/digest` Cron Job. Optionally add `ANTHROPIC_API_KEY` to turn on
+AI-assisted natural-language parsing in Quick Capture
+(`lib/captureParserAI.ts`) — without it, Quick Capture still works, using
+the rule-based parser in `lib/captureParser.ts`.
 
 ## Database migrations
 

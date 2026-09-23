@@ -16,7 +16,9 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { LegalFooter } from "@/components/LegalFooter";
 import { VOREXA_SITE_URL } from "@/lib/legal";
 
+const MODULE_HREFS = ["/plan", "/health", "/notes", "/calendar", "/money", "/vehicle", "/pets", "/vault"];
 const MODULE_DETAILS: Record<string, string> = {
+  "/plan": "Tasks, time blocking and a daily plan that fits in the time you actually have.",
   "/health": "Medicines, doses, appointments and weight trends.",
   "/notes": "Fast capture, pinned notes and shopping/checklists.",
   "/calendar": "One timeline for everything due, plus your connected Google Calendar.",
@@ -25,11 +27,10 @@ const MODULE_DETAILS: Record<string, string> = {
   "/pets": "Care schedules, visits and household assets.",
   "/vault": "Documents, policies, credentials and the estate file.",
 };
-const MODULES = NAV_ITEMS.filter((n) => n.href !== "/today").map((n) => ({
-  icon: n.icon,
-  label: n.label,
-  detail: MODULE_DETAILS[n.href],
-}));
+const MODULES = MODULE_HREFS.map((href) => {
+  const item = NAV_ITEMS.find((n) => n.href === href)!;
+  return { icon: item.icon, label: item.label, detail: MODULE_DETAILS[href] };
+});
 
 export default async function RootPage() {
   const supabase = await createClient();

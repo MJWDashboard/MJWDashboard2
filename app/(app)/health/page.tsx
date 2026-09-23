@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { HealthClient } from "./HealthClient";
 
-export const metadata = { title: "Health" };
+export const metadata = { title: "Wellness" };
 
 export default async function HealthPage() {
   const supabase = await createClient();

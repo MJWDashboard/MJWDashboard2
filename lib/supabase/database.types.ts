@@ -355,6 +355,42 @@ export type Database = {
           },
         ]
       }
+      daily_reviews: {
+        Row: {
+          carried_forward_note: string | null
+          completed_note: string | null
+          created_at: string
+          expense_note: string | null
+          general_note: string | null
+          id: string
+          overall_rating: number | null
+          owner_id: string
+          review_date: string
+        }
+        Insert: {
+          carried_forward_note?: string | null
+          completed_note?: string | null
+          created_at?: string
+          expense_note?: string | null
+          general_note?: string | null
+          id?: string
+          overall_rating?: number | null
+          owner_id?: string
+          review_date?: string
+        }
+        Update: {
+          carried_forward_note?: string | null
+          completed_note?: string | null
+          created_at?: string
+          expense_note?: string | null
+          general_note?: string | null
+          id?: string
+          overall_rating?: number | null
+          owner_id?: string
+          review_date?: string
+        }
+        Relationships: []
+      }
       debts: {
         Row: {
           balance: number
@@ -1337,33 +1373,128 @@ export type Database = {
       }
       tasks: {
         Row: {
+          actual_minutes: number
           created_at: string
+          description: string | null
           done: boolean
+          due_date: string | null
+          due_time: string | null
+          estimated_minutes: number | null
           id: string
+          is_today_priority: boolean
+          notes: string | null
           owner_id: string
+          parent_task_id: string | null
+          position: number
+          priority: string
+          recurrence_rule: string
+          scheduled_event_id: string | null
+          status: string
+          tags: string[]
           task_date: string
-          tier: string
+          tier: string | null
           title: string
         }
         Insert: {
+          actual_minutes?: number
           created_at?: string
+          description?: string | null
           done?: boolean
+          due_date?: string | null
+          due_time?: string | null
+          estimated_minutes?: number | null
           id?: string
+          is_today_priority?: boolean
+          notes?: string | null
           owner_id?: string
+          parent_task_id?: string | null
+          position?: number
+          priority?: string
+          recurrence_rule?: string
+          scheduled_event_id?: string | null
+          status?: string
+          tags?: string[]
           task_date?: string
-          tier: string
+          tier?: string | null
           title: string
         }
         Update: {
+          actual_minutes?: number
           created_at?: string
+          description?: string | null
           done?: boolean
+          due_date?: string | null
+          due_time?: string | null
+          estimated_minutes?: number | null
           id?: string
+          is_today_priority?: boolean
+          notes?: string | null
           owner_id?: string
+          parent_task_id?: string | null
+          position?: number
+          priority?: string
+          recurrence_rule?: string
+          scheduled_event_id?: string | null
+          status?: string
+          tags?: string[]
           task_date?: string
-          tier?: string
+          tier?: string | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_scheduled_event_id_fkey"
+            columns: ["scheduled_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_focus_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          mode: string
+          owner_id: string
+          planned_minutes: number | null
+          started_at: string
+          task_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          mode?: string
+          owner_id?: string
+          planned_minutes?: number | null
+          started_at?: string
+          task_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          mode?: string
+          owner_id?: string
+          planned_minutes?: number | null
+          started_at?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_focus_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

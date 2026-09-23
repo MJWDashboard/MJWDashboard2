@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Eye, EyeOff, Sun, Moon, Settings, LogOut } from "lucide-react";
+import { Eye, EyeOff, Sun, Moon, Settings, LogOut, Plus, Search } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 
 export function TopBar({
@@ -11,11 +11,13 @@ export function TopBar({
   onTogglePrivacy,
   theme,
   onToggleTheme,
+  onOpenCapture,
 }: {
   privacyBlur: boolean;
   onTogglePrivacy: () => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  onOpenCapture: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -30,6 +32,23 @@ export function TopBar({
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-end gap-2 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("vorexa:open-search"))}
+        aria-label="Search"
+        className="hidden items-center gap-2 rounded-[10px] border border-border px-3 py-1.5 text-xs text-muted hover:text-text sm:flex"
+      >
+        <Search size={14} />
+        Search
+        <kbd className="rounded border border-border px-1 text-[10px]">⌘K</kbd>
+      </button>
+      <button
+        onClick={onOpenCapture}
+        aria-label="Quick capture"
+        className="flex items-center gap-1.5 rounded-[10px] bg-accent px-3 py-1.5 text-xs font-medium text-white hover:brightness-110"
+      >
+        <Plus size={14} />
+        Add
+      </button>
       <button
         onClick={onTogglePrivacy}
         aria-label="Toggle privacy blur"

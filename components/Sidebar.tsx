@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { NAV_ITEMS } from "@/lib/nav";
+import { SIDEBAR_ITEMS } from "@/lib/nav";
 import { SignOutButton } from "./SignOutButton";
 
 export function Sidebar() {
@@ -18,8 +18,8 @@ export function Sidebar() {
         <Image src="/brand/wordmark-light.png" alt="Vorexa Core" width={130} height={43} priority />
       </div>
 
-      <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map((item) => {
+      <nav className="flex-1 space-y-1 overflow-y-auto">
+        {SIDEBAR_ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (

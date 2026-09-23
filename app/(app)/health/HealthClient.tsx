@@ -52,7 +52,7 @@ export function HealthClient({
       <PageHeader
         icon={HeartPulse}
         color={NAV_ITEMS.find((n) => n.href === "/health")!.color}
-        eyebrow="Health"
+        eyebrow="Wellness"
         title="Doses, appointments & trends"
       />
 

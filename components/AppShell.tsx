@@ -7,6 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { QuickCaptureSheet } from "./QuickCaptureSheet";
+import { GlobalSearch } from "./GlobalSearch";
 import { IdleLock } from "./IdleLock";
 import { createClient } from "@/lib/supabase/client";
 import { flushQuickCaptureQueue } from "@/lib/quickCapture";
@@ -66,6 +67,7 @@ export function AppShell({
           setTheme(next);
           persistTheme(next);
         }}
+        onOpenCapture={() => setCaptureOpen(true)}
       />
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-4 lg:pb-8">{children}</main>
     </div>
@@ -80,6 +82,7 @@ export function AppShell({
 
       <BottomNav onOpenCapture={() => setCaptureOpen(true)} />
       {captureOpen && <QuickCaptureSheet onClose={() => setCaptureOpen(false)} />}
+      <GlobalSearch />
     </div>
   );
 }
