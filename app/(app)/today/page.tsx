@@ -56,7 +56,7 @@ export default async function TodayPage() {
       </div>
 
       {needsTriage.length > 0 && (
-        <Section title="Inbox" icon={Inbox} color="#007AFF">
+        <Section title="Inbox" icon={Inbox} color="#0FAE9C">
           <InboxCard captures={needsTriage} vehicles={vehicles} accounts={accounts} />
         </Section>
       )}
@@ -101,11 +101,11 @@ export default async function TodayPage() {
         )}
       </Section>
 
-      <Section title="Tasks" icon={ListTodo} color="#007AFF">
+      <Section title="Tasks" icon={ListTodo} color="#0FAE9C">
         <TasksCard tasks={tasks} />
       </Section>
 
-      <Section title="Watchlist" icon={AlertTriangle} color="#F26D78">
+      <Section title="Watchlist" icon={AlertTriangle} color="rgb(var(--color-overdue))">
         {watchlist.length === 0 ? (
           <EmptyState
             icon={AlertTriangle}

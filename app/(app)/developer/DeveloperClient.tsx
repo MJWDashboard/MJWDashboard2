@@ -23,7 +23,7 @@ export function DeveloperClient({ users, tickets }: { users: UserRow[]; tickets:
 
   return (
     <div className="space-y-6">
-      <PageHeader icon={ShieldCheck} color="#818CF8" eyebrow="Developer" title="Platform admin" />
+      <PageHeader icon={ShieldCheck} color="#0FAE9C" eyebrow="Developer" title="Platform admin" />
 
       <AddUserCard />
 

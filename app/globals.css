@@ -2,20 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Vorexa Core design tokens — see Vorexa Core Product Update Specification.
-   Dark mode uses the brand's Deep Navy foundation rather than a generic
-   near-black, so both themes stay unmistakably Vorexa. --color-navy is
-   theme-independent: the app sidebar is always dark navy per spec. */
+/* Vorexa Core design tokens — per Vorexa Master Brand Identity & Product
+   System v2.1. Deep Navy is the shared Vorexa foundation; Core Teal / Core
+   Mint are Core's approved material accent (emerald/teal/cyan family).
+   --color-navy is theme-independent: the app sidebar and brand panels are
+   always dark navy per spec, regardless of the in-app theme. */
 :root {
   --color-navy: 11 31 68;
+  --color-midnight: 7 20 38;
 
   --color-background: 11 31 68;
   --color-surface: 20 42 82;
   --color-border: 38 58 94;
   --color-text: 255 255 255;
   --color-muted: 148 163 184;
-  --color-accent: 0 122 255;
-  --color-accent-2: 0 229 255;
+  --color-accent: 15 174 156;
+  --color-accent-2: 41 224 207;
   --color-ok: 16 185 129;
   --color-soon: 245 158 11;
   --color-overdue: 239 68 68;
@@ -27,8 +29,8 @@
   --color-border: 220 230 240;
   --color-text: 10 24 51;
   --color-muted: 95 111 134;
-  --color-accent: 0 122 255;
-  --color-accent-2: 0 229 255;
+  --color-accent: 15 174 156;
+  --color-accent-2: 41 224 207;
   --color-ok: 16 185 129;
   --color-soon: 245 158 11;
   --color-overdue: 239 68 68;
