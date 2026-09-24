@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Fuel, Receipt, X } from "lucide-react";
+import { Fuel, Receipt, CreditCard, X } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
-import { triageFuelCapture, triageExpenseCapture, dismissCapture } from "@/lib/quickCaptureServer";
+import { triageFuelCapture, triageExpenseCapture, triageDebtPaymentCapture, dismissCapture } from "@/lib/quickCaptureServer";
 
 type Capture = Tables<"quick_captures">;
 
@@ -12,20 +12,20 @@ export function InboxCard({
   captures,
   vehicles,
   accounts,
+  debts,
 }: {
   captures: Capture[];
   vehicles: { id: string; make: string; model: string }[];
   accounts: { id: string; name: string }[];
+  debts: { id: string; creditor: string }[];
 }) {
   return (
     <div className="space-y-2">
-      {captures.map((capture) =>
-        capture.type === "fuel" ? (
-          <FuelCapture key={capture.id} capture={capture} vehicles={vehicles} />
-        ) : (
-          <ExpenseCapture key={capture.id} capture={capture} accounts={accounts} />
-        )
-      )}
+      {captures.map((capture) => {
+        if (capture.type === "fuel") return <FuelCapture key={capture.id} capture={capture} vehicles={vehicles} />;
+        if (capture.type === "debt_payment") return <DebtPaymentCapture key={capture.id} capture={capture} debts={debts} />;
+        return <ExpenseCapture key={capture.id} capture={capture} accounts={accounts} />;
+      })}
     </div>
   );
 }
@@ -209,6 +209,68 @@ function ExpenseCapture({ capture, accounts }: { capture: Capture; accounts: { i
       {error && <p className="text-xs text-overdue">{error}</p>}
       <button onClick={save} disabled={pending} className="btn-primary w-full text-sm">
         {pending ? "Saving..." : "File expense"}
+      </button>
+    </CaptureShell>
+  );
+}
+
+function DebtPaymentCapture({ capture, debts }: { capture: Capture; debts: { id: string; creditor: string }[] }) {
+  const router = useRouter();
+  const payload = capture.payload as { amount?: number; note?: string };
+  const [debtId, setDebtId] = useState(debts[0]?.id ?? "");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function save() {
+    if (!debtId) {
+      setError("Pick which debt this pays off");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await triageDebtPaymentCapture(capture.id, { debt_id: debtId });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function dismiss() {
+    startTransition(async () => {
+      await dismissCapture(capture.id);
+      router.refresh();
+    });
+  }
+
+  if (debts.length === 0) {
+    return (
+      <CaptureShell icon={CreditCard} title={`Debt payment — R${payload.amount ?? 0}`} detail="Add a debt first to file this" onDismiss={dismiss}>
+        <p className="text-xs text-muted">No debts on file yet — add one in Money, then come back to file this.</p>
+      </CaptureShell>
+    );
+  }
+
+  return (
+    <CaptureShell
+      icon={CreditCard}
+      title={`Debt payment — R${payload.amount ?? 0}`}
+      detail={payload.note ? payload.note : "Pick which debt this pays off"}
+      onDismiss={dismiss}
+    >
+      <select
+        value={debtId}
+        onChange={(e) => setDebtId(e.target.value)}
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-text"
+      >
+        {debts.map((d) => (
+          <option key={d.id} value={d.id}>{d.creditor}</option>
+        ))}
+      </select>
+      {error && <p className="text-xs text-overdue">{error}</p>}
+      <button onClick={save} disabled={pending} className="btn-primary w-full text-sm">
+        {pending ? "Saving..." : "File payment"}
       </button>
     </CaptureShell>
   );

@@ -2,13 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { CheckCircle2, Circle, RotateCcw, Pill, Plus, Trash2, Pencil, X, Stethoscope, Scale, HeartPulse } from "lucide-react";
+import { CheckCircle2, Circle, RotateCcw, Pill, Plus, Trash2, Pencil, X, Stethoscope, Scale, HeartPulse, Flame, Moon } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { NAV_ITEMS } from "@/lib/nav";
-import { todaysChecklist } from "@/lib/health";
+import { todaysChecklist, calculateBmi, bmiCategory } from "@/lib/health";
+import type { Habit, HabitLog } from "@/lib/habits";
+import { isDueOn, currentStreak, todayKey } from "@/lib/habits";
+import { averageDurationMinutes, formatDuration } from "@/lib/sleep";
 import { formatZAR } from "@/lib/money";
+import { HabitsTab } from "./HabitsTab";
+import { CheckInTab } from "./CheckInTab";
 import {
   createMedicine,
   updateMedicine,
@@ -22,15 +27,18 @@ import {
   logWeight,
   updateWeightEntry,
   deleteWeightEntry,
+  updateWellnessProfile,
 } from "./actions";
 
 type Medicine = Tables<"medicines">;
 type MedDose = Tables<"med_doses">;
 type Appointment = Tables<"appointments">;
 type HealthMetric = Tables<"health_metrics">;
+type WellnessEntry = Tables<"wellness_entries">;
+type SleepEntry = Tables<"sleep_entries">;
 
 const SLOTS = ["morning", "midday", "evening", "bedtime"] as const;
-const TABS = ["Today", "Medicines", "Appointments", "Weight"] as const;
+const TABS = ["Wellness", "Habits", "Check-in", "Medicines", "Appointments", "Weight"] as const;
 
 export function HealthClient({
   medicines,
@@ -38,22 +46,34 @@ export function HealthClient({
   appointments,
   weights,
   today,
+  habits,
+  habitLogs,
+  wellnessEntries,
+  sleepEntries,
+  targetWeight,
+  heightCm,
 }: {
   medicines: Medicine[];
   doses: MedDose[];
   appointments: Appointment[];
   weights: HealthMetric[];
   today: string;
+  habits: Habit[];
+  habitLogs: HabitLog[];
+  wellnessEntries: WellnessEntry[];
+  sleepEntries: SleepEntry[];
+  targetWeight: number | null;
+  heightCm: number | null;
 }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Today");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Wellness");
 
   return (
     <div className="space-y-4">
       <PageHeader
         icon={HeartPulse}
         color={NAV_ITEMS.find((n) => n.href === "/health")!.color}
-        eyebrow="Health"
-        title="Doses, appointments & trends"
+        eyebrow="Wellness"
+        title="Habits, sleep, doses & trends"
       />
 
       <div className="flex gap-1 overflow-x-auto">
@@ -71,10 +91,117 @@ export function HealthClient({
         ))}
       </div>
 
-      {tab === "Today" && <ChecklistTab medicines={medicines} doses={doses} today={today} />}
+      {tab === "Wellness" && (
+        <WellnessDashboard
+          habits={habits}
+          habitLogs={habitLogs}
+          weights={weights}
+          wellnessEntries={wellnessEntries}
+          sleepEntries={sleepEntries}
+          appointments={appointments}
+          targetWeight={targetWeight}
+          heightCm={heightCm}
+          medicines={medicines}
+          doses={doses}
+          today={today}
+        />
+      )}
+      {tab === "Habits" && <HabitsTab habits={habits} logs={habitLogs} />}
+      {tab === "Check-in" && <CheckInTab entries={wellnessEntries} sleepEntries={sleepEntries} />}
       {tab === "Medicines" && <MedicinesTab medicines={medicines} />}
       {tab === "Appointments" && <AppointmentsTab appointments={appointments} />}
-      {tab === "Weight" && <WeightTab weights={weights} />}
+      {tab === "Weight" && <WeightTab weights={weights} targetWeight={targetWeight} heightCm={heightCm} />}
+    </div>
+  );
+}
+
+function WellnessDashboard({
+  habits,
+  habitLogs,
+  weights,
+  wellnessEntries,
+  sleepEntries,
+  appointments,
+  targetWeight,
+  heightCm,
+  medicines,
+  doses,
+  today,
+}: {
+  habits: Habit[];
+  habitLogs: HabitLog[];
+  weights: HealthMetric[];
+  wellnessEntries: WellnessEntry[];
+  sleepEntries: SleepEntry[];
+  appointments: Appointment[];
+  targetWeight: number | null;
+  heightCm: number | null;
+  medicines: Medicine[];
+  doses: MedDose[];
+  today: string;
+}) {
+  const activeHabits = habits.filter((h) => h.active);
+  const dueToday = activeHabits.filter((h) => isDueOn(h, new Date()));
+  const doneToday = dueToday.filter((h) => habitLogs.some((l) => l.habit_id === h.id && l.log_date === todayKey() && l.completed));
+  const bestActiveStreak = Math.max(0, ...activeHabits.map((h) => currentStreak(h, habitLogs.filter((l) => l.habit_id === h.id))));
+  const latestWeight = weights[weights.length - 1];
+  const bmi = latestWeight ? calculateBmi(Number(latestWeight.value), heightCm) : null;
+  const latestEntry = wellnessEntries[0];
+  const avgSleep = averageDurationMinutes(sleepEntries);
+  const upcomingAppointments = appointments.filter((a) => !a.completed && new Date(a.appointment_at) > new Date());
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="card">
+          <p className="text-xs text-muted">Habits today</p>
+          <p className="mt-1 text-lg font-semibold text-text">{doneToday.length}/{dueToday.length}</p>
+        </div>
+        <div className="card">
+          <p className="flex items-center gap-1 text-xs text-muted"><Flame size={12} /> Best streak</p>
+          <p className="mt-1 text-lg font-semibold text-text">{bestActiveStreak}d</p>
+        </div>
+        <div className="card">
+          <p className="flex items-center gap-1 text-xs text-muted"><Moon size={12} /> Avg sleep</p>
+          <p className="mt-1 text-lg font-semibold text-text">{avgSleep > 0 ? formatDuration(avgSleep) : "—"}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-muted">Weight{bmi ? ` · BMI ${bmi}` : ""}</p>
+          <p data-sensitive className="mt-1 text-lg font-semibold text-text">
+            {latestWeight ? `${Number(latestWeight.value).toFixed(1)}kg` : "—"}
+          </p>
+          {targetWeight && latestWeight && (
+            <p className="text-xs text-muted">Target {targetWeight}kg</p>
+          )}
+        </div>
+      </div>
+
+      {latestEntry && (latestEntry.mood || latestEntry.energy || latestEntry.stress) && (
+        <div className="card flex items-center justify-around text-center text-xs text-muted">
+          {latestEntry.mood && <span>Mood {latestEntry.mood}/5</span>}
+          {latestEntry.energy && <span>Energy {latestEntry.energy}/5</span>}
+          {latestEntry.stress && <span>Stress {latestEntry.stress}/5</span>}
+        </div>
+      )}
+
+      {upcomingAppointments.length > 0 && (
+        <section>
+          <p className="mb-2 text-sm font-medium text-text">Upcoming appointments</p>
+          <div className="space-y-2">
+            {upcomingAppointments.slice(0, 3).map((a) => (
+              <div key={a.id} className="card flex items-center justify-between text-sm">
+                <span className="text-text">{a.provider}</span>
+                <span className="text-xs text-muted">{new Date(a.appointment_at).toLocaleDateString("en-ZA")}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <p className="mb-2 text-sm font-medium text-text">Doses due today</p>
+        <ChecklistTab medicines={medicines} doses={doses} today={today} />
+      </section>
     </div>
   );
 }
@@ -354,13 +481,15 @@ function AppointmentForm({ appointment, onClose }: { appointment?: Appointment; 
   );
 }
 
-function WeightTab({ weights }: { weights: HealthMetric[] }) {
+function WeightTab({ weights, targetWeight, heightCm }: { weights: HealthMetric[]; targetWeight: number | null; heightCm: number | null }) {
   const [value, setValue] = useState("");
   const [editing, setEditing] = useState<HealthMetric | null>(null);
+  const [showTargets, setShowTargets] = useState(false);
   const [pending, startTransition] = useTransition();
   const latest = weights[weights.length - 1];
   const max = Math.max(...weights.map((w) => Number(w.value)), 1);
   const min = Math.min(...weights.map((w) => Number(w.value)), 0);
+  const bmi = latest ? calculateBmi(Number(latest.value), heightCm) : null;
 
   function save() {
     if (!value) return;
@@ -377,13 +506,22 @@ function WeightTab({ weights }: { weights: HealthMetric[] }) {
         <button onClick={save} disabled={pending} className="text-accent"><Plus size={20} /></button>
       </div>
 
+      <button onClick={() => setShowTargets(true)} className="text-xs text-muted hover:text-text">
+        {targetWeight || heightCm ? "Edit target weight / height" : "Set target weight / height (optional)"}
+      </button>
+
       {weights.length === 0 ? (
         <EmptyState icon={Scale} title="No weight logged" detail="Log your weight to see a 30-day trend." />
       ) : (
         <>
           <div className="card">
-            <p className="text-xs text-muted">Latest</p>
+            <p className="text-xs text-muted">Latest{bmi ? ` · BMI ${bmi} (${bmiCategory(bmi)})` : ""}</p>
             <p data-sensitive className="tabular text-xl font-semibold text-text">{Number(latest.value).toFixed(1)} kg</p>
+            {targetWeight && (
+              <p className="text-xs text-muted">
+                {Number(latest.value) > targetWeight ? `${(Number(latest.value) - targetWeight).toFixed(1)}kg above target` : "At or below target"}
+              </p>
+            )}
             <div className="mt-3 flex h-16 items-end gap-1">
               {weights.map((w) => {
                 const height = max > min ? ((Number(w.value) - min) / (max - min)) * 100 : 50;
@@ -411,7 +549,29 @@ function WeightTab({ weights }: { weights: HealthMetric[] }) {
       )}
 
       {editing && <WeightEditForm entry={editing} onClose={() => setEditing(null)} />}
+      {showTargets && <TargetsForm targetWeight={targetWeight} heightCm={heightCm} onClose={() => setShowTargets(false)} />}
     </div>
+  );
+}
+
+function TargetsForm({ targetWeight, heightCm, onClose }: { targetWeight: number | null; heightCm: number | null; onClose: () => void }) {
+  const [target, setTarget] = useState(targetWeight?.toString() ?? "");
+  const [height, setHeight] = useState(heightCm?.toString() ?? "");
+  const [pending, startTransition] = useTransition();
+
+  function save() {
+    startTransition(async () => {
+      await updateWellnessProfile(target ? Number(target) : null, height ? Number(height) : null);
+      onClose();
+    });
+  }
+
+  return (
+    <FormSheet title="Target weight & height" onClose={onClose}>
+      <input value={target} onChange={(e) => setTarget(e.target.value)} type="number" placeholder="Target weight (kg)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <input value={height} onChange={(e) => setHeight(e.target.value)} type="number" placeholder="Height (cm) — for BMI" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <button onClick={save} disabled={pending} className="btn-primary w-full">Save</button>
+    </FormSheet>
   );
 }
 

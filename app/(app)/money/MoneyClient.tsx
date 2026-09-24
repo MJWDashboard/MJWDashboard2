@@ -2,12 +2,22 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { Plus, Trash2, Pencil, X, Wallet, Landmark, CreditCard, Upload } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Wallet, Landmark, CreditCard, Upload, TrendingUp, AlertCircle } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import { NAV_ITEMS } from "@/lib/nav";
-import { accountBalance, availableCash, totalDebtCapacity, currentMonth, monthToDateSpend, formatZAR } from "@/lib/money";
+import {
+  accountBalance,
+  availableCash,
+  totalDebtCapacity,
+  monthToDateSpend,
+  totalMonthToDateExpenses,
+  totalMonthToDateIncome,
+  recurringMonthlyCost,
+  calculateNetWorth,
+  formatZAR,
+} from "@/lib/money";
 import {
   createAccount,
   updateAccount,
@@ -16,13 +26,19 @@ import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
-  bulkImportTransactions,
+  reviewTransaction,
   upsertBudget,
   createDebt,
   updateDebt,
   deleteDebt,
   addDebtPayment,
 } from "./actions";
+import { CategoriesTab } from "./CategoriesTab";
+import { RecurringTab } from "./RecurringTab";
+import { SavingsTab } from "./SavingsTab";
+import { NetWorthTab } from "./NetWorthTab";
+import { PayoffSimulator } from "./PayoffSimulator";
+import { ImportFormV2 } from "./ImportFormV2";
 
 type Account = Tables<"accounts">;
 type Transaction = Tables<"transactions">;
@@ -31,9 +47,15 @@ type Budget = Tables<"budgets">;
 type Debt = Tables<"debts">;
 type DebtPayment = Tables<"debt_payments">;
 type Entity = Tables<"entities">;
+type RecurringExpense = Tables<"recurring_expenses">;
+type SavingsGoal = Tables<"savings_goals">;
+type NetWorthSnapshot = Tables<"net_worth_snapshots">;
+type ImportTemplate = Tables<"import_templates">;
 
-const ACCOUNT_KINDS = ["cheque", "savings", "credit_card", "business", "loan", "store_account"] as const;
-const TABS = ["Overview", "Accounts", "Transactions", "Debt"] as const;
+const ACCOUNT_KINDS = [
+  "cheque", "savings", "cash", "investment", "credit_card", "loan", "store_account", "tax_liability", "other_asset", "other_liability", "business",
+] as const;
+const TABS = ["Overview", "Accounts", "Transactions", "Categories", "Recurring", "Debt", "Savings", "Net Worth"] as const;
 
 export function MoneyClient({
   accounts,
@@ -43,6 +65,11 @@ export function MoneyClient({
   debts,
   debtPayments,
   entities,
+  recurringExpenses,
+  savingsGoals,
+  netWorthSnapshots,
+  importTemplates,
+  month,
 }: {
   accounts: Account[];
   transactions: Transaction[];
@@ -51,6 +78,11 @@ export function MoneyClient({
   debts: Debt[];
   debtPayments: DebtPayment[];
   entities: Entity[];
+  recurringExpenses: RecurringExpense[];
+  savingsGoals: SavingsGoal[];
+  netWorthSnapshots: NetWorthSnapshot[];
+  importTemplates: ImportTemplate[];
+  month: string;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const cash = availableCash(accounts, transactions);
@@ -62,7 +94,7 @@ export function MoneyClient({
         icon={Wallet}
         color={NAV_ITEMS.find((n) => n.href === "/money")!.color}
         eyebrow="Money"
-        title="Budget & Debt"
+        title="Financial Core"
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -94,70 +126,188 @@ export function MoneyClient({
       </div>
 
       {tab === "Overview" && (
-        <OverviewTab transactions={transactions} categories={categories} budgets={budgets} />
+        <OverviewTab
+          accounts={accounts}
+          transactions={transactions}
+          categories={categories}
+          budgets={budgets}
+          debts={debts}
+          recurringExpenses={recurringExpenses}
+          savingsGoals={savingsGoals}
+          month={month}
+        />
       )}
       {tab === "Accounts" && (
         <AccountsTab accounts={accounts} transactions={transactions} entities={entities} />
       )}
       {tab === "Transactions" && (
-        <TransactionsTab accounts={accounts} categories={categories} transactions={transactions} />
+        <TransactionsTab accounts={accounts} categories={categories} transactions={transactions} importTemplates={importTemplates} />
       )}
+      {tab === "Categories" && <CategoriesTab categories={categories} />}
+      {tab === "Recurring" && <RecurringTab expenses={recurringExpenses} categories={categories} />}
       {tab === "Debt" && <DebtTab debts={debts} debtPayments={debtPayments} />}
+      {tab === "Savings" && <SavingsTab goals={savingsGoals} accounts={accounts} />}
+      {tab === "Net Worth" && (
+        <NetWorthTab
+          accounts={accounts}
+          transactions={transactions}
+          debts={debts}
+          savingsGoals={savingsGoals}
+          snapshots={netWorthSnapshots}
+          month={month}
+        />
+      )}
     </div>
   );
 }
 
 function OverviewTab({
+  accounts,
   transactions,
   categories,
   budgets,
+  debts,
+  recurringExpenses,
+  savingsGoals,
+  month,
 }: {
+  accounts: Account[];
   transactions: Transaction[];
   categories: Category[];
   budgets: Budget[];
+  debts: Debt[];
+  recurringExpenses: RecurringExpense[];
+  savingsGoals: SavingsGoal[];
+  month: string;
 }) {
-  const month = currentMonth();
-  const expenseCategories = categories.filter((c) => c.kind === "expense");
+  const income = totalMonthToDateIncome(transactions, month);
+  const expenses = totalMonthToDateExpenses(transactions, month);
+  const cashFlow = income - expenses;
+  const totalPlanned = budgets.reduce((sum, b) => sum + Number(b.planned_amount), 0);
+  const remainingBudget = Math.max(0, totalPlanned - expenses);
+  const totalDebt = debts.filter((d) => d.status === "active").reduce((sum, d) => sum + Number(d.balance), 0);
+  const totalSavings = savingsGoals.reduce((sum, g) => sum + Number(g.current_amount), 0);
+  const { netWorth } = calculateNetWorth(accounts, transactions, debts, savingsGoals);
+  const monthlyRecurring = recurringMonthlyCost(recurringExpenses);
+
+  const upcomingBills = recurringExpenses.filter((e) => {
+    if (!e.active || !e.next_due_date) return false;
+    const days = (new Date(e.next_due_date).getTime() - Date.now()) / 86400000;
+    return days >= 0 && days <= 30;
+  });
+
+  const expenseCategories = categories.filter((c) => c.kind === "expense" && !c.hidden);
   const monthBudgets = budgets.filter((b) => b.month === month);
 
-  if (expenseCategories.length === 0) {
-    return (
-      <EmptyState icon={Wallet} title="No categories yet" detail="Add a transaction to create your first category, then set a monthly budget for it." />
-    );
-  }
+  // Simple analytics: top merchants and largest expenses this month.
+  const monthTxns = transactions.filter((t) => t.occurred_at.startsWith(month) && Number(t.amount) < 0);
+  const byMerchant = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of monthTxns) {
+      const key = t.merchant || t.description || "Other";
+      map.set(key, (map.get(key) ?? 0) + Math.abs(Number(t.amount)));
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [monthTxns]);
+  const largestExpenses = [...monthTxns].sort((a, b) => Number(a.amount) - Number(b.amount)).slice(0, 5);
 
   return (
-    <div className="space-y-2">
-      {expenseCategories.map((cat) => {
-        const budget = monthBudgets.find((b) => b.category_id === cat.id);
-        const spent = monthToDateSpend(transactions, cat.id, month);
-        const planned = budget ? Number(budget.planned_amount) : 0;
-        const pct = planned > 0 ? Math.min(100, (spent / planned) * 100) : 0;
-        const severity = planned === 0 ? "ok" : pct >= 100 ? "overdue" : pct >= 90 ? "soon" : "ok";
-        return (
-          <div key={cat.id} className="card space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-text">{cat.name}</span>
-              <span data-sensitive className="tabular text-muted">
-                {formatZAR(spent)} {planned > 0 && `/ ${formatZAR(planned)}`}
-              </span>
-            </div>
-            {planned > 0 ? (
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-                <div
-                  className={clsx(
-                    "h-full rounded-full",
-                    severity === "overdue" ? "bg-overdue" : severity === "soon" ? "bg-soon" : "bg-ok"
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <MetricCard label="Income (MTD)" value={formatZAR(income)} tone="ok" />
+        <MetricCard label="Expenses (MTD)" value={formatZAR(expenses)} tone="overdue" />
+        <MetricCard label="Cash flow" value={formatZAR(cashFlow)} tone={cashFlow >= 0 ? "ok" : "overdue"} />
+        <MetricCard label="Remaining budget" value={formatZAR(remainingBudget)} />
+        <MetricCard label="Total debt" value={formatZAR(totalDebt)} tone="overdue" />
+        <MetricCard label="Savings" value={formatZAR(totalSavings)} tone="ok" />
+        <MetricCard label="Net worth" value={formatZAR(netWorth)} />
+        <MetricCard label="Recurring / month" value={formatZAR(monthlyRecurring)} />
+        <MetricCard label="Upcoming bills (30d)" value={String(upcomingBills.length)} />
+      </div>
+
+      <section>
+        <p className="mb-2 text-sm font-medium text-text">Category budgets</p>
+        {expenseCategories.length === 0 ? (
+          <EmptyState icon={Wallet} title="No categories yet" detail="Add a transaction to create your first category, then set a monthly budget for it." />
+        ) : (
+          <div className="space-y-2">
+            {expenseCategories.map((cat) => {
+              const budget = monthBudgets.find((b) => b.category_id === cat.id);
+              const spent = monthToDateSpend(transactions, cat.id, month);
+              const planned = budget ? Number(budget.planned_amount) : 0;
+              const pct = planned > 0 ? Math.min(100, (spent / planned) * 100) : 0;
+              const projected = planned > 0 ? (spent / Math.max(1, new Date().getDate())) * 30 : 0;
+              const severity = planned === 0 ? "ok" : pct >= 100 ? "overdue" : pct >= 90 ? "soon" : "ok";
+              return (
+                <div key={cat.id} className="card space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text">{cat.name}</span>
+                    <span data-sensitive className="tabular text-muted">
+                      {formatZAR(spent)} {planned > 0 && `/ ${formatZAR(planned)}`}
+                    </span>
+                  </div>
+                  {planned > 0 ? (
+                    <>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                        <div
+                          className={clsx("h-full rounded-full", severity === "overdue" ? "bg-overdue" : severity === "soon" ? "bg-soon" : "bg-ok")}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      {projected > planned && (
+                        <p className="text-xs text-soon">Projected month-end: {formatZAR(projected)}</p>
+                      )}
+                    </>
+                  ) : (
+                    <BudgetInput categoryId={cat.id} month={month} />
                   )}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            ) : (
-              <BudgetInput categoryId={cat.id} month={month} />
-            )}
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        )}
+      </section>
+
+      {(byMerchant.length > 0 || largestExpenses.length > 0) && (
+        <section className="grid gap-3 sm:grid-cols-2">
+          <div className="card space-y-2">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-text">
+              <TrendingUp size={14} /> Top spend this month
+            </p>
+            {byMerchant.map(([name, amount]) => (
+              <div key={name} className="flex items-center justify-between text-xs">
+                <span className="truncate text-muted">{name}</span>
+                <span data-sensitive className="tabular text-text">{formatZAR(amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="card space-y-2">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-text">
+              <AlertCircle size={14} /> Largest expenses
+            </p>
+            {largestExpenses.map((t) => (
+              <div key={t.id} className="flex items-center justify-between text-xs">
+                <span className="truncate text-muted">{t.merchant || t.description || "Transaction"}</span>
+                <span data-sensitive className="tabular text-text">{formatZAR(Math.abs(Number(t.amount)))}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, tone }: { label: string; value: string; tone?: "ok" | "overdue" }) {
+  return (
+    <div className="card">
+      <p className="text-xs text-muted">{label}</p>
+      <p
+        data-sensitive
+        className={clsx("tabular mt-1 text-base font-semibold", tone === "ok" ? "text-ok" : tone === "overdue" ? "text-overdue" : "text-text")}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -211,12 +361,14 @@ function AccountsTab({
           {accounts.map((acc) => {
             const entity = entities.find((e) => e.id === acc.entity_id);
             return (
-              <div key={acc.id} className="card flex items-center justify-between">
+              <div key={acc.id} className={clsx("card flex items-center justify-between", !acc.active && "opacity-50")}>
                 <div>
                   <p className="text-sm font-medium text-text">{acc.name}</p>
                   <p className="text-xs text-muted">
                     {acc.kind.replace("_", " ")} · {acc.is_cash ? "Cash" : "Credit facility"}
+                    {acc.institution && ` · ${acc.institution}`}
                     {entity && ` · ${entity.name}`}
+                    {!acc.active && " · inactive"}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -247,16 +399,31 @@ function AccountForm({ account, onClose }: { account?: Account; onClose: () => v
   const [kind, setKind] = useState<(typeof ACCOUNT_KINDS)[number]>((account?.kind as (typeof ACCOUNT_KINDS)[number]) ?? "cheque");
   const [isCash, setIsCash] = useState(account?.is_cash ?? true);
   const [opening, setOpening] = useState(account?.opening_balance?.toString() ?? "0");
+  const [institution, setInstitution] = useState(account?.institution ?? "");
+  const [creditLimit, setCreditLimit] = useState(account?.credit_limit?.toString() ?? "");
+  const [interestRate, setInterestRate] = useState(account?.interest_rate?.toString() ?? "");
+  const [minimumPayment, setMinimumPayment] = useState(account?.minimum_payment?.toString() ?? "");
+  const [active, setActive] = useState(account?.active ?? true);
   const [pending, startTransition] = useTransition();
+
+  const isCredit = kind === "credit_card" || kind === "loan" || kind === "store_account" || kind === "other_liability" || kind === "tax_liability";
 
   function save() {
     if (!name.trim()) return;
+    const fields = {
+      name: name.trim(),
+      kind,
+      is_cash: isCash,
+      opening_balance: Number(opening),
+      institution: institution.trim() || null,
+      credit_limit: creditLimit ? Number(creditLimit) : null,
+      interest_rate: interestRate ? Number(interestRate) : null,
+      minimum_payment: minimumPayment ? Number(minimumPayment) : null,
+      active,
+    };
     startTransition(async () => {
-      if (account) {
-        await updateAccount(account.id, { name: name.trim(), kind, is_cash: isCash, opening_balance: Number(opening) });
-      } else {
-        await createAccount({ name: name.trim(), kind, is_cash: isCash, opening_balance: Number(opening) });
-      }
+      if (account) await updateAccount(account.id, fields);
+      else await createAccount(fields);
       onClose();
     });
   }
@@ -274,7 +441,7 @@ function AccountForm({ account, onClose }: { account?: Account; onClose: () => v
         onChange={(e) => {
           const k = e.target.value as (typeof ACCOUNT_KINDS)[number];
           setKind(k);
-          setIsCash(k !== "credit_card" && k !== "loan" && k !== "store_account");
+          setIsCash(!["credit_card", "loan", "store_account", "other_liability", "tax_liability"].includes(k));
         }}
         className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text"
       >
@@ -284,6 +451,12 @@ function AccountForm({ account, onClose }: { account?: Account; onClose: () => v
           </option>
         ))}
       </select>
+      <input
+        value={institution}
+        onChange={(e) => setInstitution(e.target.value)}
+        placeholder="Institution (optional)"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
+      />
       <label className="flex items-center gap-2 text-sm text-muted">
         <input type="checkbox" checked={isCash} onChange={(e) => setIsCash(e.target.checked)} />
         Counts as cash (excluded if it's a credit facility)
@@ -295,6 +468,17 @@ function AccountForm({ account, onClose }: { account?: Account; onClose: () => v
         placeholder="Opening balance"
         className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent"
       />
+      {isCredit && (
+        <div className="grid grid-cols-3 gap-2">
+          <input value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} type="number" placeholder="Limit" className="rounded-xl border border-border bg-background px-2 py-2.5 text-sm text-text outline-none focus:border-accent" />
+          <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} type="number" placeholder="Rate %" className="rounded-xl border border-border bg-background px-2 py-2.5 text-sm text-text outline-none focus:border-accent" />
+          <input value={minimumPayment} onChange={(e) => setMinimumPayment(e.target.value)} type="number" placeholder="Min pay" className="rounded-xl border border-border bg-background px-2 py-2.5 text-sm text-text outline-none focus:border-accent" />
+        </div>
+      )}
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+        Active
+      </label>
       <button onClick={save} disabled={pending} className="btn-primary w-full">
         {account ? "Save changes" : "Save account"}
       </button>
@@ -306,15 +490,20 @@ function TransactionsTab({
   accounts,
   categories,
   transactions,
+  importTemplates,
 }: {
   accounts: Account[];
   categories: Category[];
   transactions: Transaction[];
+  importTemplates: ImportTemplate[];
 }) {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [, startTransition] = useTransition();
+
+  const needsReview = transactions.filter((t) => !t.reviewed);
+  const reviewed = transactions.filter((t) => t.reviewed);
 
   return (
     <div className="space-y-3">
@@ -327,20 +516,33 @@ function TransactionsTab({
         </button>
       </div>
 
+      {needsReview.length > 0 && (
+        <section>
+          <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-soon">
+            <AlertCircle size={14} /> Needs review ({needsReview.length})
+          </p>
+          <div className="space-y-2">
+            {needsReview.map((t) => (
+              <ReviewRow key={t.id} transaction={t} categories={categories} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {accounts.length === 0 ? (
         <EmptyState icon={Wallet} title="Add an account first" detail="Transactions belong to an account." />
-      ) : transactions.length === 0 ? (
+      ) : reviewed.length === 0 ? (
         <EmptyState icon={Wallet} title="No transactions yet" detail="Add one manually or import a CSV statement export." />
       ) : (
         <div className="space-y-2">
-          {transactions.slice(0, 50).map((t) => {
+          {reviewed.slice(0, 50).map((t) => {
             const cat = categories.find((c) => c.id === t.category_id);
             return (
               <div key={t.id} className="card flex items-center justify-between">
                 <div className="min-w-0">
-                  <p className="truncate text-sm text-text">{t.description || cat?.name || "Transaction"}</p>
+                  <p className="truncate text-sm text-text">{t.merchant || t.description || cat?.name || "Transaction"}</p>
                   <p className="text-xs text-muted">
-                    {new Date(t.occurred_at).toLocaleDateString("en-ZA")} {cat && `· ${cat.name}`}
+                    {new Date(t.occurred_at).toLocaleDateString("en-ZA")} {cat && `· ${cat.name}`} {t.recurring && "· recurring"}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -364,7 +566,39 @@ function TransactionsTab({
       {editing && (
         <TransactionForm accounts={accounts} categories={categories} transaction={editing} onClose={() => setEditing(null)} />
       )}
-      {showImport && <ImportForm accounts={accounts} onClose={() => setShowImport(false)} />}
+      {showImport && (
+        <ImportFormV2 accounts={accounts} templates={importTemplates} onClose={() => setShowImport(false)} />
+      )}
+    </div>
+  );
+}
+
+function ReviewRow({ transaction, categories }: { transaction: Transaction; categories: Category[] }) {
+  const [categoryId, setCategoryId] = useState(transaction.category_id ?? "");
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="card space-y-2 border-soon/40 bg-soon/5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-text">{transaction.merchant || transaction.description}</p>
+        <span data-sensitive className="tabular text-sm text-text">{formatZAR(Number(transaction.amount))}</span>
+      </div>
+      <p className="text-xs text-muted">{new Date(transaction.occurred_at).toLocaleDateString("en-ZA")}</p>
+      <div className="flex gap-2">
+        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text">
+          <option value="">No category</option>
+          {categories.filter((c) => !c.hidden).map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => startTransition(() => reviewTransaction(transaction.id, categoryId || null, transaction.merchant))}
+          disabled={pending}
+          className="btn-primary px-3 py-1.5 text-xs"
+        >
+          Confirm
+        </button>
+      </div>
     </div>
   );
 }
@@ -383,10 +617,14 @@ function TransactionForm({
   const [accountId, setAccountId] = useState(transaction?.account_id ?? accounts[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState<string>(transaction?.category_id ?? "");
   const [newCategory, setNewCategory] = useState("");
+  const [merchant, setMerchant] = useState(transaction?.merchant ?? "");
   const [description, setDescription] = useState(transaction?.description ?? "");
   const [amount, setAmount] = useState(transaction ? Math.abs(Number(transaction.amount)).toString() : "");
   const [type, setType] = useState<"expense" | "income">(transaction && Number(transaction.amount) > 0 ? "income" : "expense");
   const [date, setDate] = useState(transaction?.occurred_at.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [paymentMethod, setPaymentMethod] = useState(transaction?.payment_method ?? "");
+  const [notes, setNotes] = useState(transaction?.notes ?? "");
+  const [recurring, setRecurring] = useState(transaction?.recurring ?? false);
   const [pending, startTransition] = useTransition();
 
   function save() {
@@ -398,23 +636,19 @@ function TransactionForm({
         catId = data?.id ?? null;
       }
       const signedAmount = type === "expense" ? -Math.abs(Number(amount)) : Math.abs(Number(amount));
-      if (transaction) {
-        await updateTransaction(transaction.id, {
-          account_id: accountId,
-          category_id: catId,
-          description: description.trim(),
-          amount: signedAmount,
-          occurred_at: date,
-        });
-      } else {
-        await createTransaction({
-          account_id: accountId,
-          category_id: catId,
-          description: description.trim(),
-          amount: signedAmount,
-          occurred_at: date,
-        });
-      }
+      const fields = {
+        account_id: accountId,
+        category_id: catId,
+        description: description.trim(),
+        merchant: merchant.trim() || null,
+        amount: signedAmount,
+        occurred_at: date,
+        payment_method: paymentMethod.trim() || null,
+        notes: notes.trim() || null,
+        recurring,
+      };
+      if (transaction) await updateTransaction(transaction.id, fields);
+      else await createTransaction(fields);
       onClose();
     });
   }
@@ -433,67 +667,27 @@ function TransactionForm({
         </select>
         <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" placeholder="Amount" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       </div>
+      <input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Merchant (optional)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
         <option value="">New category...</option>
-        {categories.filter((c) => c.kind === type).map((c) => (
+        {categories.filter((c) => c.kind === type && !c.hidden).map((c) => (
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
       </select>
       {!categoryId && (
         <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Category name" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
       )}
-      <input value={date} onChange={(e) => setDate(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <div className="grid grid-cols-2 gap-2">
+        <input value={date} onChange={(e) => setDate(e.target.value)} type="date" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+        <input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} placeholder="Payment method" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      </div>
+      <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes (optional)" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none focus:border-accent" />
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
+        This is a recurring transaction
+      </label>
       <button onClick={save} disabled={pending} className="btn-primary w-full">{transaction ? "Save changes" : "Save transaction"}</button>
-    </FormSheet>
-  );
-}
-
-function ImportForm({ accounts, onClose }: { accounts: Account[]; onClose: () => void }) {
-  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
-  const [text, setText] = useState("");
-  const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<string | null>(null);
-
-  function handleFile(file: File) {
-    file.text().then(setText);
-  }
-
-  function parseAndImport() {
-    const rows = text
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .slice(1) // skip header
-      .map((line) => {
-        const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-        const [date, description, amount] = cols;
-        return { occurred_at: date, description: description ?? "", amount: Number(amount) };
-      })
-      .filter((r) => r.occurred_at && !Number.isNaN(r.amount));
-
-    startTransition(async () => {
-      const res = await bulkImportTransactions(accountId, rows);
-      setResult(res.error ? res.error : `Imported ${res.count} transactions`);
-      if (!res.error) setTimeout(onClose, 800);
-    });
-  }
-
-  return (
-    <FormSheet title="Import CSV" onClose={onClose}>
-      <p className="text-xs text-muted">
-        Columns: date, description, amount (negative for expenses). Export this from your bank statement.
-      </p>
-      <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text">
-        {accounts.map((a) => (
-          <option key={a.id} value={a.id}>{a.name}</option>
-        ))}
-      </select>
-      <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} className="w-full text-sm text-muted" />
-      {result && <p className="text-xs text-text">{result}</p>}
-      <button onClick={parseAndImport} disabled={pending || !text} className="btn-primary w-full">
-        Import
-      </button>
     </FormSheet>
   );
 }
@@ -521,6 +715,8 @@ function DebtTab({ debts, debtPayments }: { debts: Debt[]; debtPayments: DebtPay
           <p data-sensitive className="tabular mt-1 text-lg font-semibold text-text">{formatZAR(totalMin)}</p>
         </div>
       </div>
+
+      {active.length > 0 && <PayoffSimulator debts={active} />}
 
       <button onClick={() => setShowForm(true)} className="btn-secondary w-full">
         <Plus size={14} /> Add debt
@@ -692,7 +888,7 @@ function ordinalSuffix(n: number) {
   return "th";
 }
 
-function FormSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function FormSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl border border-border bg-surface p-4">

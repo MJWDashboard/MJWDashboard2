@@ -1,6 +1,7 @@
 import { toZonedTime } from "date-fns-tz";
 import { createClient } from "@/lib/supabase/server";
 import { SAST } from "@/lib/timezone";
+import { computeUrgency } from "@/lib/lifeAdmin";
 
 export type WatchSeverity = "soon" | "overdue";
 
@@ -52,6 +53,9 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     { data: debts },
     { data: matters },
     { data: appointments },
+    { data: recurringExpenses },
+    { data: lifeAdminItems },
+    { data: trips },
   ] = await Promise.all([
     supabase.from("vehicles").select("id, make, model, licence_disc_expiry"),
     supabase.from("services").select("id, work_done, next_due_date"),
@@ -61,6 +65,9 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     supabase.from("debts").select("id, creditor, balance, due_day, minimum_payment, status"),
     supabase.from("matters").select("id, matter, due_date, status"),
     supabase.from("appointments").select("id, provider, follow_up_date, completed"),
+    supabase.from("recurring_expenses").select("id, provider, amount, next_due_date, contract_end_date, active"),
+    supabase.from("life_admin_items").select("id, title, due_date, lead_days, status"),
+    supabase.from("travel_trips").select("id, destination, start_date, status"),
   ]);
 
   const items: WatchlistItem[] = [];
@@ -177,6 +184,36 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     }
   }
 
+  for (const r of recurringExpenses ?? []) {
+    if (!r.active) continue;
+    if (r.next_due_date) {
+      const severity = severityForDays(daysUntilDate(r.next_due_date, today));
+      if (severity === "soon" && daysUntilDate(r.next_due_date, today) <= DEBT_DUE_WINDOW_DAYS) {
+        items.push({
+          id: `recurring-due-${r.id}`,
+          title: `${r.provider} payment due`,
+          due_at: r.next_due_date,
+          amount_at_risk: r.amount,
+          severity: "soon",
+          href: "/money",
+        });
+      }
+    }
+    if (r.contract_end_date) {
+      const severity = severityForDays(daysUntilDate(r.contract_end_date, today));
+      if (severity) {
+        items.push({
+          id: `recurring-contract-${r.id}`,
+          title: `${r.provider} contract ending`,
+          due_at: r.contract_end_date,
+          amount_at_risk: null,
+          severity,
+          href: "/money",
+        });
+      }
+    }
+  }
+
   for (const m of matters ?? []) {
     if (m.status !== "open" || !m.due_date) continue;
     const severity = severityForDays(daysUntilDate(m.due_date, today));
@@ -203,6 +240,35 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         amount_at_risk: null,
         severity,
         href: "/health",
+      });
+    }
+  }
+
+  for (const la of lifeAdminItems ?? []) {
+    const urgency = computeUrgency(la.status, la.due_date, la.lead_days, today);
+    if (urgency === "action_required" || urgency === "expired") {
+      items.push({
+        id: `life-admin-${la.id}`,
+        title: la.title,
+        due_at: la.due_date,
+        amount_at_risk: null,
+        severity: urgency === "expired" ? "overdue" : "soon",
+        href: "/life-admin",
+      });
+    }
+  }
+
+  for (const t of trips ?? []) {
+    if (!t.start_date || t.status === "complete" || t.status === "cancelled") continue;
+    const severity = severityForDays(daysUntilDate(t.start_date, today));
+    if (severity) {
+      items.push({
+        id: `trip-${t.id}`,
+        title: `Trip to ${t.destination}`,
+        due_at: t.start_date,
+        amount_at_risk: null,
+        severity,
+        href: "/travel",
       });
     }
   }

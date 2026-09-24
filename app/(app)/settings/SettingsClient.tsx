@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Lock, Mail, LifeBuoy, ShieldCheck, ChevronRight, LogOut } from "lucide-react";
+import { User, Lock, Mail, LifeBuoy, ShieldCheck, ChevronRight, LogOut, Download } from "lucide-react";
 import { updateName, updatePassword, submitTicket } from "./actions";
 import { signOut } from "@/app/login/actions";
+import { exportMyData } from "@/lib/dataExport";
 
 export function SettingsClient({
   email,
@@ -35,6 +36,7 @@ export function SettingsClient({
 
       <NameForm initialFirstName={firstName} initialLastName={lastName} />
       <PasswordForm />
+      <ExportDataCard />
       <SupportForm />
 
       {isAdmin && (
@@ -172,6 +174,43 @@ function PasswordForm() {
       {error && <p className="text-sm text-overdue">{error}</p>}
       <button onClick={save} disabled={pending || !password} className="btn-primary w-full">
         {saved ? "Password updated" : pending ? "Updating..." : "Update password"}
+      </button>
+    </div>
+  );
+}
+
+function ExportDataCard() {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function download() {
+    setError(null);
+    startTransition(async () => {
+      const result = await exportMyData();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      const blob = new Blob([result.json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vorexa-core-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  return (
+    <div className="card space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-text">
+        <Download size={16} className="text-accent" />
+        Your data
+      </div>
+      <p className="text-xs text-muted">Download every record you've created across every module as a single JSON file.</p>
+      {error && <p className="text-sm text-overdue">{error}</p>}
+      <button onClick={download} disabled={pending} className="btn-secondary w-full">
+        {pending ? "Preparing export..." : "Export my data"}
       </button>
     </div>
   );

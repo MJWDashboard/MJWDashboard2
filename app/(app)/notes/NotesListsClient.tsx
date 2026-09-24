@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clsx } from "clsx";
-import { Pin, Plus, Trash2, Pencil, Check, X, StickyNote, ShoppingCart, Archive, ArchiveRestore, ChefHat, Music, MessageSquare, Lightbulb, NotebookPen } from "lucide-react";
+import { Pin, Plus, Trash2, Pencil, Check, X, StickyNote, ShoppingCart, Archive, ArchiveRestore, ChefHat, Music, MessageSquare, Lightbulb, NotebookPen, Star, ListChecks, BookMarked, Scale, Plane as PlaneIcon } from "lucide-react";
 import type { Tables } from "@/lib/supabase/database.types";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -35,6 +35,11 @@ const CATEGORIES = {
   song: { label: "Song", icon: Music, bg: "#DDD6FE", dot: "#8B5CF6" },
   message: { label: "Message", icon: MessageSquare, bg: "#BFDBFE", dot: "#3B82F6" },
   idea: { label: "Idea", icon: Lightbulb, bg: "#FBCFE8", dot: "#EC4899" },
+  checklist: { label: "Checklist", icon: ListChecks, bg: "#FDE68A", dot: "#F59E0B" },
+  journal: { label: "Journal", icon: NotebookPen, bg: "#E9D5FF", dot: "#A855F7" },
+  reference: { label: "Reference", icon: BookMarked, bg: "#A7F3D0", dot: "#10B981" },
+  decision: { label: "Decision", icon: Scale, bg: "#FED7AA", dot: "#F97316" },
+  travel_note: { label: "Travel", icon: PlaneIcon, bg: "#BAE6FD", dot: "#0EA5E9" },
 } as const;
 type Category = keyof typeof CATEGORIES;
 
@@ -104,8 +109,9 @@ function NotesTab({ notes }: { notes: Note[] }) {
   const [draftCategory, setDraftCategory] = useState<Category>("note");
   const [openId, setOpenId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
 
-  const active = notes.filter((n) => !n.archived);
+  const active = notes.filter((n) => !n.archived && (!favouritesOnly || n.favourite));
   const archived = notes.filter((n) => n.archived);
 
   function handleCreate() {
@@ -153,6 +159,13 @@ function NotesTab({ notes }: { notes: Note[] }) {
         </div>
       </div>
 
+      <button
+        onClick={() => setFavouritesOnly((v) => !v)}
+        className={clsx("flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-xs font-medium", favouritesOnly ? "bg-accent text-white" : "border border-border text-muted")}
+      >
+        <Star size={12} /> Favourites
+      </button>
+
       {active.length === 0 ? (
         <EmptyState icon={StickyNote} title="Board's empty" detail="A recipe, a song, a message — anything worth keeping goes here." />
       ) : (
@@ -184,10 +197,16 @@ function NotesTab({ notes }: { notes: Note[] }) {
                 >
                   <div className="flex items-center justify-between">
                     <Icon size={14} className="text-black/50" />
-                    {note.pinned && <Pin size={12} className="text-black/50" />}
+                    <div className="flex items-center gap-1">
+                      {note.favourite && <Star size={12} className="fill-black/50 text-black/50" />}
+                      {note.pinned && <Pin size={12} className="text-black/50" />}
+                    </div>
                   </div>
                   <p className="line-clamp-2 text-sm font-semibold text-gray-900">{note.title}</p>
                   {note.body && <p className="line-clamp-3 text-xs text-gray-700">{note.body}</p>}
+                  {note.tags.length > 0 && (
+                    <p className="line-clamp-1 text-[10px] text-black/50">{note.tags.map((t) => `#${t}`).join(" ")}</p>
+                  )}
                 </button>
               );
             })}
@@ -226,12 +245,14 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
   const [category, setCategory] = useState<Category>((note.category as Category) ?? "note");
+  const [tags, setTags] = useState(note.tags.join(", "));
   const [pending, startTransition] = useTransition();
   const cat = CATEGORIES[category] ?? CATEGORIES.note;
 
   function save() {
     startTransition(async () => {
-      await updateNote(note.id, { title, body });
+      const parsedTags = tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+      await updateNote(note.id, { title, body, tags: parsedTags });
     });
   }
 
@@ -273,8 +294,22 @@ function NoteEditor({ note, onClose }: { note: Note; onClose: () => void }) {
           placeholder="Write..."
           className="w-full resize-none rounded-xl bg-white/50 p-3 text-sm text-gray-900 outline-none placeholder:text-black/40"
         />
+        <input
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          onBlur={save}
+          placeholder="tags, comma, separated"
+          className="mt-2 w-full rounded-xl bg-white/50 px-3 py-2 text-xs text-gray-900 outline-none placeholder:text-black/40"
+        />
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => startTransition(async () => { await updateNote(note.id, { favourite: !note.favourite }); })}
+              className={clsx("flex items-center gap-1.5 text-xs", note.favourite ? "text-gray-900" : "text-black/50")}
+            >
+              <Star size={14} className={note.favourite ? "fill-current" : undefined} />
+              {note.favourite ? "Favourited" : "Favourite"}
+            </button>
             <button
               onClick={() => startTransition(() => togglePinNote(note.id, !note.pinned))}
               className={clsx("flex items-center gap-1.5 text-xs", note.pinned ? "text-gray-900" : "text-black/50")}

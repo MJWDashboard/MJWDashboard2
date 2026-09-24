@@ -395,7 +395,19 @@ function AgendaRow({ entry }: { entry: AgendaEntry }) {
       <div className="card flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs text-muted">{dateLabel} · {timeLabel}</p>
-          <p className="truncate text-sm font-medium text-text">{e.title}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-medium text-text">{e.title}</p>
+            {e.module === "plan" && (
+              <span className="shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
+                Task
+              </span>
+            )}
+            {e.source === "google" && (
+              <span className="shrink-0 rounded-full bg-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                Google
+              </span>
+            )}
+          </div>
           {e.location && <p className="text-xs text-muted">{e.location}</p>}
         </div>
         <div className="flex items-center gap-2">
