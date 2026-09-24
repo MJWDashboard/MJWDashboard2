@@ -21,13 +21,7 @@ Inbox, Morning Review / Evening Shutdown guided flows, cross-module search
 sheet). Goals, Life, Home, Travel and Insights are routed with "coming in
 Phase N" placeholders — their full data models are Phase 3-5 work, not yet
 built. See `supabase/migrations/0020_plan_v2.sql` for the schema behind it.
-
-**⚠ That migration has not been applied to the live database.** This
-session's Supabase MCP connection doesn't have access to project
-`eaxyxsrsljdonkravpoj` (the one this app actually uses — see below), so it
-could only be written to the repo, not run. Apply it via the Supabase CLI
-or SQL editor before deploying this branch, or the new Plan/Today code will
-error against the old `tasks` schema.
+Applied to the live database (`eaxyxsrsljdonkravpoj`).
 
 ## v2.0 "Financial Core" — Phase 2
 
@@ -42,8 +36,7 @@ register with review flagging, a Debt Payoff Simulator (snowball/avalanche/
 custom strategies with scenario comparison), Savings Goals, and a Net Worth
 tracker with monthly snapshots. Recurring expenses and debts due soon feed
 the Today watchlist and Money Today card. See
-`supabase/migrations/0021_money_v2.sql` — **also not yet applied to the
-live database**, same caveat as 0020 above.
+`supabase/migrations/0021_money_v2.sql`. Applied to the live database.
 
 Expense Analytics is intentionally kept lean (top merchants + largest
 expenses on the Overview tab) rather than a separate page — a full
@@ -64,8 +57,7 @@ duration, bedtime consistency), BMI (only shown when a height is on file —
 never estimated), and a Wellness dashboard tab pulling all of it together
 alongside doses-due and upcoming appointments. Habit completion now feeds
 the Today Wellness card, and Quick Capture gained a Mood type. See
-`supabase/migrations/0022_wellness_v2.sql` — **also not yet applied to the
-live database**, same caveat as 0020/0021 above.
+`supabase/migrations/0022_wellness_v2.sql`. Applied to the live database.
 
 ## v2.0 "Life Management" — Phase 4
 
@@ -87,8 +79,8 @@ gained a broad `category` alongside the existing specific `doc_type`, with
 a filter row in the Documents tab. Life Admin action items and upcoming
 trips now feed the Today watchlist, and Goals/Life Admin/Travel/Home
 contacts are searchable from the universal search (⌘K). See
-`supabase/migrations/0023_life_management_v2.sql` — **also not yet applied
-to the live database**, same caveat as 0020/0021/0022 above.
+`supabase/migrations/0023_life_management_v2.sql`. Applied to the live
+database.
 
 Scope cuts made deliberately rather than left half-built: Home's bills
 section is read-only (manage in Money); household assets stay on the
@@ -118,8 +110,8 @@ plainly when something isn't on file, never to invent numbers. Requires
 `ANTHROPIC_API_KEY` (same env var Quick Capture uses) — without it the page
 says so rather than pretending to work. Answers are logged to
 `assistant_queries` for the owner's own history. See
-`supabase/migrations/0024_intelligence_v2.sql` — **also not yet applied to
-the live database**, same caveat as 0020–0023 above.
+`supabase/migrations/0024_intelligence_v2.sql`. Applied to the live
+database.
 
 ## v2.0 "Professionalisation" — Phase 6 (partial)
 
@@ -247,14 +239,9 @@ the rule-based parser in `lib/captureParser.ts`.
 
 ## Database migrations
 
-SQL migrations live in `supabase/migrations/` and have already been applied
-to the `eaxyxsrsljdonkravpoj` project directly. Apply new ones with the
-Supabase CLI or MCP tooling — this repo does not run migrations at deploy
-time.
-
-**`0020_plan_v2.sql` through `0024_intelligence_v2.sql` (Phases 1–5) have
-not yet been applied** — this session's Supabase MCP access doesn't reach
-the live project. Apply them in order before the corresponding modules
-(Plan, Money v2, Wellness, Goals/Life Admin/Home/Travel, Insights/Reviews/
-Assistant) will work against real data; `lib/supabase/database.types.ts`
-has already been hand-updated to match.
+SQL migrations live in `supabase/migrations/` and have all been applied to
+the `eaxyxsrsljdonkravpoj` project directly, through
+`0024_intelligence_v2.sql` (Phases 1–5). Apply new ones with the Supabase
+CLI or MCP tooling — this repo does not run migrations at deploy time.
+`lib/supabase/database.types.ts` is kept in sync by hand alongside each
+migration.
